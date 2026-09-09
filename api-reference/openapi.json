@@ -6529,6 +6529,13 @@
             "description": "Ledger rows the startup sweep resolved to FAILED (#196). These are no longer counted by pending_settlements, so without this they would disappear from the health view entirely.",
             "default": 0
           },
+          "uncollected_usdc": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Uncollected Usdc",
+            "description": "USDC credited to the ledger that will never settle: exhausted PENDING plus FAILED rows (#359). Reconciliation work, expressed as money rather than as two row counts.",
+            "default": 0.0
+          },
           "settlement_configured": {
             "type": "boolean",
             "title": "Settlement Configured",
