@@ -2058,7 +2058,7 @@
     "/v1/wallet/balance": {
       "get": {
         "summary": "Wallet Balance",
-        "description": "WaaS endpoint: get USDC balance for an ERC-8004 registered agent.\n\n#424: not yet backed by a real on-chain read \u2014 answers 501 until the\nregistry lookup and balanceOf() call are implemented.",
+        "description": "WaaS endpoint: get USDC balance for an ERC-8004 registered agent.\n\n`agent_id` is the agent's wallet address (EVM 0x..., Base mainnet). The\nwallet must be registered in the configured ERC-8004 Identity Registry;\na well-formed but unregistered wallet answers 404.\n\nFails closed rather than quoting a balance it could not read (#432):\n503 wallet_registry_unconfigured when no registry address is configured,\n503 wallet_rpc_unavailable when the Base read fails or the breaker is open.",
         "operationId": "wallet_balance_v1_wallet_balance_get",
         "security": [
           {
@@ -2072,10 +2072,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "ERC-8004 agent identifier",
+              "description": "Agent's wallet address (EVM 0x\u2026, Base mainnet); must be a registered ERC-8004 agent",
               "title": "Agent Id"
             },
-            "description": "ERC-8004 agent identifier"
+            "description": "Agent's wallet address (EVM 0x\u2026, Base mainnet); must be a registered ERC-8004 agent"
           }
         ],
         "responses": {
@@ -2083,11 +2083,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Wallet Balance V1 Wallet Balance Get"
-                }
+                "schema": {}
               }
             }
           },
