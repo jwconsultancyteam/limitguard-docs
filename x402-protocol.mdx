@@ -391,7 +391,7 @@ The amount in `X-PAYMENT` must match or exceed the price for the selected tier:
 | `enhanced` | 1,500,000 ($1.50) |
 
 Not every priced endpoint has tiers. `POST /v1/entity/deep-check` is flat-priced at
-$0.50 (500,000) and ignores `X-Response-Quality` entirely: there is no cached tier, so
+$0.75 (750,000) and ignores `X-Response-Quality` entirely: there is no cached tier, so
 every call is a fresh PEP screen at the one price.
 
 `cached` is served only from cache. If nothing is cached for the entity, the response is
