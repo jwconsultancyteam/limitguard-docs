@@ -91,7 +91,7 @@
     "/v1/entity/deep-check": {
       "post": {
         "summary": "Entity Deep Check",
-        "description": "Deep check: extended PEP/RCA exposure screening (#396).\n\nThe one source the base check does not return. /v1/entity/check queries the same\nOpenSanctions collection but filters to sanctions/enforcement datasets and reduces\nthe answer to a boolean (app/services/sanctions.py); the role.pep/role.rca detail is\nfetched and discarded. This endpoint keeps it.\n\nFlat $0.50, fresh only \u2014 X-Response-Quality is ignored here, there is no cached\ntier. If the source cannot be reached the answer is a 503, never a fabricated clean\nscreen, and the x402 gate settles only on a 2xx so the call is not charged.",
+        "description": "Deep check: extended PEP/RCA exposure screening (#396).\n\nThe one source the base check does not return. /v1/entity/check queries the same\nOpenSanctions collection but filters to sanctions/enforcement datasets and reduces\nthe answer to a boolean (app/services/sanctions.py); the role.pep/role.rca detail is\nfetched and discarded. This endpoint keeps it.\n\nFlat $0.75, fresh only \u2014 X-Response-Quality is ignored here, there is no cached\ntier. If the source cannot be reached the answer is a 503, never a fabricated clean\nscreen, and the x402 gate settles only on a 2xx so the call is not charged.",
         "operationId": "entity_deep_check_v1_entity_deep_check_post",
         "requestBody": {
           "content": {
