@@ -91,7 +91,7 @@
     "/v1/entity/deep-check": {
       "post": {
         "summary": "Entity Deep Check",
-        "description": "Deep check: extended PEP/RCA exposure screening (#396).\n\nThe one source the base check does not return. /v1/entity/check queries the same\nOpenSanctions collection but filters to sanctions/enforcement datasets and reduces\nthe answer to a boolean (app/services/sanctions.py); the role.pep/role.rca detail is\nfetched and discarded. This endpoint keeps it.\n\nFlat $0.75, fresh only \u2014 X-Response-Quality is ignored here, there is no cached\ntier. If the source cannot be reached the answer is a 503, never a fabricated clean\nscreen, and the x402 gate settles only on a 2xx so the call is not charged.",
+        "description": "Deep check: extended PEP/RCA exposure screening (#396), adverse media on the\nextended tier (#402).\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\nTwo tiers, resolved from X-Response-Quality by the x402 middleware:\n`fresh` (default; the `deep` tier, $0.75) returns pep_extended only;\n`enhanced` (the `extended` tier, $1.50) adds `adverse_media` from dilisense.\nThere is no cache-only branch, so `cached` is quoted, charged and served as\n`fresh`. If a source of the requested tier cannot be reached the answer is a\n503, never a fabricated clean screen, and the x402 gate settles only on a 2xx\nso the call is not charged.",
         "operationId": "entity_deep_check_v1_entity_deep_check_post",
         "requestBody": {
           "content": {
@@ -125,7 +125,7 @@
             }
           },
           "503": {
-            "description": "PEP source unavailable \u2014 payment is not settled (#284)",
+            "description": "A source of the requested tier is unavailable \u2014 payment is not settled (#284)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3805,7 +3805,7 @@
           "quality": {
             "type": "string",
             "title": "Quality",
-            "description": "Only tier offered; see #396",
+            "description": "deep (fresh) or extended (enhanced); see DEEP_CHECK_TIER_NAMES",
             "default": "deep"
           },
           "sources_returned": {
@@ -3873,7 +3873,44 @@
           "processing_time_ms"
         ],
         "title": "DeepCheckResponse",
-        "description": "Response from /v1/entity/deep-check (#396).\n\n``sources_returned`` is built from payment.DEEP_CHECK_ADDS -- the same tuple\nenhanced_check_hint advertises -- so what was promised and what was delivered are\none value. A name may only join that tuple together with the field that fills it."
+        "description": "Response from /v1/entity/deep-check (#396, #402).\n\n``sources_returned`` is built from payment.DEEP_CHECK_TIER_ADDS[tier] -- the same\ntable enhanced_check_hint advertises -- so what was promised and what was delivered\nare one value. A name may only join that table together with the field that fills\nit on that tier."
+      },
+      "DeepCheckTierOffer": {
+        "properties": {
+          "quality": {
+            "type": "string",
+            "title": "Quality",
+            "description": "deep or extended"
+          },
+          "response_quality": {
+            "type": "string",
+            "title": "Response Quality",
+            "description": "X-Response-Quality value that buys this tier (fresh or enhanced)"
+          },
+          "price_usdc": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Price Usdc",
+            "description": "Cost via x402 payment"
+          },
+          "adds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Adds",
+            "description": "Sources this tier actually returns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quality",
+          "response_quality",
+          "price_usdc",
+          "adds"
+        ],
+        "title": "DeepCheckTierOffer",
+        "description": "One purchasable /v1/entity/deep-check tier, as the upsell hint advertises it."
       },
       "EnhancedCheckHint": {
         "properties": {
@@ -3900,6 +3937,14 @@
             "type": "array",
             "title": "Adds",
             "description": "Additional data sources included"
+          },
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/DeepCheckTierOffer"
+            },
+            "type": "array",
+            "title": "Tiers",
+            "description": "Every tier the endpoint sells; the top-level fields are the recommended one"
           },
           "trigger_reason": {
             "type": "string",
