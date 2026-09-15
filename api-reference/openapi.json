@@ -2058,7 +2058,7 @@
     "/v1/wallet/balance": {
       "get": {
         "summary": "Wallet Balance",
-        "description": "WaaS endpoint: get USDC balance for an ERC-8004 registered agent.\n\nReturns balance data or 404 if agent is not registered.",
+        "description": "WaaS endpoint: get USDC balance for an ERC-8004 registered agent.\n\n#424: not yet backed by a real on-chain read \u2014 answers 501 until the\nregistry lookup and balanceOf() call are implemented.",
         "operationId": "wallet_balance_v1_wallet_balance_get",
         "security": [
           {
