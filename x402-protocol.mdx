@@ -275,11 +275,67 @@ Rules:
 - The same header applies to a Solana `txSignature` for an already-confirmed transaction.
 - There is no grace period after which an unrelated submission is served anyway.
 
-What this does **not** do: it is not proof of wallet ownership. A party who requests
-their own 402 for the same resource ahead of time holds a token of their own and can
-still race you with it (the issue's own caveat for this direction). Submit your hash
-promptly after it confirms. The EIP-3009 (`PAYMENT-SIGNATURE`) path and the Solana
-partially-signed-transaction path are not exposed to this at all and need no token.
+What the token alone does **not** do: it is not proof of wallet ownership. It binds a
+redemption to a *resource* and a *deadline*, not to a *wallet*, so a party who requested
+their own 402 for the same resource ahead of time holds a valid token and can still race
+you with your hash. The optional signature below closes exactly that gap. Until you send
+it, submit your hash promptly after it confirms. The EIP-3009 (`PAYMENT-SIGNATURE`) path
+and the Solana partially-signed-transaction path are delivered to us privately, are not
+exposed to this race at all, and need neither the token nor the signature.
+
+### Proving you own the sending wallet (issue #365)
+
+Send the sending wallet's signature over the challenge and a copied hash becomes
+worthless to anyone else:
+
+```
+X-Payment-Challenge-Signature: <signature>
+```
+
+**The field is optional today.** Omitting it behaves exactly as before — your proof is
+accepted and the redemption is counted as unsigned. It is planned to become **required**
+(issue #367) once unsigned redemptions fall to zero, so adopt it before then.
+
+The signed message is exactly five UTF-8 lines joined by a newline, with **no trailing
+newline**:
+
+```
+limitguard-x402-challenge-v1
+/v1/entity/check
+eip155:8453
+0x1111111111111111111111111111111111111111111111111111111111111111
+abcDEF123_-abcDEF123_-abcDEF12
+```
+
+| Line | Content |
+|---|---|
+| 1 | The literal protocol tag `limitguard-x402-challenge-v1`. A layout change bumps the version, so an old signature can never verify against a new message. |
+| 2 | The resource the challenge was minted for. On REST this is the URL path, e.g. `/v1/entity/check`. On MCP it is the **tool name**, e.g. `check_entity`. On `/x402/verify` it is the `resourcePath` you send. |
+| 3 | The CAIP-2 chain id, e.g. `eip155:8453` — the `network` of the settled-transfer entry you are paying against. |
+| 4 | The proof: an EVM `txHash` **lowercased and `0x`-prefixed**, or a Solana `txSignature` exactly as you send it. |
+| 5 | The challenge id, i.e. the `X-Payment-Challenge` value you are sending with it. |
+
+Signature schemes:
+
+- **EVM (Base)** — EIP-191 `personal_sign` over that message, the ordinary
+  `personal_sign` / `eth_sign` any wallet exposes. Send it as hex, with or without the
+  `0x` prefix. The server recovers the address and compares it to the `from` of the USDC
+  Transfer log in your transaction's receipt.
+- **Solana** — a raw ed25519 signature over the UTF-8 bytes of that message, base58
+  encoded. The server verifies it against the transfer *authority* read from the
+  confirmed transaction.
+
+The comparison is always against the sender read **from chain**. There is no field in
+which you can assert who you are, so a signature only ever helps the wallet that really
+sent the USDC.
+
+If the header is present and does not verify, the request is refused with `402`
+`settlement_signature_invalid` — and, importantly, **your proof is not consumed**: the
+deduplication claim is released, so the genuine payer can still redeem the same hash. A
+wrong signature therefore cannot be used to burn someone else's transfer.
+
+All three redemption paths enforce this identically: the protected REST endpoints, the
+MCP tool calls, and `POST /x402/verify`.
 
 ### Verifying a settled-transfer proof via `/x402/verify`
 
@@ -333,6 +389,10 @@ The amount in `X-PAYMENT` must match or exceed the price for the selected tier:
 | `cached` | 100,000 ($0.10) |
 | `fresh` | 850,000 ($0.85) |
 | `enhanced` | 1,500,000 ($1.50) |
+
+Not every priced endpoint has tiers. `POST /v1/entity/deep-check` is flat-priced at
+$0.50 (500,000) and ignores `X-Response-Quality` entirely: there is no cached tier, so
+every call is a fresh PEP screen at the one price.
 
 `cached` is served only from cache. If nothing is cached for the entity, the response is
 `404` with `errorCode: "not_cached"` and a `retry` block naming `X-Response-Quality: fresh`
@@ -395,6 +455,15 @@ transaction, then re-verified against the mint, destination ATA and fee payer be
 payment is accepted, along with the transfer authority's ed25519 signature over the
 transaction message — an unsigned or tampered transaction is rejected up front. You may optionally include `amount` and `sender` in `payload`; if
 present they are used for the price check, and the transaction is still verified.
+
+A partially signed transaction is the default the Python SDK's `SolanaWallet` sends. It
+compiles the transfer with the address advertised as `accepts[].extra.feePayer` at account
+index 0 and leaves that signature slot empty, signing only as the transfer authority; the
+server co-signs as fee payer and broadcasts. A paying wallet therefore needs USDC and no
+SOL. Because no money has moved when the payload is presented, it is not a client-broadcast
+proof and is **not** gated on the `X-Payment-Challenge` token that a `txSignature` or
+`txHash` proof must be redeemed with. To pay the network fee yourself and send a
+`txSignature` instead, construct the wallet with `broadcast=True`.
 
 These payloads work against `X-PAYMENT` on any paid endpoint and against `POST /x402/verify`
 and `POST /x402/settle`.

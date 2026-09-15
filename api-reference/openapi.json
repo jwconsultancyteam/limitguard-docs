@@ -88,6 +88,60 @@
         ]
       }
     },
+    "/v1/entity/deep-check": {
+      "post": {
+        "summary": "Entity Deep Check",
+        "description": "Deep check: extended PEP/RCA exposure screening (#396).\n\nThe one source the base check does not return. /v1/entity/check queries the same\nOpenSanctions collection but filters to sanctions/enforcement datasets and reduces\nthe answer to a boolean (app/services/sanctions.py); the role.pep/role.rca detail is\nfetched and discarded. This endpoint keeps it.\n\nFlat $0.50, fresh only \u2014 X-Response-Quality is ignored here, there is no cached\ntier. If the source cannot be reached the answer is a 503, never a fabricated clean\nscreen, and the x402 gate settles only on a 2xx so the call is not charged.",
+        "operationId": "entity_deep_check_v1_entity_deep_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeepCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeepCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PEP source unavailable \u2014 payment is not settled (#284)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
     "/v1/risk/score": {
       "post": {
         "summary": "Risk Score",
@@ -3022,6 +3076,124 @@
   },
   "components": {
     "schemas": {
+      "AdverseMediaArticle": {
+        "properties": {
+          "headline": {
+            "type": "string",
+            "title": "Headline",
+            "description": "Article headline as indexed by the vendor"
+          },
+          "source_link": {
+            "type": "string",
+            "title": "Source Link",
+            "description": "URL of the article"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "dilisense exposure category, e.g. financial_crime"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At",
+            "description": "ISO 8601 timestamp"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "ISO 639-1 language code"
+          },
+          "snippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snippet",
+            "description": "Bounded plain-text excerpt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "headline",
+          "source_link",
+          "category"
+        ],
+        "title": "AdverseMediaArticle",
+        "description": "One adverse-media article, projected to the fields we stand behind (#402).\n\nField names follow the dilisense `checkIndividual` article object (headline,\nsource_link, timestamp, language, body). `snippet` is the body with its ``<p>``\nmarkup stripped and bounded; `category` is the news-exposure bucket dilisense\nfiled the article under."
+      },
+      "AdverseMediaResult": {
+        "properties": {
+          "screened": {
+            "type": "boolean",
+            "title": "Screened",
+            "description": "True when dilisense was actually queried"
+          },
+          "adverse_media_found": {
+            "type": "boolean",
+            "title": "Adverse Media Found",
+            "description": "True when the vendor reported at least one news exposure"
+          },
+          "match_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Match Count",
+            "description": "Total exposures reported (total_hits)"
+          },
+          "category_hits": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Category Hits",
+            "description": "Exposures per dilisense category"
+          },
+          "articles": {
+            "items": {
+              "$ref": "#/components/schemas/AdverseMediaArticle"
+            },
+            "type": "array",
+            "title": "Articles"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "description": "True when articles were capped below match_count",
+            "default": false
+          },
+          "retrieved_at": {
+            "type": "string",
+            "title": "Retrieved At",
+            "description": "ISO 8601 UTC timestamp of the query"
+          }
+        },
+        "type": "object",
+        "required": [
+          "screened",
+          "adverse_media_found",
+          "match_count",
+          "retrieved_at"
+        ],
+        "title": "AdverseMediaResult",
+        "description": "Result of the `adverse_media` source. `screened` is never False on a 200.\n\nMirrors PepScreenResult: app/services/adverse_media.py raises rather than\nfabricating a clean screen, and the router turns that into a 503 so the payment\nis never settled (#284, #402). A negative means no *indexed reporting* matched,\nnot that no wrongdoing exists; `screened` and `adverse_media_found` are separate\nfields so a caller can tell \"looked, found nothing\" from \"did not look\"."
+      },
       "AgentProspect": {
         "properties": {
           "agent_id": {
@@ -3560,6 +3732,75 @@
         "title": "ComplianceSourceStatus",
         "description": "Health status of a regulatory source."
       },
+      "CreditReportResult": {
+        "properties": {
+          "screened": {
+            "type": "boolean",
+            "title": "Screened",
+            "description": "True when the provider was actually queried"
+          },
+          "risk_score": {
+            "type": "string",
+            "title": "Risk Score",
+            "description": "Normalised verdict: green, yellow, red, or unknown"
+          },
+          "risk_band_available": {
+            "type": "boolean",
+            "title": "Risk Band Available",
+            "description": "True when the provider returned an assessment rather than grey/ND"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Identifier of the provider queried"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-2 country the provider covers"
+          },
+          "organization_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Name",
+            "description": "Company name as held by the provider"
+          },
+          "identifier_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier Type",
+            "description": "Which identifier resolved the lookup: vat, tax or company_id"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "title": "Retrieved At",
+            "description": "ISO 8601 UTC timestamp of the query"
+          }
+        },
+        "type": "object",
+        "required": [
+          "screened",
+          "risk_score",
+          "risk_band_available",
+          "provider",
+          "country",
+          "retrieved_at"
+        ],
+        "title": "CreditReportResult",
+        "description": "Result of the `credit_report` source. `screened` is never False on a 200.\n\nMirrors AdverseMediaResult: app/services/credit_report.py raises rather than\nfabricating a verdict, and the router turns that into a 503 so the payment is\nnever settled (#284, #404). `screened` and `risk_score` are separate fields so a\ncaller can tell \"looked, low risk\" from \"did not look\" -- and because coverage is\nper country, \"no provider for this country\" is a raised error, never a green\nverdict.\n\nA green score is the provider's assessment of the company at query time, not a\nguarantee of solvency and not a recommendation to extend credit. `risk_score` is\na normalised value from a closed set (green / yellow / red / unknown), not the raw\nvendor string; `risk_band_available` is False when the provider declined to assess\n(its documented grey/ND answer, e.g. a closed company), which is a different fact\nfrom a low-risk verdict."
+      },
       "CustomerRevenue": {
         "properties": {
           "api_key_id": {
@@ -3780,6 +4021,115 @@
           "retention_days"
         ],
         "title": "DataInventoryItem"
+      },
+      "DeepCheckRequest": {
+        "properties": {
+          "entity_name": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Entity Name",
+            "description": "Legal entity or person name"
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-2 country code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_name",
+          "country"
+        ],
+        "title": "DeepCheckRequest",
+        "description": "Request for POST /v1/entity/deep-check (#396).\n\nTakes entity fields rather than an ``entity_id`` from a prior check: the audit\ntrail is keyed by sha256(entity_name) and is one-way, so an id could not be\nresolved back to the name the PEP screen has to query. Deep-check calls no\nregistry, so there is nothing to re-collect and no KVK/CBE field to carry."
+      },
+      "DeepCheckResponse": {
+        "properties": {
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "quality": {
+            "type": "string",
+            "title": "Quality",
+            "description": "Only tier offered; see #396",
+            "default": "deep"
+          },
+          "sources_returned": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources Returned",
+            "description": "Sources actually run; equals EnhancedCheckHint.adds"
+          },
+          "pep_extended": {
+            "$ref": "#/components/schemas/PepScreenResult"
+          },
+          "adverse_media": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdverseMediaResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Populated only on a tier whose adds include `adverse_media`. None means the tier did not include it -- never that a screen ran and found nothing."
+          },
+          "credit_report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CreditReportResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Populated only on a tier whose adds include `credit_report`, and only for a country with a registered provider. None means the tier did not include it -- never that a screen ran and found no credit risk."
+          },
+          "processing_time_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Processing Time Ms"
+          },
+          "disclaimers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Disclaimers"
+          },
+          "sandbox": {
+            "type": "boolean",
+            "title": "Sandbox",
+            "default": false
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": "1.0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_name",
+          "country",
+          "sources_returned",
+          "pep_extended",
+          "processing_time_ms"
+        ],
+        "title": "DeepCheckResponse",
+        "description": "Response from /v1/entity/deep-check (#396).\n\n``sources_returned`` is built from payment.DEEP_CHECK_ADDS -- the same tuple\nenhanced_check_hint advertises -- so what was promised and what was delivered are\none value. A name may only join that tuple together with the field that fills it."
       },
       "DeployedVersion": {
         "properties": {
@@ -4772,6 +5122,115 @@
           "COMPLIANCE"
         ],
         "title": "OracleTag"
+      },
+      "PepMatch": {
+        "properties": {
+          "caption": {
+            "type": "string",
+            "title": "Caption",
+            "description": "Matched entity display name"
+          },
+          "schema_type": {
+            "type": "string",
+            "title": "Schema Type",
+            "description": "FollowTheMoney schema, e.g. Person"
+          },
+          "topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Topics",
+            "description": "Risk topics, e.g. role.pep, role.rca"
+          },
+          "datasets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Datasets"
+          },
+          "score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "description": "Match confidence"
+          },
+          "countries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Countries"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "caption",
+          "schema_type",
+          "topics",
+          "score"
+        ],
+        "title": "PepMatch",
+        "description": "One OpenSanctions PEP/RCA match, projected to the fields we stand behind."
+      },
+      "PepScreenResult": {
+        "properties": {
+          "screened": {
+            "type": "boolean",
+            "title": "Screened",
+            "description": "True when OpenSanctions was actually queried"
+          },
+          "pep_exposure": {
+            "type": "boolean",
+            "title": "Pep Exposure",
+            "description": "True when at least one role.pep/role.rca match cleared threshold"
+          },
+          "match_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Match Count"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/PepMatch"
+            },
+            "type": "array",
+            "title": "Matches"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "description": "True when matches were capped",
+            "default": false
+          },
+          "retrieved_at": {
+            "type": "string",
+            "title": "Retrieved At",
+            "description": "ISO 8601 UTC timestamp of the query"
+          }
+        },
+        "type": "object",
+        "required": [
+          "screened",
+          "pep_exposure",
+          "match_count",
+          "retrieved_at"
+        ],
+        "title": "PepScreenResult",
+        "description": "Result of the `pep_extended` source. `screened` is never False on a 200.\n\nThere is no code path that returns this model without having queried\nOpenSanctions: app/services/pep.py raises rather than fabricating a clean screen,\nand the router turns that into a 503 so the payment is never settled (#284, #396)."
       },
       "PitchMessage": {
         "properties": {
