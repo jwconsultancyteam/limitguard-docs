@@ -5,7 +5,7 @@ description: "Pay-per-use USDC micropayments for AI agents — no subscription r
 
 {/* Generated from docs/x402-protocol.md in jwconsultancyteam/limitguard-ai by scripts/sync_public_repos.py. Edit the source, not this page. */}
 
-LimitGuard implements the x402 V2 micropayment protocol for AI agent pay-per-use access. No subscription or API key required — agents pay per call in USDC.
+LimitGuard implements the x402 V2 micropayment protocol for AI agent pay-per-use access. No prepaid key or API key required — agents pay per call in USDC.
 
 ## Overview
 
@@ -98,6 +98,7 @@ Every 402 also carries additive recovery hints under `extensions.bazaar.info`, s
 | `extensions.bazaar.info.recovery.url` | `https://api.limitguard.ai/v1/quickstart` (+ a `curl` one-liner) |
 | `extensions.bazaar.info.documentation_url` | `https://docs.limitguard.ai/x402-protocol` |
 | `extensions.bazaar.info.sandbox.curl` | `POST /v1/keys/create {"email": "...", "tier": "sandbox"}` → free `lg_sandbox_` key, no wallet |
+| `extensions.bazaar.info.prepaidBalance` | Only on `errorCode: insufficient_balance` (API-key holder whose prepaid balance is below the price): `balance_usd`, `price_usd`, `topup.url` (`POST /v1/keys/topup/{usd}`), and a note that paying this call by x402 also works |
 
 The same body is mirrored base64-encoded in the `PAYMENT-REQUIRED` response header.
 
