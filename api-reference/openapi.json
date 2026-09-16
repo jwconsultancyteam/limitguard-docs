@@ -248,7 +248,7 @@
     "/v1/keys/usage": {
       "get": {
         "summary": "Get Usage",
-        "description": "Check current API key usage and remaining quota.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).",
+        "description": "Check current API key usage, remaining quota and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from (#434).",
         "operationId": "get_usage_v1_keys_usage_get",
         "responses": {
           "200": {
@@ -272,7 +272,7 @@
     "/v1/keys/revoke": {
       "post": {
         "summary": "Revoke Key",
-        "description": "Revoke an API key permanently.\n\nThe key being revoked is identified by the X-API-Key header.\nThis action is irreversible \u2014 the key will stop working immediately.",
+        "description": "Revoke an API key permanently.\n\nThe key being revoked is identified by the X-API-Key header.\nThis action is irreversible \u2014 the key will stop working immediately.\nAny remaining prepaid balance is forfeited.",
         "operationId": "revoke_key_v1_keys_revoke_post",
         "responses": {
           "200": {
@@ -298,7 +298,7 @@
     "/v1/keys/upgrade/{tier}": {
       "post": {
         "summary": "Upgrade Key",
-        "description": "Upgrade an API key to a paid tier via x402 USDC payment.\n\nThe x402 middleware handles payment verification before this handler runs.\nSend X-API-Key header to identify which key to upgrade.\n\nTier ladder: free -> indie ($29) -> starter ($99) -> growth ($299) -> pro ($999)",
+        "description": "Buy prepaid balance via x402 USDC payment (#434).\n\nThe x402 price is credited 1:1 to the key's prepaid balance and the tier\nlabel is set to the higher of the current and purchased tier (the label\nselects burst limits in rate_limit.py; it never downgrades). Repeat\npurchases are allowed. Each priced call is then debited at the price in\nthe pricing table.\n\nThe x402 middleware handles payment verification before this handler runs.\nSend X-API-Key header to identify which key to credit.\n\nLadder prices: indie $29, starter $99, growth $299, pro $999.",
         "operationId": "upgrade_key_v1_keys_upgrade__tier__post",
         "security": [
           {
@@ -323,6 +323,54 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/KeyUpgradeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/keys/topup/{usd}": {
+      "post": {
+        "summary": "Topup Key",
+        "description": "Top up a key's prepaid balance via x402 USDC payment (#434).\n\nThe x402 middleware prices this path at {usd} dollars and verifies payment\nbefore this handler runs; the amount paid is credited 1:1. Each priced call\nis then debited at the price in the pricing table.",
+        "operationId": "topup_key_v1_keys_topup__usd__post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "usd",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 5,
+              "description": "Whole US dollars to add to the prepaid balance",
+              "title": "Usd"
+            },
+            "description": "Whole US dollars to add to the prepaid balance"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyTopupResponse"
                 }
               }
             }
@@ -4628,7 +4676,7 @@
           "monthly_limit": {
             "type": "integer",
             "title": "Monthly Limit",
-            "description": "Monthly request limit for this tier"
+            "description": "Monthly request ceiling for this tier (an abuse cap, not prepaid calls)"
           }
         },
         "type": "object",
@@ -4641,6 +4689,39 @@
         "title": "KeyCreateResponse",
         "description": "Response after creating a new API key. Plaintext key shown only once."
       },
+      "KeyTopupResponse": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "title": "Key Id",
+            "description": "Key identifier (SHA-256 hash prefix)"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier",
+            "description": "Tier label (unchanged by a top-up)"
+          },
+          "credited_usd": {
+            "type": "number",
+            "title": "Credited Usd",
+            "description": "USD credited to the prepaid balance by this payment (1:1)"
+          },
+          "balance_usd": {
+            "type": "number",
+            "title": "Balance Usd",
+            "description": "Prepaid balance after this credit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "tier",
+          "credited_usd",
+          "balance_usd"
+        ],
+        "title": "KeyTopupResponse",
+        "description": "Response after topping up a key's prepaid balance via x402."
+      },
       "KeyUpgradeResponse": {
         "properties": {
           "key_id": {
@@ -4651,22 +4732,32 @@
           "previous_tier": {
             "type": "string",
             "title": "Previous Tier",
-            "description": "Tier before upgrade"
+            "description": "Tier label before this purchase"
           },
           "new_tier": {
             "type": "string",
             "title": "New Tier",
-            "description": "Tier after upgrade"
+            "description": "Tier label after this purchase (never lower than before)"
           },
           "monthly_limit": {
             "type": "integer",
             "title": "Monthly Limit",
-            "description": "New monthly request limit"
+            "description": "Monthly request ceiling for the tier label (an abuse cap, not prepaid calls)"
           },
           "payment_amount_usdc": {
             "type": "number",
             "title": "Payment Amount Usdc",
             "description": "Amount paid in USDC"
+          },
+          "credited_usd": {
+            "type": "number",
+            "title": "Credited Usd",
+            "description": "USD credited to the prepaid balance by this payment (1:1)"
+          },
+          "balance_usd": {
+            "type": "number",
+            "title": "Balance Usd",
+            "description": "Prepaid balance after this credit"
           }
         },
         "type": "object",
@@ -4675,10 +4766,12 @@
           "previous_tier",
           "new_tier",
           "monthly_limit",
-          "payment_amount_usdc"
+          "payment_amount_usdc",
+          "credited_usd",
+          "balance_usd"
         ],
         "title": "KeyUpgradeResponse",
-        "description": "Response after upgrading an API key tier via x402 payment."
+        "description": "Response after buying prepaid balance via x402 on POST /v1/keys/upgrade/{tier}."
       },
       "KeyUsageResponse": {
         "properties": {
@@ -4700,7 +4793,7 @@
           "monthly_limit": {
             "type": "integer",
             "title": "Monthly Limit",
-            "description": "Maximum requests allowed this period"
+            "description": "Monthly request ceiling for this tier (an abuse cap, not prepaid calls)"
           },
           "remaining": {
             "type": "integer",
@@ -4711,6 +4804,12 @@
             "type": "number",
             "title": "Usage Percent",
             "description": "Percentage of quota used (0-100)"
+          },
+          "balance_usd": {
+            "type": "number",
+            "title": "Balance Usd",
+            "description": "Prepaid balance in USD; each priced call is debited at the price in the pricing table",
+            "default": 0.0
           }
         },
         "type": "object",
@@ -4723,7 +4822,7 @@
           "usage_percent"
         ],
         "title": "KeyUsageResponse",
-        "description": "Response showing current API key usage and remaining quota."
+        "description": "Response showing current API key usage, remaining quota and prepaid balance."
       },
       "LegalDocument": {
         "properties": {
