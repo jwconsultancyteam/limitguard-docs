@@ -58,7 +58,7 @@ Response (HTTP 402):
       "description": "Full entity trust check across multiple verification layers...",
       "mimeType": "application/json",
       "payTo": "0xFacilitatorAddress",
-      "maxTimeoutSeconds": 60,
+      "maxTimeoutSeconds": 600,
       "extra": {"name": "USD Coin", "version": "2", "decimals": 6}
     },
     {
@@ -71,7 +71,7 @@ Response (HTTP 402):
       "description": "Full entity trust check across multiple verification layers...",
       "mimeType": "application/json",
       "payTo": "SolanaFacilitatorAddress",
-      "maxTimeoutSeconds": 60,
+      "maxTimeoutSeconds": 600,
       "extra": {"name": "USDC", "version": "2", "decimals": 6}
     }
   ],
@@ -204,7 +204,7 @@ response = httpx.post(
 
 ## Replay Prevention
 
-Each nonce can only be used once (Redis, 5-minute TTL). Reusing a nonce returns HTTP 402 with "Nonce already used (replay detected)". Settled-transfer tx hashes (see below) use a longer 24-hour replay window instead.
+Each nonce can only be used once (Redis, 10-minute TTL — tied to the quote's `maxTimeoutSeconds`). Reusing a nonce returns HTTP 402 with "Nonce already used (replay detected)". Settled-transfer tx hashes (see below) use a longer 24-hour replay window instead.
 
 ## Settled Transfer Fallback (EVM)
 
