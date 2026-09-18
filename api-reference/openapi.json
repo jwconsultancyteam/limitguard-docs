@@ -5495,7 +5495,7 @@
           "status": {
             "type": "string",
             "title": "Status",
-            "description": "ok, timeout, error, skipped"
+            "description": "ready, not_configured, unavailable, degraded, or unknown (not yet probed)"
           },
           "latency_ms": {
             "anyOf": [
