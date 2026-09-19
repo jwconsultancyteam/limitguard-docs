@@ -1,0 +1,37 @@
+---
+title: "Downtime log, September 2026"
+sidebarTitle: "Downtime log, Sep 2026"
+description: "Planned maintenance on 2026-09-19 and every short downtime shown on the status page since the 2026-09-05 restore"
+---
+
+This page records every downtime of `api.limitguard.ai` shown on [status.limitguard.ai](https://status.limitguard.ai) since the service was restored on 2026-09-05. The longer outage before that has its own [post-mortem](/postmortems/2026-09-langfuse-event-loop).
+
+## Planned maintenance, 2026-09-19
+
+All times UTC.
+
+| When | What |
+|---|---|
+| 2026-09-19 00:34 | Tracing backend upgraded. The API does not depend on it to serve requests and stayed up. |
+| 2026-09-19 00:40:55 | Container engine upgrade on the API host starts. Every container on the host stops, including the API and the reverse proxy in front of it. |
+| 2026-09-19 00:41:45 | All containers back and healthy. `api.limitguard.ai/health` returns 200. |
+
+About 50 seconds of downtime. Requests in that window could not connect. Every service restarted from its existing data. The upgrade was run in the lowest-traffic hour.
+
+## Unplanned downtime, 2026-09-08 to 2026-09-18
+
+Daily totals as measured by the status-page monitors. The monitors report per-day totals, not individual start times.
+
+| Date | API | x402 discovery |
+|---|---|---|
+| 2026-09-08 | 3 min | none |
+| 2026-09-09 | 9 min | none |
+| 2026-09-10 | 2 min | 5 min |
+| 2026-09-13 | 7 min | none |
+| 2026-09-14 | 9 min | 5 min |
+| 2026-09-15 | 33 min | 25 min |
+| 2026-09-16 | 19 min | 10 min |
+| 2026-09-18 | 7 min | 4 min |
+| **Total** | **89 min** | **49 min** |
+
+The causes of these windows are still being investigated, and none of them has been ruled a false positive yet. This page will be updated with a cause per row. Any that turns out to be a real outage over a few minutes will also get its own entry on the status page, whose incident history currently shows none of them.
