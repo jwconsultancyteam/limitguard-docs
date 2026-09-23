@@ -6456,5 +6456,10 @@
         "name": "X-API-Key"
       }
     }
-  }
+  },
+  "servers": [
+    {
+      "url": "https://api.limitguard.ai"
+    }
+  ]
 }
