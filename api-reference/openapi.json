@@ -1957,7 +1957,7 @@
     "/v1/financial/health": {
       "get": {
         "summary": "Financial Health",
-        "description": "Get overall financial system health status.\n\nThe settlement fields are operator-wide and only disclosed to admin keys\n(#291); other callers do not receive them at all.",
+        "description": "Get overall financial system health status.\n\nThe settlement fields are operator-wide and only disclosed to admin keys\n(#291); other callers do not receive them at all. Revenue scope follows\nthe same split (#427): an admin sees the platform-wide total -- every\nkey's prepaid revenue plus anonymous x402 wallet revenue that belongs to no\ntenant; anyone else sees only revenue attributed to their own key.",
         "operationId": "financial_health_v1_financial_health_get",
         "responses": {
           "200": {
@@ -1981,7 +1981,7 @@
     "/v1/treasury/balance": {
       "get": {
         "summary": "Treasury Balance",
-        "description": "Get current USDC treasury balance.",
+        "description": "Get current USDC treasury balance.\n\nNot tenant-scoped (#427): there is a single treasury wallet behind every\nsettlement, regardless of which key or wallet paid.",
         "operationId": "treasury_balance_v1_treasury_balance_get",
         "responses": {
           "200": {
@@ -3486,6 +3486,41 @@
         ],
         "title": "CertificateVerifyResponse",
         "description": "Response for certificate verification."
+      },
+      "ChainBalance": {
+        "properties": {
+          "chain": {
+            "type": "string",
+            "title": "Chain",
+            "description": "Blockchain network: base or solana"
+          },
+          "wallet_address": {
+            "type": "string",
+            "title": "Wallet Address",
+            "description": "Configured USDC recipient on this chain, or empty when unset"
+          },
+          "balance_usdc": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Balance Usdc",
+            "description": "USDC credited on this chain (human-readable)"
+          },
+          "balance_raw": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Balance Raw",
+            "description": "USDC credited on this chain in smallest unit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chain",
+          "wallet_address",
+          "balance_usdc",
+          "balance_raw"
+        ],
+        "title": "ChainBalance",
+        "description": "One chain's share of the treasury balance (#490)."
       },
       "CheckAgentRequest": {
         "properties": {
@@ -5563,24 +5598,39 @@
             "type": "number",
             "minimum": 0.0,
             "title": "Balance Usdc",
-            "description": "USDC balance (human-readable)"
+            "description": "USDC balance across all chains (human-readable)"
           },
           "balance_raw": {
             "type": "integer",
             "minimum": 0.0,
             "title": "Balance Raw",
-            "description": "USDC balance in smallest unit (6 decimals)"
+            "description": "USDC balance across all chains in smallest unit (6 decimals)"
           },
           "chain": {
             "type": "string",
             "title": "Chain",
-            "description": "Blockchain network",
+            "description": "Chain of wallet_address: base, or solana when only a Solana recipient is configured. balance_raw is NOT limited to this chain; see wallets for the per-chain split",
             "default": "base"
           },
           "wallet_address": {
             "type": "string",
             "title": "Wallet Address",
-            "description": "Treasury wallet address"
+            "description": "Treasury wallet address on `chain`"
+          },
+          "wallets": {
+            "items": {
+              "$ref": "#/components/schemas/ChainBalance"
+            },
+            "type": "array",
+            "title": "Wallets",
+            "description": "Per-chain breakdown: every chain with a configured recipient or a tracked balance"
+          },
+          "unattributed_raw": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unattributed Raw",
+            "description": "Part of balance_raw credited before per-chain tracking existed (#490), so it cannot be assigned to a chain",
+            "default": 0
           },
           "frozen": {
             "type": "boolean",
