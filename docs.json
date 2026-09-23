@@ -12,15 +12,22 @@
     "light": "#34D399",
     "dark": "#059669"
   },
-  "topbarLinks": [
-    {
-      "name": "API Status",
-      "url": "https://api.limitguard.ai/health"
+  "navbar": {
+    "links": [
+      {
+        "label": "limitguard.ai",
+        "href": "https://limitguard.ai"
+      },
+      {
+        "label": "API Status",
+        "href": "https://api.limitguard.ai/health"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get API Key",
+      "href": "https://api.limitguard.ai/v1/keys/create"
     }
-  ],
-  "topbarCtaButton": {
-    "name": "Get API Key",
-    "url": "https://api.limitguard.ai/v1/keys/create"
   },
   "navigation": {
     "anchors": [
@@ -83,6 +90,10 @@
             "pages": [
               "api-reference/introduction"
             ]
+          },
+          {
+            "group": "Endpoints",
+            "openapi": "api-reference/openapi.json"
           }
         ]
       },
@@ -102,7 +113,6 @@
       }
     ]
   },
-  "openapi": "api-reference/openapi.json",
   "api": {
     "baseUrl": "https://api.limitguard.ai",
     "auth": {
@@ -113,10 +123,6 @@
       "mode": "simple"
     }
   },
-  "footerSocials": {
-    "github": "https://github.com/jwconsultancyteam/limitguard-docs",
-    "website": "https://limitguard.ai"
-  },
   "feedback": {
     "thumbsRating": true,
     "suggestEdit": true
@@ -124,9 +130,17 @@
   "search": {
     "prompt": "Search LimitGuard docs..."
   },
-  "metadata": {
-    "og:site_name": "LimitGuard Documentation",
-    "og:description": "Trust Intelligence API for the Agent Economy. Real-time entity verification and risk scoring.",
-    "twitter:site": "@limitguard"
+  "footer": {
+    "socials": {
+      "github": "https://github.com/jwconsultancyteam/limitguard-docs",
+      "website": "https://limitguard.ai"
+    }
+  },
+  "seo": {
+    "indexing": "navigable",
+    "metatags": {
+      "og:site_name": "LimitGuard",
+      "og:description": "LimitGuard API docs: KYB, sanctions and PEP screening, Dutch and Belgian company registry checks and entity trust scores for AI agents, via x402 pay-per-call, API keys or MCP."
+    }
   }
 }
