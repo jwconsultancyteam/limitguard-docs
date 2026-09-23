@@ -114,7 +114,7 @@ curl https://api.limitguard.ai/.well-known/mcp.json
     },
     {
       "name": "verify_wallet",
-      "description": "MCP tool: verify blockchain wallet address. Checks on-chain activity and risk flags.",
+      "description": "Unimplemented / beta: returns placeholder data, not a real result. Free ($0) until real logic ships. Check wallet trust score for crypto payments. Supports EVM and Solana addresses.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1486,7 +1486,7 @@ async function verifyEntity(entityName, country) {
 
 | Property | Sandbox | Production |
 |----------|---------|------------|
-| Data sources | Mock only — no real KVK, sanctions, VIES | All 8 sources, live |
+| Data sources | Mock only — no real KVK, sanctions, VIES | Up to 8 sources, live (which ones run depends on the identifiers you send) |
 | Responses | Deterministic (same input = same output) | Live results |
 | x402 payment | Skipped entirely | Required (or API key) |
 | Quota | Not consumed | Consumed |
