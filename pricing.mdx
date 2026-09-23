@@ -3,7 +3,7 @@ title: "Pricing"
 description: "Pay only for what you use — USDC per API call"
 ---
 
-All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol), or hold an [API key](/authentication) and draw down a monthly call quota instead.
+All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol), or hold a paid-tier [API key](/authentication) with a prepaid balance that each priced call is debited from.
 
 **Start here:** Free sandbox key, no wallet. $0.65-0.85 fresh; $0.10 cached when available.
 
@@ -61,7 +61,7 @@ The [5 MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are *
 
 ## API Key Tier Upgrades
 
-Pay via x402 to move an existing API key onto a higher monthly call quota. This is the only case where x402 payment is required even if you already hold an API key — see [Authentication](/authentication#api-key-authentication) for the full tier ladder. Quotas reset on the first day of each calendar month (UTC).
+Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key — see [Authentication](/authentication#api-key-authentication) for the full tier ladder. Quotas reset on the first day of each calendar month (UTC).
 
 | Endpoint | Price | Unlocks |
 |----------|-------|---------|
@@ -95,8 +95,8 @@ No payment or API key required:
 
     [Learn more →](/x402-protocol)
   </Card>
-  <Card title="API Key Subscription" icon="key">
-    API key holders bypass x402 on regular API calls, drawing down a monthly quota instead. Tier upgrades themselves are purchased via x402.
+  <Card title="Prepaid API Key" icon="key">
+    Paid-tier API keys skip x402 on each call; the call is debited from the key's prepaid balance instead. Top-ups are paid via x402. Free and sandbox keys hold no balance and pay per call.
 
     **Tiers:** Free (500/mo), Indie ($29), Starter ($99), Growth ($299), Pro ($999).
 
