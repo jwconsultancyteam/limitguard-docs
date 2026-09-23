@@ -19,7 +19,7 @@ description: "Trust Intelligence API for the Agent Economy"
 # LimitGuard
 
 **Real-time trust scoring for AI agents, businesses, and transactions.**
-8 data sources. One API call. Verified on-chain.
+Up to 8 data sources. One API call. Paid per call in USDC or with an API key.
 
 LimitGuard is a Trust Intelligence API that lets AI agents and developers verify the trustworthiness of any business entity before transacting. We aggregate 8 independent data sources — business registries, sanctions lists, jurisdiction risk, domain intelligence, IBAN validation, VAT verification, wallet screening, and on-chain payment history — into a single trust score.
 
@@ -84,10 +84,10 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
     EU VAT registration check
   </Card>
   <Card title="Wallet Risk" icon="wallet">
-    ETH, BTC, SOL screening
+    ETH, BTC, SOL address format validation (on-chain screening is in development)
   </Card>
-  <Card title="x402 History" icon="clock-rotate-left">
-    On-chain payment trust
+  <Card title="x402 Payments" icon="clock-rotate-left">
+    Pay per call in USDC on Base or Solana
   </Card>
 </CardGroup>
 
@@ -98,7 +98,7 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
     POST the entity name, country, and any identifiers you have — KVK number, domain, IBAN, VAT, or wallet address.
   </Step>
   <Step title="8 parallel checks">
-    LimitGuard queries all available data sources in parallel. Business registry, sanctions, jurisdiction, domain, financial, and on-chain — all in under 500ms.
+    LimitGuard queries every data source your identifiers allow, in parallel: business registry, sanctions and PEP, jurisdiction risk, domain and financial checks.
   </Step>
   <Step title="Get trust score">
     Receive a trust score (0-100), risk level, entity cluster, and recommendation: **proceed**, **review**, **enhanced due diligence**, or **block**.
