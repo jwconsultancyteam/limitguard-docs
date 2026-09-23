@@ -27,7 +27,7 @@
     "/v1/entity/check": {
       "post": {
         "summary": "Entity Check",
-        "description": "Full entity trust check.\n\nTriggers all available data sources based on provided identifiers,\ncomputes a trust score, assigns a cluster, and returns a recommendation.\n\nProvide at least one identifier: kvk_number, cbe_number, domain, iban, or vat_number.",
+        "description": "Full entity trust check.\n\nAlways runs country risk and sanctions; runs each other data source\nwhose identifier is provided (up to 8 total), computes a trust score,\nassigns a cluster, and returns a recommendation.\n\nIdentifiers are optional (kvk_number, cbe_number, domain, iban, vat_number,\nwallet_address). With none, only country risk and sanctions run (plus a KVK\nname search for NL), at lower confidence.",
         "operationId": "entity_check_v1_entity_check_post",
         "requestBody": {
           "content": {
@@ -145,7 +145,7 @@
     "/v1/risk/score": {
       "post": {
         "summary": "Risk Score",
-        "description": "Quick risk assessment using country risk + sanctions only.\n\nFaster than /entity/check (2 sources vs 8). Returns risk_score\nwhere 0 = lowest risk, 100 = highest risk.",
+        "description": "Quick risk assessment using country risk + sanctions only.\n\nFaster than /entity/check (2 sources vs up to 8). Returns risk_score\nwhere 0 = lowest risk, 100 = highest risk.",
         "operationId": "risk_score_v1_risk_score_post",
         "requestBody": {
           "content": {
@@ -4111,7 +4111,7 @@
               }
             ],
             "title": "Wallet Address",
-            "description": "Crypto wallet address"
+            "description": "Crypto wallet address (format check only; no on-chain lookup)"
           },
           "wallet_chain": {
             "anyOf": [
@@ -4123,7 +4123,7 @@
               }
             ],
             "title": "Wallet Chain",
-            "description": "Blockchain (eth, btc)"
+            "description": "Blockchain the address is checked against (eth, base, polygon, arbitrum, btc, sol). Defaults to eth when omitted, so send btc or sol with a Bitcoin or Solana address"
           }
         },
         "additionalProperties": false,
@@ -4133,7 +4133,7 @@
           "country"
         ],
         "title": "EntityCheckRequest",
-        "description": "Full entity check request - triggers all data sources."
+        "description": "Full entity check request - always runs country risk and sanctions; runs each other data source whose identifier is supplied (up to 8 total)."
       },
       "ErasureRequest": {
         "properties": {
