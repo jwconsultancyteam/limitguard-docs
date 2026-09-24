@@ -3,7 +3,7 @@ title: "Sandbox Mode"
 description: "Test the API for free — no wallet or API key required"
 ---
 
-Sandbox mode lets you test the LimitGuard API without using real data sources, making USDC payments, or consuming your monthly quota.
+Sandbox mode lets you test the LimitGuard API without calling real data sources, making USDC payments, or spending a prepaid balance.
 
 ## How to Activate
 
@@ -71,7 +71,7 @@ Two methods — both produce the same behavior:
 | **Data sources** | No real sources called (KVK, sanctions, VIES, etc.) |
 | **Responses** | Deterministic mock data — same input always gives same output |
 | **Payments** | No USDC payment required — x402 is skipped |
-| **Quota** | Not consumed |
+| **Balance** | Not debited |
 | **Rate limit** | 10 requests per minute per IP |
 
 ## Mock Data Examples
@@ -125,7 +125,7 @@ The response includes a `Retry-After: 60` header.
 |----------|---------------|
 | First-time integration | Header sandbox + any API key |
 | CI/CD automated tests | `lg_test_` prefix key in env vars |
-| Frontend development | Header sandbox to avoid quota |
+| Frontend development | Header sandbox to avoid charges |
 | Load testing | Sandbox — never load test production |
 | Demo / prototype | Header sandbox |
 

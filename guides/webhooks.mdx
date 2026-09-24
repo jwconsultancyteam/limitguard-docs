@@ -1,12 +1,16 @@
 ---
 title: "Webhooks"
-description: "Real-time event notifications with HMAC signature verification"
+description: "Webhook registration and signed test deliveries"
 ---
 
-Webhooks let you subscribe to LimitGuard events and receive real-time HTTP POST notifications to your server the moment something changes — a trust score update, a new compliance alert, or a certificate issuance. Instead of polling the API, your system reacts instantly.
+Webhooks let you subscribe to LimitGuard events and receive HTTP POST notifications to your server: a trust score change, a new sanctions match, a trust level downgrade, or a certificate expiring. Instead of polling the API, your system reacts to the four event types below.
+
+<Warning>
+Automatic event delivery is not live yet. You can register, list and delete webhooks and send a signed test delivery (`POST /v1/webhooks/{webhook_id}/test`), but LimitGuard does not send any of the events below on its own yet. Registrations are held in memory and are lost when the API restarts. Until delivery is live, poll the matching endpoints instead (for sanctions changes, `GET /v1/compliance/alerts`).
+</Warning>
 
 <Note>
-Webhooks require an API key with the `starter` tier or above. Sandbox webhooks fire with simulated payloads and do not count against your quota.
+Webhooks require an API key with the `starter` tier or above.
 </Note>
 
 ## How It Works
@@ -31,7 +35,7 @@ curl -X POST https://api.limitguard.ai/v1/webhooks \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://your-app.com/webhooks/limitguard",
-    "events": ["entity.checked", "score.updated", "compliance.alert"]
+    "events": ["trust.score.changed", "sanctions.match.new"]
   }'
 ```
 
@@ -43,7 +47,7 @@ response = httpx.post(
     headers={"X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx"},
     json={
         "url": "https://your-app.com/webhooks/limitguard",
-        "events": ["entity.checked", "score.updated", "compliance.alert"],
+        "events": ["trust.score.changed", "sanctions.match.new"],
     },
 )
 webhook = response.json()
@@ -60,7 +64,7 @@ const response = await fetch("https://api.limitguard.ai/v1/webhooks", {
   },
   body: JSON.stringify({
     url: "https://your-app.com/webhooks/limitguard",
-    events: ["entity.checked", "score.updated", "compliance.alert"],
+    events: ["trust.score.changed", "sanctions.match.new"],
   }),
 });
 const webhook = await response.json();
@@ -74,7 +78,7 @@ console.log(webhook.secret);     // whsec_xxxxxxxxxxxxxxxx — store this secure
 {
   "webhook_id": "wh_abc123def456",
   "url": "https://your-app.com/webhooks/limitguard",
-  "events": ["entity.checked", "score.updated", "compliance.alert"],
+  "events": ["trust.score.changed", "sanctions.match.new"],
   "secret": "whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
   "status": "active",
   "created_at": "2026-02-20T10:00:00Z"
@@ -187,7 +191,7 @@ Each webhook payload follows a consistent envelope structure. Dispatch on `event
 ```json Payload Envelope
 {
   "id": "evt_01JMVQX3KZPB4Y8N9C2WD7FGH1",
-  "type": "score.updated",
+  "type": "trust.score.changed",
   "api_version": "2026-02-01",
   "created_at": "2026-02-20T14:32:07.419Z",
   "livemode": true,
@@ -212,16 +216,14 @@ async def process_event(event: dict):
     event_type = event["type"]
     data = event["data"]
 
-    if event_type == "entity.checked":
-        await on_entity_checked(data)
-    elif event_type == "score.updated":
-        await on_score_updated(data)
-    elif event_type == "compliance.alert":
-        await on_compliance_alert(data)
-    elif event_type == "certificate.issued":
-        await on_certificate_issued(data)
-    elif event_type == "certificate.revoked":
-        await on_certificate_revoked(data)
+    if event_type == "trust.score.changed":
+        await on_trust_score_changed(data)
+    elif event_type == "sanctions.match.new":
+        await on_sanctions_match_new(data)
+    elif event_type == "trust.level.downgrade":
+        await on_trust_level_downgrade(data)
+    elif event_type == "certificate.expired":
+        await on_certificate_expired(data)
     else:
         # Forward-compatible: ignore unknown event types
         pass
@@ -232,20 +234,17 @@ async function processEvent(event) {
   const { type, data } = event;
 
   switch (type) {
-    case "entity.checked":
-      await onEntityChecked(data);
+    case "trust.score.changed":
+      await onTrustScoreChanged(data);
       break;
-    case "score.updated":
-      await onScoreUpdated(data);
+    case "sanctions.match.new":
+      await onSanctionsMatchNew(data);
       break;
-    case "compliance.alert":
-      await onComplianceAlert(data);
+    case "trust.level.downgrade":
+      await onTrustLevelDowngrade(data);
       break;
-    case "certificate.issued":
-      await onCertificateIssued(data);
-      break;
-    case "certificate.revoked":
-      await onCertificateRevoked(data);
+    case "certificate.expired":
+      await onCertificateExpired(data);
       break;
     default:
       // Forward-compatible: ignore unknown event types
@@ -266,13 +265,14 @@ Use the event `id` field (`evt_...`) as an idempotency key. Store processed even
 
 ## Event Types
 
-| Event | Trigger | Key Payload Fields |
-|-------|---------|-------------------|
-| `entity.checked` | Any `POST /v1/entity/check` call completes | `entity_id`, `trust_score`, `trust_level`, `recommendation`, `sources_checked` |
-| `score.updated` | A monitored entity's trust score changes by ≥5 points | `entity_id`, `previous_score`, `new_score`, `changed_sources` |
-| `compliance.alert` | New sanctions match, FATF listing, or adverse media flag | `entity_id`, `alert_type`, `severity`, `source`, `description` |
-| `certificate.issued` | A new trust certificate is generated for an entity | `entity_id`, `certificate_id`, `valid_until`, `score_at_issuance` |
-| `certificate.revoked` | A trust certificate is revoked (score dropped or entity flagged) | `entity_id`, `certificate_id`, `revocation_reason` |
+This is the full list of event types LimitGuard defines. The payload shape is not a fixed per-type schema; treat `data` as a plain object and read the fields you need.
+
+| Event | Meaning |
+|-------|---------|
+| `trust.score.changed` | A monitored entity's trust score has changed |
+| `sanctions.match.new` | A new sanctions/watchlist match was found for a monitored entity |
+| `trust.level.downgrade` | A monitored entity's `trust_level` moved to a lower band |
+| `certificate.expired` | A previously issued certificate passed its `expires_at` |
 
 ### Subscribe to All Events
 
@@ -296,7 +296,7 @@ Every webhook request includes two headers:
 | Header | Example Value | Description |
 |--------|---------------|-------------|
 | `X-LimitGuard-Signature` | `sha256=a3f8c...` | HMAC-SHA256 of the raw request body |
-| `X-LimitGuard-Event` | `score.updated` | The event type (convenience header) |
+| `X-LimitGuard-Event` | `trust.score.changed` | The event type (convenience header) |
 | `X-LimitGuard-Delivery` | `evt_01JMVQX3KZ...` | Unique delivery ID for deduplication |
 | `X-LimitGuard-Timestamp` | `1740054727` | Unix timestamp of delivery attempt |
 
@@ -390,25 +390,22 @@ Returns `204 No Content` on success. The endpoint immediately stops receiving de
 
 ## Testing
 
-Use the test endpoint to fire a simulated event to your webhook without triggering a real check:
+Use the test endpoint to fire a simulated delivery to your webhook without triggering a real check. It takes no request body and always sends a `trust.score.changed` test event:
 
 <CodeGroup>
 
 ```bash curl
 curl -X POST https://api.limitguard.ai/v1/webhooks/wh_abc123def456/test \
-  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"event": "entity.checked"}'
+  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx"
 ```
 
 ```python Python
 response = httpx.post(
     "https://api.limitguard.ai/v1/webhooks/wh_abc123def456/test",
     headers={"X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx"},
-    json={"event": "entity.checked"},
 )
 print(response.json())
-# {"delivery_id": "evt_test_...", "status": "delivered", "response_code": 200}
+# {"delivery_id": "...", "success": true, "status_code": 200, "attempts": 1}
 ```
 
 ```javascript JavaScript
@@ -416,16 +413,12 @@ const response = await fetch(
   "https://api.limitguard.ai/v1/webhooks/wh_abc123def456/test",
   {
     method: "POST",
-    headers: {
-      "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ event: "entity.checked" }),
+    headers: { "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx" },
   }
 );
 const result = await response.json();
-console.log(result.status); // "delivered"
-console.log(result.response_code); // 200
+console.log(result.success); // true
+console.log(result.status_code); // 200
 ```
 
 </CodeGroup>
@@ -433,11 +426,9 @@ console.log(result.response_code); // 200
 ```json Response
 {
   "delivery_id": "evt_test_01JMVR2KXPB4Y8N9C2WD7FGH1",
-  "event": "entity.checked",
-  "status": "delivered",
-  "response_code": 200,
-  "response_time_ms": 43,
-  "delivered_at": "2026-02-20T14:32:07.419Z"
+  "success": true,
+  "status_code": 200,
+  "attempts": 1
 }
 ```
 
@@ -496,8 +487,8 @@ async def process_event(event: dict):
 New event types will be introduced as LimitGuard adds capabilities. Always handle unknown types gracefully rather than raising an exception:
 
 ```python Python
-KNOWN_EVENTS = {"entity.checked", "score.updated", "compliance.alert",
-                "certificate.issued", "certificate.revoked"}
+KNOWN_EVENTS = {"trust.score.changed", "sanctions.match.new",
+                "trust.level.downgrade", "certificate.expired"}
 
 async def process_event(event: dict):
     if event["type"] not in KNOWN_EVENTS:
@@ -510,7 +501,7 @@ async def process_event(event: dict):
 Even after signature verification, validate required fields before using them:
 
 ```python Python
-def validate_score_updated(data: dict) -> bool:
+def validate_trust_score_changed(data: dict) -> bool:
     required = {"entity_id", "previous_score", "new_score", "trust_level"}
     return required.issubset(data.keys())
 ```
@@ -546,7 +537,7 @@ All event payloads share the same outer envelope:
     Interactive playground for all four webhook endpoints
   </Card>
   <Card title="Rate Limits" icon="gauge" href="/guides/rate-limits">
-    Understand quota limits and how they apply to webhook-triggering calls
+    Understand the per-minute and daily limits
   </Card>
   <Card title="Error Handling" icon="triangle-exclamation" href="/guides/errors">
     Complete error catalog — including webhook delivery failures

@@ -19,9 +19,9 @@ description: "Trust Intelligence API for the Agent Economy"
 # LimitGuard
 
 **Real-time trust scoring for AI agents, businesses, and transactions.**
-Up to 8 data sources. One API call. Paid per call in USDC or with an API key.
+Up to 7 data sources. One API call. Paid per call in USDC or with an API key.
 
-LimitGuard is a Trust Intelligence API that lets AI agents and developers verify the trustworthiness of any business entity before transacting. We aggregate 8 independent data sources — business registries, sanctions lists, jurisdiction risk, domain intelligence, IBAN validation, VAT verification, wallet screening, and on-chain payment history — into a single trust score.
+LimitGuard is a Trust Intelligence API that lets AI agents and developers verify the trustworthiness of any business entity before transacting. We aggregate up to 7 independent data sources (business registries, sanctions lists, jurisdiction risk, domain intelligence, IBAN validation, VAT verification, and wallet address format validation) into a single trust score.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
@@ -57,12 +57,12 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
   "trust_level": "high",
   "cluster": "established_eu_sme",
   "recommendation": "proceed",
-  "sources_checked": 8,
+  "sources_checked": 3,
   "processing_time_ms": 247
 }
 ```
 
-## 8 Verification Layers
+## 7 Verification Layers
 
 <CardGroup cols={4}>
   <Card title="KVK / CBE" icon="building">
@@ -83,11 +83,8 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
   <Card title="VAT / VIES" icon="file-invoice">
     EU VAT registration check
   </Card>
-  <Card title="Wallet Risk" icon="wallet">
-    ETH, BTC, SOL address format validation (on-chain screening is in development)
-  </Card>
-  <Card title="x402 Payments" icon="clock-rotate-left">
-    Pay per call in USDC on Base or Solana
+  <Card title="Wallet Format Check" icon="wallet">
+    ETH, BTC, SOL address format validation. Full wallet screening (OFAC match, on-chain signals) is a separate, free tool: see [Trust Architecture](/guides/trust-architecture).
   </Card>
 </CardGroup>
 
@@ -97,7 +94,7 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
   <Step title="Send entity data">
     POST the entity name, country, and any identifiers you have — KVK number, domain, IBAN, VAT, or wallet address.
   </Step>
-  <Step title="8 parallel checks">
+  <Step title="Parallel checks">
     LimitGuard queries every data source your identifiers allow, in parallel: business registry, sanctions and PEP, jurisdiction risk, domain and financial checks.
   </Step>
   <Step title="Get trust score">

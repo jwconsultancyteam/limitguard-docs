@@ -3,22 +3,23 @@ title: "Rate Limits"
 description: "Rate limit behavior, tiers, and Retry-After headers"
 ---
 
-LimitGuard enforces rate limits to ensure fair access and API stability. Limits differ by authentication mode and subscription tier. x402 callers are exempt from request-count limits — cost is the throttle.
+LimitGuard enforces rate limits to ensure fair access and API stability. They are abuse limits, not a quota you buy: every call is paid for, either per call with x402 or from an API key's prepaid balance. A key's tier (bought as a prepaid top-up) only selects its burst limits.
 
 ## Rate Limits by Tier
 
-| Tier | Requests / Minute | Requests / Month | Auth Method |
-|------|:-----------------:|:----------------:|-------------|
-| **Sandbox** | 10 / min per IP | Unlimited | `X-LimitGuard-Mode: sandbox` or `lg_test_` key |
-| **x402 (no key)** | No limit | No limit | `X-PAYMENT` header (pay per call) |
-| **Free** | 60 / min | 500 / mo | `lg_live_` API key — free tier |
-| **Indie** | TBD | 1,000 / mo | `lg_live_` API key — upgraded via x402 ($29) |
-| **Starter** | 300 / min | 10,000 / mo | `lg_live_` API key — upgraded via x402 ($99) |
-| **Growth** | TBD | 50,000 / mo | `lg_live_` API key — upgraded via x402 ($299) |
-| **Pro** | 1,000 / min | 250,000 / mo | `lg_live_` API key — upgraded via x402 ($999) |
+| Tier | Requests / Minute | Requests / 24 h | Auth Method |
+|------|:-----------------:|:---------------:|-------------|
+| **Unauthenticated** | 10 / min per IP | No daily cap | No key, no payment |
+| **Unpaid 402 quote** | 120 / min per IP | No daily cap | A request x402 answers with the price only |
+| **x402 payer** | 60 / min per payer | No daily cap | `X-PAYMENT` header (pay per call) |
+| **Free** | 10 / min | 500 | `lg_live_` API key, free tier (pays per call) |
+| **Indie** | 30 / min | 1,000 | `lg_live_` API key, $29 prepaid top-up |
+| **Starter** | 60 / min | 10,000 | `lg_live_` API key, $99 prepaid top-up |
+| **Growth** | 120 / min | 50,000 | `lg_live_` API key, $299 prepaid top-up |
+| **Pro** | 300 / min | 250,000 | `lg_live_` API key, $999 prepaid top-up |
 
 <Note>
-Monthly quotas reset on the first day of each calendar month (UTC). Minute-level limits use a rolling window, not a fixed clock boundary.
+Both windows are rolling: the per-minute limit over the last 60 seconds, the daily limit over the last 24 hours. Nothing resets on a calendar boundary. Entity checks also have a per-entity limit per caller, against enumeration.
 </Note>
 
 ## Middleware Execution Order
@@ -61,50 +62,52 @@ Content-Type: application/json
 }
 ```
 
-### Example: Free Tier Monthly Quota Exhausted
+### Example: Free Tier Daily Limit Reached
 
 ```http
 HTTP/1.1 429 Too Many Requests
-Retry-After: 1296000
+Retry-After: 3600
 X-RateLimit-Limit: 500
 X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 1709251200
-Content-Type: application/json
+Content-Type: application/problem+json
 ```
 
 ```json
 {
-  "error": "Monthly quota exhausted (500 requests). Quota resets 2026-03-01T00:00:00Z. Upgrade your plan or switch to x402 pay-per-call."
+  "type": "about:blank",
+  "title": "Rate Limit Exceeded",
+  "status": 429,
+  "detail": "Exceeded per-day limit of 500 requests for free tier.",
+  "retry_after": 3600
 }
 ```
 
 <Warning>
-Always read the `Retry-After` header rather than hard-coding a wait time. Monthly quota exhaustion returns a `Retry-After` value in days, not seconds.
+Always read the `Retry-After` header rather than hard-coding a wait time: it is 60 seconds for a per-minute limit and 3600 seconds for the rolling 24-hour limit.
 </Warning>
 
-## x402 Has No Rate Limits
+## x402 Payers Have No Daily Cap
 
-Callers using the x402 USDC micropayment protocol are not subject to request-count or per-minute rate limits. Each successful payment authorizes exactly one API call — the payment itself acts as the throttle.
+Callers paying per call with x402 have no daily request cap: each successful payment authorizes exactly one API call, so cost is the throttle. A verified payer is still limited to 60 requests per minute, and entity checks keep their per-entity limit.
 
 <Tip>
-If you are building an AI agent that may need to make bursts of requests, x402 is the right choice. You pay per call and are never blocked by quota exhaustion. See the [x402 Protocol](/x402-protocol) guide for implementation details.
+If you are building an AI agent that may need to make bursts of requests, x402 is the right choice. You pay per call and have no daily cap. See the [x402 Protocol](/x402-protocol) guide for implementation details.
 </Tip>
 
 ### Cost-Based Throttling vs. Count-Based Throttling
 
 | Mechanism | API Key Tiers | x402 |
 |-----------|:-------------:|:----:|
-| Per-minute limit | Yes | No |
-| Monthly quota | Yes | No |
-| Cost per call | No | Yes |
-| Quota exhaustion risk | Yes | No |
-| Suitable for AI agent bursts | No | Yes |
+| Per-minute limit | Yes (by tier) | Yes (60 / min per payer) |
+| Rolling 24-hour limit | Yes (by tier) | No |
+| Cost per call | Yes, debited from the prepaid balance | Yes, paid per call |
+| Suitable for AI agent bursts | Up to the tier's per-minute limit | Up to 60 / min |
 
 ## Best Practices
 
 ### 1. Always Respect `Retry-After`
 
-Never retry before `Retry-After` seconds have elapsed. Retrying too early wastes your remaining quota and triggers the same 429 immediately.
+Never retry before `Retry-After` seconds have elapsed. Retrying too early counts against the same window and triggers the same 429 immediately.
 
 ### 2. Implement Exponential Backoff
 
@@ -312,10 +315,10 @@ If you are consistently hitting rate limits on a subscription key, you have two 
 
 <CardGroup cols={2}>
   <Card title="Upgrade Your Plan" icon="arrow-up" href="/authentication">
-    Move from Free to Indie, Starter, Growth, or Pro for higher per-minute and monthly limits.
+    Top up to Indie, Starter, Growth, or Pro for higher per-minute and daily limits.
   </Card>
   <Card title="Switch to x402" icon="credit-card" href="/x402-protocol">
-    Pay per call with USDC. No quotas, no monthly limits — scales to any volume instantly.
+    Pay per call with USDC. No daily cap; 60 requests per minute per payer.
   </Card>
 </CardGroup>
 
@@ -333,4 +336,4 @@ curl https://api.limitguard.ai/v1/keys/upgrade/pro \
   -H "X-PAYMENT: <base64 payment>"
 ```
 
-Available tiers: `free`, `sandbox`, `indie`, `starter`, `growth`, `pro`. See [Authentication](/authentication#api-key-authentication) for quotas and upgrade prices.
+Available tiers: `free`, `sandbox`, `indie`, `starter`, `growth`, `pro`. See [Authentication](/authentication#api-key-authentication) for top-up prices and limits.
