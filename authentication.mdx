@@ -83,7 +83,7 @@ const { api_key } = await response.json();
 
 | Tier | Top-up (credited to the prepaid balance) | Rate limits |
 |------|------------------------------------------|-------------|
-| `free` / `sandbox` | none: calls are paid per call over x402 | 10 / min, 500 / 24 h |
+| `free` / `sandbox` | 500 calls (a ceiling, not an allowance: REST calls are still paid per call over x402) | 10 / min, 500 / 24 h |
 | `indie` | $29 | 30 / min, 1,000 / 24 h |
 | `starter` | $99 | 60 / min, 10,000 / 24 h |
 | `growth` | $299 | 120 / min, 50,000 / 24 h |
