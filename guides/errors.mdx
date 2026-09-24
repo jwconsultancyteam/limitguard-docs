@@ -208,7 +208,7 @@ For AI agents, 402 is the expected first response when no payment or API key is 
     }
     ```
 
-    **Fix:** Use the `amount` value from the 402 response exactly. If using a non-default `X-Response-Quality` tier, the required amount changes — `cached` requires less, `enhanced` requires more. See the [pricing table](/pricing) for per-endpoint amounts.
+    **Fix:** Use the `amount` value from the 402 response exactly. If using a non-default `X-Response-Quality` tier, the required amount changes — `cached` requires less. See the [pricing table](/pricing) for per-endpoint amounts.
   </Accordion>
 
   <Accordion title="Expired payment signature (validBefore exceeded)">
@@ -890,7 +890,7 @@ async function buildEvmPayment(chainId, amount, signer, recipient, usdcAddress) 
   <Accordion title="Getting 403 but my key is valid?">
     - Run `GET /v1/usage/summary` with your key to see your current tier
     - Check the [pricing page](/pricing) for which endpoints are available on your tier
-    - `/v1/kyb/check`, `/v1/compliance/*`, and enhanced quality tier require `pro` or higher
+    - `/v1/kyb/check` and `/v1/compliance/*` require `pro` or higher
   </Accordion>
 
   <Accordion title="x402 payment keeps returning 402?">

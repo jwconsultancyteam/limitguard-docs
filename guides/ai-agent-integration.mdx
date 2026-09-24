@@ -520,7 +520,7 @@ curl https://api.limitguard.ai/.well-known/x402.json
 }
 ```
 
-Truncated to three entries; the live response lists all 18 priced endpoints. `price_raw` is the default (`fresh`) price in USDC 6-decimal units. The listing does **not** break out per-quality-tier prices — for `cached` or `enhanced` amounts, see [Pricing](/pricing#tiered-pricing) or read the `amount` from the 402 response for the quality you requested.
+Truncated to three entries; the live response lists every priced endpoint. `price_raw` is the default (`fresh`) price in USDC 6-decimal units. The listing does **not** break out per-quality-tier prices — for `cached` amounts, see [Pricing](/pricing#tiered-pricing) or read the `amount` from the 402 response for the quality you requested.
 
 ### How x402 Works
 
@@ -619,9 +619,9 @@ def verify_entity_x402(
     entity_name: str,
     country: str,
     sender_key: str,
-    quality: str = "fresh",  # cached | fresh | enhanced
+    quality: str = "fresh",  # cached | fresh
 ) -> dict:
-    tier_prices = {"cached": 100_000, "fresh": 850_000, "enhanced": 1_500_000}
+    tier_prices = {"cached": 100_000, "fresh": 850_000}
     amount = tier_prices[quality]
 
     # Step 1: Probe to get facilitator address
@@ -717,7 +717,7 @@ async function buildX402Payment(amountUsdc, signer, recipient) {
 }
 
 async function verifyEntityX402(entityName, country, signer, quality = "fresh") {
-  const tierPrices = { cached: 100_000, fresh: 850_000, enhanced: 1_500_000 };
+  const tierPrices = { cached: 100_000, fresh: 850_000 };
   const amount = tierPrices[quality];
 
   // Step 1: Probe to get facilitator address
@@ -769,7 +769,8 @@ Control cost vs. freshness with the `X-Response-Quality` header. The payment amo
 |------|-------------|-----------------|----------------|---------------|----------------|
 | Cached | `cached` | $0.10 (100,000) | $0.10 (100,000) | $0.25 (250,000) | Up to 24h cached |
 | Fresh | `fresh` | $0.85 (850,000) | $0.65 (650,000) | $1.50 (1,500,000) | Live fan-out (default) |
-| Enhanced | `enhanced` | $1.50 (1,500,000) | $1.00 (1,000,000) | $3.00 (3,000,000) | Live + premium sources |
+
+`enhanced` was retired on these endpoints on 2026-09-24: it ran the same sources as `fresh`, so it is now quoted, charged and served at the `fresh` price. For more sources, use `POST /v1/entity/deep-check`.
 
 <Tip>
 For high-frequency screening (e.g., checking every inbound invoice), start with `cached` for pre-screening and only upgrade to `fresh` when the cached score is below 70. This reduces cost by 8.5x on clean counterparties.
@@ -862,10 +863,10 @@ class TrustGatedAgent:
     # Per-quality prices are not carried in the x402 listing — see /pricing.
     # Amounts are USDC 6-decimal units (1_000_000 = $1.00).
     TIER_PRICES = {
-        "/v1/entity/check": {"cached": 100_000, "fresh": 850_000, "enhanced": 1_500_000},
-        "/v1/risk/score": {"cached": 100_000, "fresh": 650_000, "enhanced": 1_000_000},
-        "/v1/reputation/score": {"cached": 100_000, "fresh": 650_000, "enhanced": 1_000_000},
-        "/v1/kyb/check": {"cached": 250_000, "fresh": 1_500_000, "enhanced": 3_000_000},
+        "/v1/entity/check": {"cached": 100_000, "fresh": 850_000},
+        "/v1/risk/score": {"cached": 100_000, "fresh": 650_000},
+        "/v1/reputation/score": {"cached": 100_000, "fresh": 650_000},
+        "/v1/kyb/check": {"cached": 250_000, "fresh": 1_500_000},
     }
 
     def __init__(self, wallet_private_key: str):
@@ -1115,10 +1116,10 @@ const TrustDecision = {
 // Per-quality prices are not carried in the x402 listing — see /pricing.
 // Amounts are USDC 6-decimal units (1_000_000 = $1.00).
 const TIER_PRICES = {
-  "/v1/entity/check": { cached: 100_000, fresh: 850_000, enhanced: 1_500_000 },
-  "/v1/risk/score": { cached: 100_000, fresh: 650_000, enhanced: 1_000_000 },
-  "/v1/reputation/score": { cached: 100_000, fresh: 650_000, enhanced: 1_000_000 },
-  "/v1/kyb/check": { cached: 250_000, fresh: 1_500_000, enhanced: 3_000_000 },
+  "/v1/entity/check": { cached: 100_000, fresh: 850_000 },
+  "/v1/risk/score": { cached: 100_000, fresh: 650_000 },
+  "/v1/reputation/score": { cached: 100_000, fresh: 650_000 },
+  "/v1/kyb/check": { cached: 250_000, fresh: 1_500_000 },
 };
 
 class TrustGatedAgent {
@@ -1603,11 +1604,11 @@ Don't pay for `fresh` when `cached` is sufficient.
 
 | Scenario | Recommended Tier | Reason |
 |----------|-----------------|--------|
-| First-time supplier onboarding | `enhanced` | High stakes, need maximum signal |
+| First-time supplier onboarding | `POST /v1/entity/deep-check` | High stakes: adds PEP/RCA screening and the Dutch insolvency register |
 | Repeat invoice from known supplier | `cached` | Already verified, use cached result |
 | Pre-screening inbound leads | `cached` | Volume operation, cost matters |
 | Transaction >$10,000 | `fresh` | High value, needs live data |
-| Compliance audit trigger | `enhanced` | Full evidence trail required |
+| Compliance audit trigger | `POST /v1/reports/entity` | Stored report with every source's status and an evidence hash |
 
 ### 4. Log Trust Scores in Your Audit Trail
 

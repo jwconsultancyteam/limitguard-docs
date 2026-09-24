@@ -11,14 +11,16 @@ All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol)
 
 ## Tiered Pricing
 
-Four core endpoints support three quality tiers. Select with the `X-Response-Quality` header (default: `fresh`).
+Four core endpoints sell two quality tiers. Select with the `X-Response-Quality` header (default: `fresh`).
 
-| Endpoint | Cached | Fresh (default) | Enhanced |
-|----------|--------|-----------------|----------|
-| `POST /v1/entity/check` | $0.10 | $0.85 | $1.50 |
-| `POST /v1/risk/score` | $0.10 | $0.65 | $1.00 |
-| `POST /v1/reputation/score` | $0.10 | $0.65 | $1.00 |
-| `POST /v1/kyb/check` | $0.25 | $1.50 | $3.00 |
+| Endpoint | Cached | Fresh (default) |
+|----------|--------|-----------------|
+| `POST /v1/entity/check` | $0.10 | $0.85 |
+| `POST /v1/risk/score` | $0.10 | $0.65 |
+| `POST /v1/reputation/score` | $0.10 | $0.65 |
+| `POST /v1/kyb/check` | $0.25 | $1.50 |
+
+`enhanced` was retired on these four endpoints on 2026-09-24: it ran the same sources as `fresh`, so `X-Response-Quality: enhanced` is now quoted, charged and served at the `fresh` price, and the 402 body's `info.note` says so. `POST /v1/entity/deep-check` keeps its own tiers (see [x402 Protocol](/x402-protocol)).
 
 ### Quality Tier Definitions
 
@@ -28,9 +30,6 @@ Four core endpoints support three quality tiers. Select with the `X-Response-Qua
   </Accordion>
   <Accordion title="Fresh — Default" icon="rotate">
     Always run full data source fan-out. This is the default behavior when no header is sent. Set `X-Response-Quality: fresh`.
-  </Accordion>
-  <Accordion title="Enhanced — Most Comprehensive" icon="star">
-    Full fan-out plus premium data sources. Use for high-value transactions requiring maximum confidence. Set `X-Response-Quality: enhanced`.
   </Accordion>
 </AccordionGroup>
 
