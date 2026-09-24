@@ -1,23 +1,25 @@
 ---
 title: "Webhooks"
-description: "Webhook registration and signed test deliveries"
+description: "Get sanctions-list changes that affect you pushed to your server"
 ---
 
-Webhooks let you subscribe to LimitGuard events and receive HTTP POST notifications to your server: a trust score change, a new sanctions match, a trust level downgrade, or a certificate expiring. Instead of polling the API, your system reacts to the four event types below.
+Webhooks let LimitGuard push events to your server as signed HTTP `POST` requests, so you do not have to poll.
 
-<Warning>
-Automatic event delivery is not live yet. You can register, list and delete webhooks and send a signed test delivery (`POST /v1/webhooks/{webhook_id}/test`), but LimitGuard does not send any of the events below on its own yet. Registrations are held in memory and are lost when the API restarts. Until delivery is live, poll the matching endpoints instead (for sanctions changes, `GET /v1/compliance/alerts`).
-</Warning>
+<Info>
+**Live today: `sanctions.match.new`.** When the OFAC SDN, EU or UN consolidated list changes an entry that matches an entity or wallet you checked, or an entry on your watchlist, LimitGuard sends you the same alert `GET /v1/compliance/alerts` shows you. Registrations and pending deliveries are stored, so they survive restarts and deploys.
+
+`trust.score.changed`, `trust.level.downgrade` and `certificate.expired` can be registered, but nothing sends them yet. Every registration and list response carries `delivered_events`, the subset of your `events` that is actually sent today.
+</Info>
 
 <Note>
-Webhooks require an API key with the `starter` tier or above.
+Webhooks need an API key (`X-API-Key`). A webhook belongs to the key that registered it: only that key can list, test or delete it, and it receives alerts for that key's checks and watchlist only.
 </Note>
 
 ## How It Works
 
-Every time an event occurs in the LimitGuard platform, we send an HTTP `POST` request to each registered endpoint with a JSON payload describing what happened. Your server responds with `HTTP 200` to acknowledge receipt. If delivery fails, we retry with exponential backoff.
+When an event occurs, LimitGuard sends an HTTP `POST` with a JSON body to every active webhook of yours that subscribed to that event type. Respond with any `2xx` status within 10 seconds to acknowledge it. Anything else (a non-`2xx` status, a redirect, a timeout, a TLS or connection error) counts as a failed attempt and is retried with backoff.
 
-Each request includes an `X-LimitGuard-Signature` header containing an HMAC-SHA256 signature computed from the raw request body using the webhook secret returned at registration. **Always verify this signature before processing the payload.**
+Each request carries an `X-LimitGuard-Signature` header: the hex HMAC-SHA256 of the raw request body, keyed with the webhook secret you received at registration. **Always verify it before processing the payload.**
 
 ## Setup
 
@@ -25,7 +27,7 @@ Each request includes an `X-LimitGuard-Signature` header containing an HMAC-SHA2
 
 <Step title="Register your endpoint">
 
-Send a `POST /v1/webhooks` request with your HTTPS URL and the event types you want to receive.
+Send `POST /v1/webhooks` with your HTTPS URL and the event types you want.
 
 <CodeGroup>
 
@@ -35,7 +37,7 @@ curl -X POST https://api.limitguard.ai/v1/webhooks \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://your-app.com/webhooks/limitguard",
-    "events": ["trust.score.changed", "sanctions.match.new"]
+    "events": ["sanctions.match.new"]
   }'
 ```
 
@@ -47,12 +49,12 @@ response = httpx.post(
     headers={"X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx"},
     json={
         "url": "https://your-app.com/webhooks/limitguard",
-        "events": ["trust.score.changed", "sanctions.match.new"],
+        "events": ["sanctions.match.new"],
     },
 )
 webhook = response.json()
-print(webhook["webhook_id"])   # wh_abc123
-print(webhook["secret"])       # whsec_xxxxxxxxxxxxxxxx — store this securely
+print(webhook["id"])      # 3f6c2a9e-...
+print(webhook["secret"])  # 64 hex characters: store it securely now
 ```
 
 ```javascript JavaScript
@@ -64,36 +66,39 @@ const response = await fetch("https://api.limitguard.ai/v1/webhooks", {
   },
   body: JSON.stringify({
     url: "https://your-app.com/webhooks/limitguard",
-    events: ["trust.score.changed", "sanctions.match.new"],
+    events: ["sanctions.match.new"],
   }),
 });
 const webhook = await response.json();
-console.log(webhook.webhook_id); // wh_abc123
-console.log(webhook.secret);     // whsec_xxxxxxxxxxxxxxxx — store this securely
+console.log(webhook.id);     // 3f6c2a9e-...
+console.log(webhook.secret); // 64 hex characters: store it securely now
 ```
 
 </CodeGroup>
 
 ```json Response (201 Created)
 {
-  "webhook_id": "wh_abc123def456",
+  "id": "3f6c2a9e-8b41-4d7e-9a53-2c1f0e7b6d48",
   "url": "https://your-app.com/webhooks/limitguard",
-  "events": ["trust.score.changed", "sanctions.match.new"],
-  "secret": "whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "status": "active",
-  "created_at": "2026-02-20T10:00:00Z"
+  "events": ["sanctions.match.new"],
+  "secret": "9f2c...64 hex characters...a71e",
+  "active": true,
+  "created_at": "2026-09-24T10:00:00.412907Z",
+  "delivered_events": ["sanctions.match.new"]
 }
 ```
 
+The URL must use `https://`, its host must resolve, and it must not resolve to a private, loopback, link-local, multicast, reserved or cloud-metadata address (IPv4 or IPv6). The same address check runs again before every delivery, since DNS can change after registration. A URL that fails any of these is refused with `422`.
+
 <Warning>
-The `secret` is returned **once only** at creation and is never shown again. Store it immediately in a secure secret manager (e.g., AWS Secrets Manager, HashiCorp Vault, or a `.env` file that is never committed to source control).
+The `secret` is returned **once only**, in this response, and is never shown again (it is stored encrypted). Put it in a secret manager or an environment variable that is never committed. If you lose it, delete the webhook and register a new one.
 </Warning>
 
 </Step>
 
 <Step title="Verify the signature">
 
-Before processing any webhook payload, verify that it genuinely came from LimitGuard by computing the expected HMAC-SHA256 signature and comparing it to the value in the `X-LimitGuard-Signature` header.
+Compute the HMAC-SHA256 of the **raw request body** (the exact bytes you received, before any JSON parsing), keyed with your secret string, and compare its hex digest with `X-LimitGuard-Signature` in constant time. The header is the bare hex digest, with no `sha256=` prefix.
 
 <CodeGroup>
 
@@ -102,37 +107,26 @@ import hashlib
 import hmac
 
 def verify_signature(payload: bytes, signature_header: str, secret: str) -> bool:
-    """
-    Returns True if the payload matches the LimitGuard signature.
-    Always use this before processing any webhook event.
-    """
-    expected = hmac.new(
-        secret.encode("utf-8"),
-        payload,
-        hashlib.sha256,
-    ).hexdigest()
-
-    # Use hmac.compare_digest to prevent timing attacks
-    return hmac.compare_digest(f"sha256={expected}", signature_header)
+    expected = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
 
 
-# --- FastAPI example ---
-from fastapi import FastAPI, Request, HTTPException
+# FastAPI example
+import os
+from fastapi import FastAPI, HTTPException, Request
 
 app = FastAPI()
-WEBHOOK_SECRET = "whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # from env
+WEBHOOK_SECRET = os.environ["LIMITGUARD_WEBHOOK_SECRET"]
 
 @app.post("/webhooks/limitguard")
 async def handle_webhook(request: Request):
     payload = await request.body()
     signature = request.headers.get("X-LimitGuard-Signature", "")
-
     if not verify_signature(payload, signature, WEBHOOK_SECRET):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     event = await request.json()
-    # Hand off to async worker — respond 200 immediately
-    await process_event(event)
+    await queue_for_processing(event)  # respond fast, work in the background
     return {"received": True}
 ```
 
@@ -143,34 +137,26 @@ import express from "express";
 const WEBHOOK_SECRET = process.env.LIMITGUARD_WEBHOOK_SECRET;
 
 function verifySignature(payload, signatureHeader, secret) {
-  const expected = `sha256=${crypto
-    .createHmac("sha256", secret)
-    .update(payload)
-    .digest("hex")}`;
-
-  // Use timingSafeEqual to prevent timing attacks
-  return crypto.timingSafeEqual(
-    Buffer.from(expected),
-    Buffer.from(signatureHeader)
-  );
+  const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  const a = Buffer.from(expected);
+  const b = Buffer.from(signatureHeader || "");
+  // timingSafeEqual throws on a length mismatch, so check that first
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 const app = express();
 
 app.post(
   "/webhooks/limitguard",
-  // Use raw body — JSON parsing breaks the HMAC
+  // Keep the raw body: re-serialised JSON will not match the signature
   express.raw({ type: "application/json" }),
   (req, res) => {
-    const signature = req.headers["x-limitguard-signature"] ?? "";
-
+    const signature = req.headers["x-limitguard-signature"];
     if (!verifySignature(req.body, signature, WEBHOOK_SECRET)) {
       return res.status(401).json({ error: "Invalid signature" });
     }
-
     const event = JSON.parse(req.body);
-    // Acknowledge immediately, process asynchronously
-    res.json({ received: true });
+    res.json({ received: true }); // acknowledge first
     processEvent(event).catch(console.error);
   }
 );
@@ -179,75 +165,116 @@ app.post(
 </CodeGroup>
 
 <Warning>
-Always verify signatures using a **constant-time comparison** (`hmac.compare_digest` in Python, `crypto.timingSafeEqual` in Node.js). Standard string equality (`===`) is vulnerable to timing attacks.
+Compare signatures in constant time (`hmac.compare_digest` in Python, `crypto.timingSafeEqual` in Node.js). A plain `==` or `===` comparison leaks timing information.
 </Warning>
 
 </Step>
 
 <Step title="Handle the event">
 
-Each webhook payload follows a consistent envelope structure. Dispatch on `event.type`:
+Every delivery has the same envelope. Dispatch on `event`:
 
-```json Payload Envelope
+```json Delivery body
 {
-  "id": "evt_01JMVQX3KZPB4Y8N9C2WD7FGH1",
-  "type": "trust.score.changed",
-  "api_version": "2026-02-01",
-  "created_at": "2026-02-20T14:32:07.419Z",
-  "livemode": true,
+  "created_at": "2026-09-24T10:00:03.114233+00:00",
   "data": {
-    "entity_id": "ent_acme_corp_bv_nl",
-    "entity_name": "Acme Corp BV",
-    "country": "NL",
-    "previous_score": 74,
-    "new_score": 87,
-    "trust_level": "high",
-    "recommendation": "proceed",
-    "changed_sources": ["kvk", "sanctions"],
-    "processing_time_ms": 312
-  }
+    "action_items": [
+      "Stop payouts to and freeze pending transfers with wallet 0x1da58215...",
+      "Re-screen counterparties linked to this wallet",
+      "File the hit with your compliance officer and keep this alert as evidence"
+    ],
+    "advice": [
+      {
+        "action": "Stop payouts to and freeze pending transfers with wallet 0x1da58215...",
+        "why": "Added to OFAC SDN on 2026-09-23 under programme CYBER2",
+        "expected_result": "Avoids a sanctions breach on further transfers"
+      },
+      {
+        "action": "Re-screen counterparties linked to this wallet",
+        "why": "Entities paying or paid by a listed wallet may be exposed too",
+        "expected_result": "Finds indirect exposure before the next transfer"
+      },
+      {
+        "action": "File the hit with your compliance officer and keep this alert as evidence",
+        "why": "Sanctions screening decisions must be documented",
+        "expected_result": "An auditable record of when you learned of the listing"
+      }
+    ],
+    "affected_sectors": ["financial_services"],
+    "as_of": "2026-09-23",
+    "content_hash": "4e1f...",
+    "created_at": "2026-09-24T10:00:02Z",
+    "effective_date": "2026-09-23",
+    "entry_id": "54321",
+    "event_type": "designated",
+    "id": "b7d0e6a4-2f18-4c55-8e0b-1a9c3d7f5e21",
+    "is_relevant_to_trust_scoring": true,
+    "jurisdiction": "us",
+    "list_name": "OFAC SDN",
+    "match": {"basis": "checked", "kind": "crypto_address", "score": 1.0},
+    "relevance_score": 1.0,
+    "severity": "critical",
+    "source_id": "ofac_sdn",
+    "source_name": "OFAC SDN",
+    "source_url": "https://sanctionslist.ofac.treas.gov/Home/SdnList",
+    "summary": "OFAC SDN: designated entity Example Exchange Ltd (CYBER2)"
+  },
+  "event": "sanctions.match.new",
+  "event_id": "9c41e2d07b5a4f86a3e1d2c4b6f80a17"
 }
 ```
+
+| Field | Description |
+|-------|-------------|
+| `event` | The event type, e.g. `sanctions.match.new`. A test delivery uses `test`. |
+| `event_id` | Stable ID of the event. A retry of the same event carries the same `event_id`: use it to de-duplicate. |
+| `created_at` | When the delivery was queued (ISO 8601, UTC). The same on every retry, so it is not a freshness check. |
+| `data` | The event payload. For `sanctions.match.new`, your alert exactly as `GET /v1/compliance/alerts` returns it: never another customer's data, never more than that endpoint shows you. |
+
+The body is JSON with its keys sorted. Always parse it rather than relying on key order or formatting, and verify the signature against the raw bytes before parsing.
+
+<Warning>
+**`sanctions.match.new` is sent for every list change that touches you, not only new listings.** Read `data.event_type`:
+
+| `data.event_type` | Meaning | `data.severity` |
+|-------------------|---------|-----------------|
+| `designated` | The entry was added to the list | `critical` |
+| `amended` | The listing changed (names, identifiers, programmes and so on) | `high` |
+| `delisted` | The entry was removed from the list | `informational` |
+
+`data.match.basis` says why the alert is yours: `checked` (an entity or wallet you checked) or `watchlist` (an entry on your watchlist). `data.match.kind` is how it matched (`crypto_address`, `registration`, `name_exact` or `name_tokens`) and `data.match.score` how strongly.
+</Warning>
 
 <CodeGroup>
 
 ```python Python
 async def process_event(event: dict):
-    event_type = event["type"]
-    data = event["data"]
+    if event["event"] != "sanctions.match.new":
+        return  # test deliveries and future event types: acknowledge and ignore
 
-    if event_type == "trust.score.changed":
-        await on_trust_score_changed(data)
-    elif event_type == "sanctions.match.new":
-        await on_sanctions_match_new(data)
-    elif event_type == "trust.level.downgrade":
-        await on_trust_level_downgrade(data)
-    elif event_type == "certificate.expired":
-        await on_certificate_expired(data)
-    else:
-        # Forward-compatible: ignore unknown event types
-        pass
+    alert = event["data"]
+    if alert["event_type"] == "designated":
+        await freeze_and_escalate(alert)
+    elif alert["event_type"] == "amended":
+        await rescreen(alert)
+    elif alert["event_type"] == "delisted":
+        await review_restrictions(alert)
 ```
 
 ```javascript JavaScript
 async function processEvent(event) {
-  const { type, data } = event;
+  if (event.event !== "sanctions.match.new") return; // test and future types
 
-  switch (type) {
-    case "trust.score.changed":
-      await onTrustScoreChanged(data);
+  const alert = event.data;
+  switch (alert.event_type) {
+    case "designated":
+      await freezeAndEscalate(alert);
       break;
-    case "sanctions.match.new":
-      await onSanctionsMatchNew(data);
+    case "amended":
+      await rescreen(alert);
       break;
-    case "trust.level.downgrade":
-      await onTrustLevelDowngrade(data);
-      break;
-    case "certificate.expired":
-      await onCertificateExpired(data);
-      break;
-    default:
-      // Forward-compatible: ignore unknown event types
+    case "delisted":
+      await reviewRestrictions(alert);
       break;
   }
 }
@@ -255,105 +282,65 @@ async function processEvent(event) {
 
 </CodeGroup>
 
-<Tip>
-Use the event `id` field (`evt_...`) as an idempotency key. Store processed event IDs in your database to safely deduplicate retried deliveries.
-</Tip>
-
 </Step>
 
 </Steps>
 
 ## Event Types
 
-This is the full list of event types LimitGuard defines. The payload shape is not a fixed per-type schema; treat `data` as a plain object and read the fields you need.
+These are the event types you can register. Only `sanctions.match.new` is sent today; the others are accepted so an integration can subscribe ahead of time, and `delivered_events` tells you which of yours are live.
 
-| Event | Meaning |
-|-------|---------|
-| `trust.score.changed` | A monitored entity's trust score has changed |
-| `sanctions.match.new` | A new sanctions/watchlist match was found for a monitored entity |
-| `trust.level.downgrade` | A monitored entity's `trust_level` moved to a lower band |
-| `certificate.expired` | A previously issued certificate passed its `expires_at` |
+| Event | Sent today | Meaning |
+|-------|------------|---------|
+| `sanctions.match.new` | Yes | A sanctions-list change (designation, amendment or delisting) matches an entity or wallet you checked, or your watchlist |
+| `trust.score.changed` | Not yet | A monitored entity's trust score changed |
+| `trust.level.downgrade` | Not yet | A monitored entity's `trust_level` moved to a lower band |
+| `certificate.expired` | Not yet | A certificate passed its `expires_at` |
 
-### Subscribe to All Events
+`events` must list at least one of these names; there is no wildcard. An unknown name is refused with `422`.
 
-Pass `"events": ["*"]` to receive every event type, including future additions.
+## Delivery Headers
 
-```json
-{
-  "url": "https://your-app.com/webhooks/limitguard",
-  "events": ["*"]
-}
-```
+| Header | Example | Description |
+|--------|---------|-------------|
+| `Content-Type` | `application/json` | Always JSON |
+| `X-LimitGuard-Signature` | `a3f8c1...` (64 hex characters) | HMAC-SHA256 of the raw body, keyed with your secret |
+| `X-LimitGuard-Event` | `sanctions.match.new` | The event type (same as `event` in the body) |
+| `X-LimitGuard-Event-Id` | `9c41e2d07b5a...` | Same as `event_id` in the body; unchanged across retries |
 
-<Note>
-New event types may be added as LimitGuard adds data sources. Subscribing to `["*"]` is the easiest way to stay current, but ensure your handler ignores unknown types gracefully.
-</Note>
+There is no timestamp header. Protect against replays by storing the `event_id`s you have processed and ignoring repeats.
 
-## Signature Verification
+## Retries
 
-Every webhook request includes two headers:
+A failed attempt is retried with exponential backoff (doubling from 30 seconds, plus up to 20% random jitter), up to 6 attempts per event:
 
-| Header | Example Value | Description |
-|--------|---------------|-------------|
-| `X-LimitGuard-Signature` | `sha256=a3f8c...` | HMAC-SHA256 of the raw request body |
-| `X-LimitGuard-Event` | `trust.score.changed` | The event type (convenience header) |
-| `X-LimitGuard-Delivery` | `evt_01JMVQX3KZ...` | Unique delivery ID for deduplication |
-| `X-LimitGuard-Timestamp` | `1740054727` | Unix timestamp of delivery attempt |
+| Attempt | Delay after the previous attempt | About this long after the first |
+|---------|----------------------------------|---------------------------------|
+| 1 | Within seconds of the alert | 0 |
+| 2 | 30 s | 30 s |
+| 3 | 1 min | 1.5 min |
+| 4 | 2 min | 3.5 min |
+| 5 | 4 min | 7.5 min |
+| 6 (last) | 8 min | 15.5 min |
 
-### Computing the Signature
+After the 6th failed attempt that event is marked failed and is not retried again. Other events keep being delivered.
 
-```
-HMAC-SHA256(key=webhook_secret, message=raw_request_body)
-```
-
-The `X-LimitGuard-Signature` header value is formatted as `sha256=<hex_digest>`.
-
-### Replay Attack Prevention
-
-Compare the `X-LimitGuard-Timestamp` header against your server's current time. Reject deliveries older than 5 minutes to prevent replay attacks:
-
-```python Python
-import time
-
-def verify_webhook(payload: bytes, headers: dict, secret: str) -> bool:
-    timestamp = int(headers.get("X-LimitGuard-Timestamp", "0"))
-    signature = headers.get("X-LimitGuard-Signature", "")
-
-    # Reject stale deliveries (older than 5 minutes)
-    if abs(time.time() - timestamp) > 300:
-        return False
-
-    expected = f"sha256={hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()}"
-    return hmac.compare_digest(expected, signature)
-```
-
-## Retry Logic
-
-If your endpoint returns anything other than a `2xx` status code, or if the connection times out, LimitGuard retries delivery with exponential backoff:
-
-| Attempt | Delay | Cumulative Time |
-|---------|-------|----------------|
-| 1 (initial) | — | 0s |
-| 2 | 30s | 30s |
-| 3 | 5 min | ~5.5 min |
-| 4 (final) | 30 min | ~36 min |
-
-After 4 failed attempts, the event is marked as undelivered and no further retries occur. You can replay undelivered events from the [dashboard](https://limitguard.ai/dashboard/webhooks) or by sending a test event.
-
-**Timeout:** LimitGuard waits up to **10 seconds** for your server to respond. Respond with `200` immediately and process the payload asynchronously.
+LimitGuard waits up to **10 seconds** for your response and does not follow redirects. Respond `2xx` immediately and do the work asynchronously.
 
 <Warning>
-If your endpoint consistently fails (>10 consecutive failures), the webhook is automatically deactivated to protect system stability. You'll receive an email notification. Re-enable it from the dashboard or by POSTing to `POST /v1/webhooks/{webhook_id}/enable`.
+**Deactivation.** When 10 events in a row fail all their attempts for the same webhook, that webhook is deactivated: its queued deliveries are dropped and it no longer appears in `GET /v1/webhooks`. Any successful delivery resets the count. To resume, fix your endpoint and register the webhook again; you will get a new secret. You can still poll `GET /v1/compliance/alerts` for anything you missed.
 </Warning>
 
 ## Managing Webhooks
 
-### List Active Webhooks
+### List your webhooks
+
+`GET /v1/webhooks` returns your active webhooks as a JSON array. Secrets are never included.
 
 <CodeGroup>
 
 ```bash curl
-curl -X GET https://api.limitguard.ai/v1/webhooks \
+curl https://api.limitguard.ai/v1/webhooks \
   -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx"
 ```
 
@@ -362,187 +349,138 @@ response = httpx.get(
     "https://api.limitguard.ai/v1/webhooks",
     headers={"X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx"},
 )
-webhooks = response.json()["webhooks"]
-for wh in webhooks:
-    print(f"{wh['webhook_id']} → {wh['url']} ({wh['status']})")
+for wh in response.json():
+    print(wh["id"], wh["url"], wh["delivered_events"])
 ```
 
 ```javascript JavaScript
 const response = await fetch("https://api.limitguard.ai/v1/webhooks", {
   headers: { "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx" },
 });
-const { webhooks } = await response.json();
-webhooks.forEach((wh) => {
-  console.log(`${wh.webhook_id} → ${wh.url} (${wh.status})`);
-});
+const webhooks = await response.json();
+webhooks.forEach((wh) => console.log(wh.id, wh.url, wh.delivered_events));
 ```
 
 </CodeGroup>
 
-### Remove a Webhook
+```json Response
+[
+  {
+    "id": "3f6c2a9e-8b41-4d7e-9a53-2c1f0e7b6d48",
+    "url": "https://your-app.com/webhooks/limitguard",
+    "events": ["sanctions.match.new"],
+    "active": true,
+    "created_at": "2026-09-24T10:00:00.412907Z",
+    "delivered_events": ["sanctions.match.new"]
+  }
+]
+```
+
+### Change a webhook
+
+There is no update endpoint. To change the URL or the events, register the new configuration and then delete the old webhook. Registering the same URL twice is allowed and creates two separate webhooks, each receiving its own copy of every event.
+
+### Delete a webhook
 
 ```bash curl
-curl -X DELETE https://api.limitguard.ai/v1/webhooks/wh_abc123def456 \
+curl -X DELETE https://api.limitguard.ai/v1/webhooks/3f6c2a9e-8b41-4d7e-9a53-2c1f0e7b6d48 \
   -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx"
 ```
 
-Returns `204 No Content` on success. The endpoint immediately stops receiving deliveries.
+Returns `204 No Content`. The webhook and its delivery history are removed and nothing more is sent to it. An unknown ID, or one registered by a different API key, returns `404`.
 
 ## Testing
 
-Use the test endpoint to fire a simulated delivery to your webhook without triggering a real check. It takes no request body and always sends a `trust.score.changed` test event:
+`POST /v1/webhooks/{webhook_id}/test` sends one signed test delivery to your endpoint right away. It takes no request body, makes a single attempt with no retries, and reports the result:
 
 <CodeGroup>
 
 ```bash curl
-curl -X POST https://api.limitguard.ai/v1/webhooks/wh_abc123def456/test \
+curl -X POST https://api.limitguard.ai/v1/webhooks/3f6c2a9e-8b41-4d7e-9a53-2c1f0e7b6d48/test \
   -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx"
 ```
 
 ```python Python
 response = httpx.post(
-    "https://api.limitguard.ai/v1/webhooks/wh_abc123def456/test",
+    "https://api.limitguard.ai/v1/webhooks/3f6c2a9e-8b41-4d7e-9a53-2c1f0e7b6d48/test",
     headers={"X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx"},
 )
 print(response.json())
-# {"delivery_id": "...", "success": true, "status_code": 200, "attempts": 1}
 ```
 
 ```javascript JavaScript
 const response = await fetch(
-  "https://api.limitguard.ai/v1/webhooks/wh_abc123def456/test",
-  {
-    method: "POST",
-    headers: { "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx" },
-  }
+  "https://api.limitguard.ai/v1/webhooks/3f6c2a9e-8b41-4d7e-9a53-2c1f0e7b6d48/test",
+  { method: "POST", headers: { "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx" } }
 );
-const result = await response.json();
-console.log(result.success); // true
-console.log(result.status_code); // 200
+console.log(await response.json());
 ```
 
 </CodeGroup>
 
 ```json Response
 {
-  "delivery_id": "evt_test_01JMVR2KXPB4Y8N9C2WD7FGH1",
+  "delivery_id": "c2a8f0d1-5e7b-4a39-b6c4-8d1e2f3a4b5c",
   "success": true,
   "status_code": 200,
   "attempts": 1
 }
 ```
 
-Test events include a realistic synthetic payload using the `Acme Corp BV` sandbox entity. The signature is computed using your real webhook secret, so your full verification stack is exercised.
+`status_code` is what your endpoint answered, or `null` if it could not be reached. Your endpoint receives this body, signed with your real secret, so the test exercises your whole verification path:
+
+```json Test delivery body
+{
+  "created_at": "2026-09-24T10:05:00.281554+00:00",
+  "data": {"message": "Webhook test delivery from LimitGuard.ai"},
+  "event": "test",
+  "event_id": "e8b1c7a2-4d6f-4e3a-9b8c-0f1d2e3a4b5c"
+}
+```
 
 <Tip>
-Run the test endpoint from your CI/CD pipeline after deployment to verify your webhook handler is reachable and returning `200` before going live.
+Call the test endpoint from your deployment pipeline to confirm your handler is reachable and verifying signatures before real alerts depend on it.
 </Tip>
 
 ## Best Practices
 
-### Respond Immediately, Process Asynchronously
+### Respond immediately, process asynchronously
 
-Acknowledge the delivery within 10 seconds by returning `200 OK` before doing any meaningful work. Offload processing to a background queue (Celery, BullMQ, SQS, etc.):
+Return `2xx` within 10 seconds, before doing any real work, and hand the event to a background queue (Celery, BullMQ, SQS and so on). A slow handler turns into timeouts, retries and, eventually, deactivation.
 
-```python Python
-# GOOD — respond immediately, process in background
-@app.post("/webhooks/limitguard")
-async def handle_webhook(request: Request):
-    payload = await request.body()
-    if not verify_signature(payload, request.headers.get("X-LimitGuard-Signature", ""), WEBHOOK_SECRET):
-        raise HTTPException(status_code=401, detail="Invalid signature")
+### De-duplicate on `event_id`
 
-    event = await request.json()
-    await queue.enqueue("process_limitguard_event", event)  # async, non-blocking
-    return {"received": True}  # Return 200 immediately
-
-# BAD — slow processing blocks the response
-@app.post("/webhooks/limitguard")
-async def handle_webhook_slow(request: Request):
-    event = await request.json()
-    await run_heavy_database_operations(event)  # Will time out for slow ops
-    return {"received": True}
-```
-
-### Implement Idempotency
-
-LimitGuard may deliver the same event more than once on retry. Use the `id` field as an idempotency key:
+The same event can arrive more than once, for example when your `2xx` response is lost and the attempt is retried. Record each `event_id` together with its side effects, in one transaction, and skip any you have seen:
 
 ```python Python
 async def process_event(event: dict):
-    event_id = event["id"]
-
-    # Check if already processed
-    if await db.event_processed(event_id):
-        return  # Safe to ignore — already handled
-
-    # Mark as processed atomically before side effects
     async with db.transaction():
-        await db.mark_event_processed(event_id)
+        if not await db.insert_if_absent("processed_events", event["event_id"]):
+            return  # already handled
         await apply_business_logic(event)
 ```
 
-### Forward-Compatible Event Handling
+### Ignore what you do not recognise
 
-New event types will be introduced as LimitGuard adds capabilities. Always handle unknown types gracefully rather than raising an exception:
+New event types and new `data` fields will be added. Acknowledge unknown `event` values with `2xx` instead of failing, or the retries will count towards deactivation.
 
-```python Python
-KNOWN_EVENTS = {"trust.score.changed", "sanctions.match.new",
-                "trust.level.downgrade", "certificate.expired"}
+### Serve a valid certificate
 
-async def process_event(event: dict):
-    if event["type"] not in KNOWN_EVENTS:
-        logger.info(f"Ignoring unknown event type: {event['type']}")
-        return  # Do not raise — return 200 to prevent retries
-```
-
-### Validate Event Data
-
-Even after signature verification, validate required fields before using them:
-
-```python Python
-def validate_trust_score_changed(data: dict) -> bool:
-    required = {"entity_id", "previous_score", "new_score", "trust_level"}
-    return required.issubset(data.keys())
-```
-
-### Use HTTPS with a Valid Certificate
-
-LimitGuard only delivers to `https://` endpoints with a valid TLS certificate. Self-signed certificates and `http://` URLs are rejected at registration time.
-
-```json Error (400 Bad Request)
-{
-  "error": "invalid_webhook_url",
-  "message": "Webhook URL must use HTTPS with a valid certificate."
-}
-```
-
-## Webhook Payload Reference
-
-All event payloads share the same outer envelope:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Globally unique event ID (`evt_...`) — use as idempotency key |
-| `type` | `string` | Event type (e.g., `score.updated`) |
-| `api_version` | `string` | API version at time of delivery (e.g., `2026-02-01`) |
-| `created_at` | `string` | ISO 8601 timestamp of the event |
-| `livemode` | `boolean` | `false` for sandbox events |
-| `data` | `object` | Event-specific payload (varies by type) |
+Deliveries verify your TLS certificate. A self-signed or expired certificate is not refused at registration, but every delivery to it fails.
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="API Reference: Webhooks" icon="code" href="/api-reference/introduction">
-    Interactive playground for all four webhook endpoints
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    All endpoints, including the four webhook endpoints
   </Card>
   <Card title="Rate Limits" icon="gauge" href="/guides/rate-limits">
-    Understand the per-minute and daily limits
+    The per-minute and daily limits your API key has
   </Card>
   <Card title="Error Handling" icon="triangle-exclamation" href="/guides/errors">
-    Complete error catalog — including webhook delivery failures
+    The error catalog, including webhook registration errors
   </Card>
   <Card title="Sandbox" icon="flask" href="/sandbox">
-    Test your webhook handler with deterministic sandbox payloads
+    Try the API without spending anything
   </Card>
 </CardGroup>

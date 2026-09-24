@@ -21,7 +21,6 @@ The `type` field is always `"about:blank"` in the current API version. Future ve
 | `402` | Payment Required | x402 — no payment header sent, or insufficient amount |
 | `403` | Forbidden | Key exists but lacks permission for this endpoint or tier |
 | `404` | Not Found | Entity, webhook, or resource ID does not exist |
-| `409` | Conflict | Duplicate resource (e.g., webhook URL already registered) |
 | `422` | Unprocessable Entity | Request parsed but field values are invalid |
 | `429` | Too Many Requests | Per-minute or rolling 24-hour rate limit exceeded |
 | `500` | Internal Server Error | Unexpected server error — safe to retry |
@@ -325,7 +324,7 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
   </Accordion>
 
   <Accordion title="Webhook not found">
-    **Cause:** A `DELETE /v1/webhooks/{webhook_id}` or test call was made with an unknown `webhook_id`.
+    **Cause:** A `DELETE /v1/webhooks/{webhook_id}` or test call was made with an unknown `webhook_id`, or with the ID of a webhook another API key registered.
 
     **Fix:** Use `GET /v1/webhooks` to list all registered webhooks and confirm the correct `webhook_id`.
   </Accordion>
@@ -339,30 +338,9 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
 
 ---
 
-## 409 Conflict
-
-<AccordionGroup>
-  <Accordion title="Duplicate webhook URL">
-    **Cause:** A webhook with the same URL is already registered for your API key.
-
-    ```json
-    {
-      "type": "about:blank",
-      "title": "Conflict",
-      "status": 409,
-      "detail": "Webhook URL https://your-server.com/hook is already registered"
-    }
-    ```
-
-    **Fix:** Use `GET /v1/webhooks` to check existing registrations. If you want to update events for an existing webhook, delete it first and re-create with the new configuration.
-  </Accordion>
-</AccordionGroup>
-
----
-
 ## 422 Unprocessable Entity
 
-422 errors occur when the request is syntactically valid JSON but the field values fail business-logic validation. The `detail` field is always an **array** of field-level errors.
+422 errors occur when the request is syntactically valid JSON but the field values fail business-logic validation. For field validation the `detail` field is an **array** of field-level errors; a few checks made after validation (such as the webhook URL check) return a single string `detail` instead.
 
 ```json
 {
@@ -428,7 +406,21 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
   <Accordion title="Invalid webhook event type">
     **Cause:** `events` array in `POST /v1/webhooks` contains an unrecognized event name.
 
-    **Fix:** Use events from the supported list: `trust_score.updated`, `compliance.alert`, `entity.flagged`, `risk.threshold_exceeded`. Check `GET /v1/webhooks` for the current supported list.
+    **Fix:** Use event types from the list in the [Webhooks guide](/guides/webhooks#event-types): `sanctions.match.new`, `trust.score.changed`, `trust.level.downgrade` or `certificate.expired`. There is no `*` wildcard. Only `sanctions.match.new` is sent today; `delivered_events` in the registration response lists which of yours are live.
+  </Accordion>
+
+  <Accordion title="Invalid webhook URL">
+    **Cause:** The `url` in `POST /v1/webhooks` is not `https://`, its host does not resolve, or it resolves to a private, loopback, link-local, reserved or cloud-metadata address. This error carries a plain string `detail` instead of the field array above:
+
+    ```json
+    {
+      "detail": "Webhook URL resolves to a private/reserved IP — SSRF protection blocks this address"
+    }
+    ```
+
+    Other `detail` values: `"URL must use HTTPS"` and `"Cannot resolve hostname '<host>': ..."`.
+
+    **Fix:** Use a public `https://` URL whose host resolves in public DNS.
   </Accordion>
 </AccordionGroup>
 
