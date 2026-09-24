@@ -70,7 +70,9 @@
               "guides/rate-limits",
               "guides/webhooks",
               "guides/trust-architecture",
-              "guides/ai-agent-integration"
+              "guides/ai-agent-integration",
+              "guides/frameworks",
+              "guides/pay-per-call"
             ]
           },
           {

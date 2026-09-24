@@ -1,0 +1,111 @@
+---
+title: "Pay Per Call"
+description: "Call LimitGuard with a USDC wallet and a client library - no API key, no subscription"
+---
+
+No API key, no signup: an agent with a funded USDC wallet can call any priced LimitGuard endpoint directly. Two paths are proven end to end against production:
+
+- **Base** - the official PyPI [`x402`](https://pypi.org/project/x402/) client, using the EIP-3009 `exact` scheme settled through Coinbase's facilitator. The wallet needs USDC on Base only - no ETH for gas.
+- **Solana** - the LimitGuard SDK's co-sign mode. LimitGuard's own fee payer covers the Solana network fee, so the wallet needs USDC only - no SOL.
+
+Both examples call `POST /v1/risk/score`. For the raw HTTP 402 flow behind both (useful if you're not on Python, or want to hand-roll the signature), see [x402 Protocol](/x402-protocol). For what each endpoint costs, see [Pricing](/pricing).
+
+## Base (official `x402` client)
+
+```bash
+pip install "x402[evm,httpx]"
+```
+
+```python
+import asyncio
+import os
+
+import httpx
+from eth_account import Account
+from x402 import x402Client
+from x402.http.clients import x402_httpx_transport
+from x402.mechanisms.evm.exact import ExactEvmScheme
+
+API_URL = "https://api.limitguard.ai"
+RISK_PATH = "/v1/risk/score"  # $0.65 USDC, fresh tier -- see /pricing
+
+
+async def check_risk(entity_name: str, country: str) -> dict:
+    """POST /v1/risk/score, paying the 402 automatically with USDC on Base."""
+    account = Account.from_key(os.environ["EVM_PRIVATE_KEY"])  # 0x-prefixed hex key
+
+    # "eip155:*" matches Base (eip155:8453) and any other EVM chain LimitGuard quotes.
+    client = x402Client().register("eip155:*", ExactEvmScheme(account))
+    # Refuse to auto-pay more than $1 for any single call. Raise this for a
+    # pricier endpoint (e.g. /v1/kyb/check at $1.50) before calling it.
+    client.set_spend_controls({"max_amount_per_payment": "$1.00"})
+
+    async with httpx.AsyncClient(
+        transport=x402_httpx_transport(client), base_url=API_URL, timeout=30,
+    ) as http:
+        response = await http.post(
+            RISK_PATH, json={"entity_name": entity_name, "country": country}
+        )
+    response.raise_for_status()
+    return response.json()
+
+
+if __name__ == "__main__":
+    result = asyncio.run(check_risk("Acme Corp BV", "NL"))
+    print(f"Risk score: {result['risk_score']} - {result['recommendation']}")
+```
+
+Set `EVM_PRIVATE_KEY` to a wallet holding at least $0.65 USDC on Base mainnet (`eip155:8453`). The transport handles the 402: it probes the endpoint, signs the EIP-3009 authorization, retries with the payment header, and returns the paid response - nothing else to wire up.
+
+## Solana (LimitGuard SDK, co-sign mode)
+
+```bash
+pip install "limitguard[solana]>=0.1.4"
+```
+
+<Warning>
+Pin `limitguard[solana]>=0.1.4`, not just `limitguard[solana]`. As of this writing PyPI's latest published `limitguard` is 0.1.3, and 0.1.3's Solana payment path breaks against current `solana-py` releases (the SDK's `TransferCheckedParams` import moved in `solana-py` 0.36+, which `limitguard[solana]`'s own `solana>=0.34` floor allows a fresh install to pull in). 0.1.4 fixes this and is being released - if `pip install "limitguard[solana]>=0.1.4"` fails to resolve, the release has not landed on PyPI yet; check back or open an issue.
+</Warning>
+
+```python
+import asyncio
+import os
+
+from limitguard import LimitGuardClient
+from limitguard.x402 import SolanaWallet
+from solders.keypair import Keypair
+
+
+async def check_risk(entity_name: str, country: str) -> dict:
+    """POST /v1/risk/score, paying the 402 with USDC on Solana."""
+    keypair = Keypair.from_base58_string(os.environ["SOLANA_PRIVATE_KEY"])
+    # Co-sign mode (the default): LimitGuard's fee payer pays the network fee,
+    # so this wallet needs USDC only, no SOL.
+    wallet = SolanaWallet(keypair=keypair)
+
+    async with LimitGuardClient(wallet=wallet) as client:
+        result = await client.risk_score(entity_name, country)
+    return result.model_dump()
+
+
+if __name__ == "__main__":
+    result = asyncio.run(check_risk("Acme Corp BV", "NL"))
+    print(f"Risk score: {result['risk_score']} - {result['recommendation']}")
+```
+
+Set `SOLANA_PRIVATE_KEY` to a base58-encoded secret key for a wallet holding at least $0.65 USDC (Solana mainnet USDC mint `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`). `LimitGuardClient` retries any 402 automatically once a `wallet` is set - note that, unlike the Base example above, the SDK has no built-in per-call spend cap, so only call methods (`risk_score`, `check_entity`, ...) whose price you already know rather than passing it an arbitrary path.
+
+<Note>
+`SolanaWallet(keypair=keypair, broadcast=True)` opts back into paying the network fee yourself instead of the co-sign path - that mode needs a small SOL balance in addition to USDC. The default (shown above) does not.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="x402 Protocol" icon="credit-card" href="/x402-protocol">
+    The raw HTTP 402 flow, response headers, and both chains' payment payloads
+  </Card>
+  <Card title="Pricing" icon="tag" href="/pricing">
+    What every endpoint costs, cached vs. fresh vs. enhanced
+  </Card>
+</CardGroup>

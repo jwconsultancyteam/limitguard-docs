@@ -1,0 +1,54 @@
+# LimitGuard
+
+> LimitGuard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU.
+
+## Get Started
+
+- [Introduction](https://docs.limitguard.ai/introduction.md): Trust Intelligence API for the Agent Economy
+- [Quickstart](https://docs.limitguard.ai/quickstart.md): Get your first trust score in under 3 minutes
+- [Authentication](https://docs.limitguard.ai/authentication.md): API keys, x402 USDC micropayments, and sandbox mode
+- [Sandbox Mode](https://docs.limitguard.ai/sandbox.md): Test the API for free - no wallet or API key required
+
+## Core Concepts
+
+- [Pricing](https://docs.limitguard.ai/pricing.md): Pay only for what you use - USDC per API call
+- [x402 Protocol](https://docs.limitguard.ai/x402-protocol.md): Pay-per-use USDC micropayments for AI agents - no subscription required
+- [Discovery](https://docs.limitguard.ai/discovery.md): Machine-readable discovery for AI agents - MCP, A2A, x402, and llms.txt
+
+## Guides
+
+- [Error Handling](https://docs.limitguard.ai/guides/errors.md): Complete error catalog with causes and fixes
+- [Rate Limits](https://docs.limitguard.ai/guides/rate-limits.md): Rate limit behavior, tiers, and Retry-After headers
+- [Webhooks](https://docs.limitguard.ai/guides/webhooks.md): Get sanctions-list changes that affect you pushed to your server
+- [Trust Architecture](https://docs.limitguard.ai/guides/trust-architecture.md): Zero-access model, data flow, and security architecture
+- [AI Agent Integration](https://docs.limitguard.ai/guides/ai-agent-integration.md): How AI agents discover and use LimitGuard - MCP, A2A, and x402
+- [Framework Integrations](https://docs.limitguard.ai/guides/frameworks.md): Connect LangChain, CrewAI, or the OpenAI Agents SDK to LimitGuard's remote MCP server
+- [Pay Per Call](https://docs.limitguard.ai/guides/pay-per-call.md): Call LimitGuard with a USDC wallet and a client library - no API key, no subscription
+
+## Post-mortems
+
+- [Downtime log, September 2026](https://docs.limitguard.ai/postmortems/2026-09-downtime-log.md): Planned maintenance on 2026-09-19 and every short downtime shown on the status page since the 2026-09-05 restore
+- [Outage post-mortem, 2026-06-19 to 2026-09-05](https://docs.limitguard.ai/postmortems/2026-09-langfuse-event-loop.md): 78 days of 503s from one synchronous call with no timeout on the event loop, why nothing noticed, and what is structurally different now
+
+## API Reference
+
+- [API Reference](https://docs.limitguard.ai/api-reference/introduction.md): Complete reference for all 64 LimitGuard API endpoints
+
+## OpenAPI Specs
+
+- [LimitGuard API (docs)](https://docs.limitguard.ai/api-reference/openapi.json)
+- [LimitGuard API (live)](https://api.limitguard.ai/openapi.json)
+
+## Changelog
+
+- [September 24, 2026](https://docs.limitguard.ai/changelog/2026-09-24.md)
+- [September 8, 2026](https://docs.limitguard.ai/changelog/2026-09-08.md)
+- [September 7, 2026](https://docs.limitguard.ai/changelog/2026-09-07.md)
+- [September 5, 2026](https://docs.limitguard.ai/changelog/2026-09-05.md)
+- [February 20, 2026](https://docs.limitguard.ai/changelog/2026-02-20.md)
+
+## Optional
+
+- [LimitGuard.ai](https://limitguard.ai): Product site
+- [API status](https://api.limitguard.ai/health): Live health check
+- [LimitGuard API llms.txt](https://api.limitguard.ai/llms.txt): The live API's own machine-readable summary (distinct from this docs-site index)
