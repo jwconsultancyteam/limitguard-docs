@@ -248,7 +248,7 @@
     "/v1/keys/usage": {
       "get": {
         "summary": "Get Usage",
-        "description": "Check current API key usage, remaining quota and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from (#434).",
+        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from (#434).\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.",
         "operationId": "get_usage_v1_keys_usage_get",
         "responses": {
           "200": {
@@ -4663,25 +4663,35 @@
             "title": "Tier",
             "description": "Current pricing tier"
           },
+          "rate_limit_per_minute": {
+            "type": "integer",
+            "title": "Rate Limit Per Minute",
+            "description": "Real enforced burst cap: max requests per minute for this tier"
+          },
+          "rate_limit_per_day": {
+            "type": "integer",
+            "title": "Rate Limit Per Day",
+            "description": "Real enforced cap: max requests per rolling 24h for this tier"
+          },
           "monthly_usage": {
             "type": "integer",
             "title": "Monthly Usage",
-            "description": "Requests used this billing period"
+            "description": "Requests this key made in the current calendar month (UTC), counted against monthly_limit."
           },
           "monthly_limit": {
             "type": "integer",
             "title": "Monthly Limit",
-            "description": "Monthly request ceiling for this tier (an abuse cap, not prepaid calls)"
+            "description": "Monthly request ceiling for this tier: an abuse cap enforced on key calls (429 when reached, resets on the first of the month UTC), not a number of prepaid calls. Calls paid per call with x402 are never refused by it."
           },
           "remaining": {
             "type": "integer",
             "title": "Remaining",
-            "description": "Requests remaining this period"
+            "description": "Requests left before the monthly ceiling this calendar month"
           },
           "usage_percent": {
             "type": "number",
             "title": "Usage Percent",
-            "description": "Percentage of quota used (0-100)"
+            "description": "Percentage of the monthly ceiling used this calendar month (0-100)"
           },
           "balance_usd": {
             "type": "number",
@@ -4694,13 +4704,15 @@
         "required": [
           "key_id",
           "tier",
+          "rate_limit_per_minute",
+          "rate_limit_per_day",
           "monthly_usage",
           "monthly_limit",
           "remaining",
           "usage_percent"
         ],
         "title": "KeyUsageResponse",
-        "description": "Response showing current API key usage, remaining quota and prepaid balance."
+        "description": "Response showing current API key usage, the tier's real enforced rate\nlimits, and prepaid balance.\n\n#434 moved pricing to a prepaid balance debited per call; the limits that\nactually throttle a caller day-to-day are the per-minute burst cap and the\nrolling 24h cap (app.middleware.rate_limit.TIER_RATE_LIMITS) -- not the\nmonthly_* fields below, which are a separate, much looser abuse ceiling\nthat a steady low-rate caller could in principle still cross once a month\neven while always under the per-minute/per-day caps."
       },
       "LegalDocument": {
         "properties": {
