@@ -91,7 +91,7 @@
     "/v1/entity/deep-check": {
       "post": {
         "summary": "Entity Deep Check",
-        "description": "Deep check: extended PEP/RCA exposure screening (#396), the Dutch insolvency\nregister on every tier (#403), adverse media on the extended tier (#402), an\nItalian credit report on the credit tier (#404).\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.75) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.50) adds `adverse_media` from dilisense;\n`credit` ($2.25, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
+        "description": "Deep check: extended PEP/RCA exposure screening (#396), the Dutch insolvency\nregister on every tier (#403), adverse media on the extended tier (#402), an\nItalian credit report on the credit tier (#404).\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (apps/api/app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (apps/api/app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.75) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.50) adds `adverse_media` from dilisense;\n`credit` ($2.25, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
         "operationId": "entity_deep_check_v1_entity_deep_check_post",
         "requestBody": {
           "content": {
@@ -2296,7 +2296,7 @@
     "/v1/compliance/readiness/{entity_id}": {
       "get": {
         "summary": "Ai Act Readiness",
-        "description": "Get EU AI Act readiness score for an entity.",
+        "description": "EU AI Act readiness self-assessment for one AI system.\n\nThe result depends only on system_type and the completed_items the caller\nsends; entity_id is echoed as a label and nothing is looked up about it, so\nthe response says so in `basis` and `note` (2026-09-24: a paid call for a\ncompany name returned the same generic 0/7 as any other).",
         "operationId": "ai_act_readiness_v1_compliance_readiness__entity_id__get",
         "security": [
           {
@@ -2319,11 +2319,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "AI system type (credit_scoring, trust_scoring, etc.)",
+              "description": "AI system type: credit_scoring, trust_scoring, biometric_identification or employment_screening (others answer UNDETERMINED)",
               "default": "trust_scoring",
               "title": "System Type"
             },
-            "description": "AI system type (credit_scoring, trust_scoring, etc.)"
+            "description": "AI system type: credit_scoring, trust_scoring, biometric_identification or employment_screening (others answer UNDETERMINED)"
           },
           {
             "name": "completed_items",
@@ -2334,11 +2334,11 @@
               "items": {
                 "type": "string"
               },
-              "description": "Completed readiness checklist items",
+              "description": "Checklist items you have completed, one parameter per item: risk_management, data_governance, technical_docs, record_keeping, transparency, human_oversight, accuracy_robustness",
               "default": [],
               "title": "Completed Items"
             },
-            "description": "Completed readiness checklist items"
+            "description": "Checklist items you have completed, one parameter per item: risk_management, data_governance, technical_docs, record_keeping, transparency, human_oversight, accuracy_robustness"
           }
         ],
         "responses": {
@@ -3112,7 +3112,7 @@
           "retrieved_at"
         ],
         "title": "AdverseMediaResult",
-        "description": "Result of the `adverse_media` source. `screened` is never False on a 200.\n\nMirrors PepScreenResult: app/services/adverse_media.py raises rather than\nfabricating a clean screen, and the router turns that into a 503 so the payment\nis never settled (#284, #402). A negative means no *indexed reporting* matched,\nnot that no wrongdoing exists; `screened` and `adverse_media_found` are separate\nfields so a caller can tell \"looked, found nothing\" from \"did not look\"."
+        "description": "Result of the `adverse_media` source. `screened` is never False on a 200.\n\nMirrors PepScreenResult: apps/api/app/services/adverse_media.py raises rather than\nfabricating a clean screen, and the router turns that into a 503 so the payment\nis never settled (#284, #402). A negative means no *indexed reporting* matched,\nnot that no wrongdoing exists; `screened` and `adverse_media_found` are separate\nfields so a caller can tell \"looked, found nothing\" from \"did not look\"."
       },
       "AgentRevenue": {
         "properties": {
@@ -3571,7 +3571,7 @@
           "retrieved_at"
         ],
         "title": "CreditReportResult",
-        "description": "Result of the `credit_report` source, sold on the `credit` deep-check tier\n(#404 Stage 2). `screened` is never False while `applicable` is True.\n\nMirrors InsolvencyRecordsResult, not AdverseMediaResult: coverage is a single\ncountry (Italy), so \"we do not cover this country\" is a 200 with\n`applicable: false` from app/services/credit_report.py, the same pattern the\ninsolvency register uses for non-NL -- never a raise, because that would be a\npaid 503 for a caller who explicitly opted into this tier. A supported country\nwhose screen fails for any other reason (unset key, vendor outage, unparseable\nverdict) still raises CreditReportUnavailable, and the router turns that into a\n503 so the payment is never settled (#284).\n\nA green score is the provider's assessment of the company at query time, not a\nguarantee of solvency and not a recommendation to extend credit. `risk_score` is\na normalised value from a closed set (green / yellow / red / unknown), not the raw\nvendor string, and is None exactly when `applicable` is False; `risk_band_available`\nis False when the provider declined to assess (its documented grey/ND answer, e.g.\na closed company), which is a different fact from a low-risk verdict."
+        "description": "Result of the `credit_report` source, sold on the `credit` deep-check tier\n(#404 Stage 2). `screened` is never False while `applicable` is True.\n\nMirrors InsolvencyRecordsResult, not AdverseMediaResult: coverage is a single\ncountry (Italy), so \"we do not cover this country\" is a 200 with\n`applicable: false` from apps/api/app/services/credit_report.py, the same pattern the\ninsolvency register uses for non-NL -- never a raise, because that would be a\npaid 503 for a caller who explicitly opted into this tier. A supported country\nwhose screen fails for any other reason (unset key, vendor outage, unparseable\nverdict) still raises CreditReportUnavailable, and the router turns that into a\n503 so the payment is never settled (#284).\n\nA green score is the provider's assessment of the company at query time, not a\nguarantee of solvency and not a recommendation to extend credit. `risk_score` is\na normalised value from a closed set (green / yellow / red / unknown), not the raw\nvendor string, and is None exactly when `applicable` is False; `risk_band_available`\nis False when the provider declined to assess (its documented grey/ND answer, e.g.\na closed company), which is a different fact from a low-risk verdict."
       },
       "CustomerUsageResponse": {
         "properties": {
@@ -4474,7 +4474,7 @@
           "retrieved_at"
         ],
         "title": "InsolvencyRecordsResult",
-        "description": "Result of the `insolvency_records` source (#403).\n\nUnlike PepScreenResult and AdverseMediaResult, `screened` CAN be False on a 200:\nthe register covers the Netherlands only, so for any other `country` the source\nis not consulted and the row says so with `applicable: false`. That is a\ndifferent fact from a clean negative and must never be read as one. When\n`applicable` is True, `screened` is always True: every other failure raises and\nthe router answers 503 (#284), so the caller is not charged.\n\nA negative result (`found: false`) means the register listed no insolvency\nproceeding for the KvK number or trade name at query time. Exception code 3\n(\"too many results\") is reported as `found: true, truncated: true,\nmatch_count: null` with no records: matches exist but the register will not\nlist them until the query is narrowed (send `kvk_number`).\n\nRegister conditions: no replica is kept and a successful screen is cached for at\nmost 24 hours (app/config.py::cache_insolvency_ttl), inside the six-month\ndestruction rule the subscription imposes."
+        "description": "Result of the `insolvency_records` source (#403).\n\nUnlike PepScreenResult and AdverseMediaResult, `screened` CAN be False on a 200:\nthe register covers the Netherlands only, so for any other `country` the source\nis not consulted and the row says so with `applicable: false`. That is a\ndifferent fact from a clean negative and must never be read as one. When\n`applicable` is True, `screened` is always True: every other failure raises and\nthe router answers 503 (#284), so the caller is not charged.\n\nA negative result (`found: false`) means the register listed no insolvency\nproceeding for the KvK number or trade name at query time. Exception code 3\n(\"too many results\") is reported as `found: true, truncated: true,\nmatch_count: null` with no records: matches exist but the register will not\nlist them until the query is narrowed (send `kvk_number`).\n\nRegister conditions: no replica is kept and a successful screen is cached for at\nmost 24 hours (apps/api/app/config.py::cache_insolvency_ttl), inside the six-month\ndestruction rule the subscription imposes."
       },
       "KYBCheckRequest": {
         "properties": {
@@ -4898,7 +4898,7 @@
           "retrieved_at"
         ],
         "title": "PepScreenResult",
-        "description": "Result of the `pep_extended` source. `screened` is never False on a 200.\n\nThere is no code path that returns this model without having queried\nOpenSanctions: app/services/pep.py raises rather than fabricating a clean screen,\nand the router turns that into a 503 so the payment is never settled (#284, #396)."
+        "description": "Result of the `pep_extended` source. `screened` is never False on a 200.\n\nThere is no code path that returns this model without having queried\nOpenSanctions: apps/api/app/services/pep.py raises rather than fabricating a clean screen,\nand the router turns that into a 503 so the payment is never settled (#284, #396)."
       },
       "ProviderRegistration": {
         "properties": {
@@ -5037,6 +5037,17 @@
             "type": "string",
             "title": "Urgency",
             "description": "normal, high, or critical"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis",
+            "description": "self_assessment: scored from the completed_items you sent",
+            "default": "self_assessment"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": "Self-assessment: the score counts the completed_items you sent against the 7 EU AI Act high-risk obligations. entity_id is your label; nothing is looked up about it."
           }
         },
         "type": "object",
