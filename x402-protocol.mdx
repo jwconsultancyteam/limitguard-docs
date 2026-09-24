@@ -483,6 +483,11 @@ The older `X-PAYMENT` header (V1 format with `maxAmountRequired`, `from`, `to` f
 
 If the payment facilitator is unavailable (circuit breaker open), LimitGuard falls back to a verified wallet cache. Wallets that have previously completed verified payments are cached. The response includes `X-Payment-Fallback: true` when this path is used.
 
+Routes settled through the Coinbase CDP facilitator (see `CDP_FACILITATOR_ROUTES` in
+[Configuration](./configuration.md)) are the exception: a CDP outage fails closed with
+`402 server_error` instead of falling back to the wallet cache, so a false "verified"
+never gets served on the same authorization the CDP outage might still land later.
+
 ## Discovery
 
 AI agents can discover LimitGuard's x402 payment requirements automatically:
