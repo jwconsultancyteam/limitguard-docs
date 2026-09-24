@@ -2127,7 +2127,7 @@
     "/v1/compliance/alerts": {
       "get": {
         "summary": "List Alerts",
-        "description": "List regulatory alerts with pagination and filtering.",
+        "description": "List alerts, newest first: global list changes plus the caller's own hits.\n\nThe caller's subscriptions (if any) narrow the global alerts only, to\ntheir minimum severity and their jurisdictions; the caller's own hits are\nalways shown. ``subscription_filters`` in the response says what was\napplied (null without a subscription), so a narrowed list never reads as\n\"no alerts\". Jurisdiction codes are stored lower-case; \"NL\" matches \"nl\"\n(#519).",
         "operationId": "list_alerts_v1_compliance_alerts_get",
         "security": [
           {
@@ -3279,7 +3279,7 @@
             },
             "type": "array",
             "title": "Severity Filter",
-            "description": "Minimum severity to receive"
+            "description": "Minimum severity to receive: the least severe entry is the threshold. Narrows global alerts only; your own hits are always shown"
           },
           "jurisdictions": {
             "items": {
@@ -3583,6 +3583,39 @@
             "type": "string",
             "title": "Content Hash",
             "default": ""
+          },
+          "last_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Status"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
           }
         },
         "type": "object",
