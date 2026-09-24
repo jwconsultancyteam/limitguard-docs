@@ -3,23 +3,23 @@ title: "Rate Limits"
 description: "Rate limit behavior, tiers, and Retry-After headers"
 ---
 
-LimitGuard enforces rate limits to ensure fair access and API stability. They are abuse limits, not a quota you buy: every call is paid for, either per call with x402 or from an API key's prepaid balance. A key's tier (bought as a prepaid top-up) only selects its burst limits.
+LimitGuard enforces rate limits to ensure fair access and API stability. They are abuse limits, not a quota you buy: every call is paid for, either per call with x402 or from an API key's prepaid balance. A key's tier (bought as a prepaid top-up) only selects these limits.
 
 ## Rate Limits by Tier
 
-| Tier | Requests / Minute | Requests / 24 h | Auth Method |
-|------|:-----------------:|:---------------:|-------------|
-| **Unauthenticated** | 10 / min per IP | No daily cap | No key, no payment |
-| **Unpaid 402 quote** | 120 / min per IP | No daily cap | A request x402 answers with the price only |
-| **x402 payer** | 60 / min per payer | No daily cap | `X-PAYMENT` header (pay per call) |
-| **Free** | 10 / min | 500 | `lg_live_` API key, free tier (pays per call) |
-| **Indie** | 30 / min | 1,000 | `lg_live_` API key, $29 prepaid top-up |
-| **Starter** | 60 / min | 10,000 | `lg_live_` API key, $99 prepaid top-up |
-| **Growth** | 120 / min | 50,000 | `lg_live_` API key, $299 prepaid top-up |
-| **Pro** | 300 / min | 250,000 | `lg_live_` API key, $999 prepaid top-up |
+| Tier | Requests / Minute | Requests / 24 h | Monthly ceiling | Auth Method |
+|------|:-----------------:|:---------------:|:---------------:|-------------|
+| **Unauthenticated** | 10 / min per IP | No daily cap | None | No key, no payment |
+| **Unpaid 402 quote** | 120 / min per IP | No daily cap | None | A request x402 answers with the price only |
+| **x402 payer** | 60 / min per payer | No daily cap | None | `X-PAYMENT` header (pay per call) |
+| **Free** | 10 / min | 500 | 500 | `lg_live_` API key, free tier (pays per call) |
+| **Indie** | 30 / min | 1,000 | 1,000 | `lg_live_` API key, $29 prepaid top-up |
+| **Starter** | 60 / min | 10,000 | 10,000 | `lg_live_` API key, $99 prepaid top-up |
+| **Growth** | 120 / min | 50,000 | 50,000 | `lg_live_` API key, $299 prepaid top-up |
+| **Pro** | 300 / min | 250,000 | 250,000 | `lg_live_` API key, $999 prepaid top-up |
 
 <Note>
-Both windows are rolling: the per-minute limit over the last 60 seconds, the daily limit over the last 24 hours. Nothing resets on a calendar boundary. Entity checks also have a per-entity limit per caller, against enumeration.
+The per-minute and 24-hour windows are rolling. The monthly ceiling is an abuse cap on an API key, not your prepaid balance: it counts the key's calls in the calendar month and resets on the first day of each month (UTC). A call paid per call with x402 is never refused by it, even when it carries a key. Entity checks also have a per-entity limit per caller, against enumeration.
 </Note>
 
 ## Middleware Execution Order
@@ -82,8 +82,16 @@ Content-Type: application/problem+json
 }
 ```
 
+### Example: Monthly Ceiling Reached
+
+```json
+{
+  "detail": "Monthly request ceiling reached (500/500). This is an abuse cap, not your prepaid balance; it resets next month."
+}
+```
+
 <Warning>
-Always read the `Retry-After` header rather than hard-coding a wait time: it is 60 seconds for a per-minute limit and 3600 seconds for the rolling 24-hour limit.
+Always read the `Retry-After` header rather than hard-coding a wait time: it is 60 seconds for a per-minute limit and 3600 seconds for the rolling 24-hour limit. The monthly ceiling lifts at the start of the next calendar month (UTC); until then, pay per call with x402, which it never refuses.
 </Warning>
 
 ## x402 Payers Have No Daily Cap
@@ -100,6 +108,7 @@ If you are building an AI agent that may need to make bursts of requests, x402 i
 |-----------|:-------------:|:----:|
 | Per-minute limit | Yes (by tier) | Yes (60 / min per payer) |
 | Rolling 24-hour limit | Yes (by tier) | No |
+| Monthly ceiling (abuse cap) | Yes (by tier) | No |
 | Cost per call | Yes, debited from the prepaid balance | Yes, paid per call |
 | Suitable for AI agent bursts | Up to the tier's per-minute limit | Up to 60 / min |
 
@@ -315,10 +324,10 @@ If you are consistently hitting rate limits on a subscription key, you have two 
 
 <CardGroup cols={2}>
   <Card title="Upgrade Your Plan" icon="arrow-up" href="/authentication">
-    Top up to Indie, Starter, Growth, or Pro for higher per-minute and daily limits.
+    Top up to Indie, Starter, Growth, or Pro for higher per-minute, daily and monthly limits.
   </Card>
   <Card title="Switch to x402" icon="credit-card" href="/x402-protocol">
-    Pay per call with USDC. No daily cap; 60 requests per minute per payer.
+    Pay per call with USDC. No daily or monthly cap; 60 requests per minute per payer.
   </Card>
 </CardGroup>
 

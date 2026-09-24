@@ -23,7 +23,7 @@ The `type` field is always `"about:blank"` in the current API version. Future ve
 | `404` | Not Found | Entity, webhook, or resource ID does not exist |
 | `409` | Conflict | Duplicate resource (e.g., webhook URL already registered) |
 | `422` | Unprocessable Entity | Request parsed but field values are invalid |
-| `429` | Too Many Requests | Per-minute or rolling 24-hour rate limit exceeded |
+| `429` | Too Many Requests | Per-minute, rolling 24-hour or monthly-ceiling limit exceeded |
 | `500` | Internal Server Error | Unexpected server error — safe to retry |
 | `503` | Service Unavailable | Planned maintenance or cascading dependency failure |
 
@@ -436,7 +436,7 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
 
 ## 429 Too Many Requests
 
-LimitGuard enforces two independent limits per key: a per-minute limit and a rolling 24-hour limit. A verified x402 payer has a per-minute limit only.
+LimitGuard enforces three limits per API key: a per-minute limit, a rolling 24-hour limit and a monthly request ceiling (an abuse cap that resets on the first of each month UTC). A verified x402 payer has a per-minute limit only.
 
 ### Rate Limit Response
 
@@ -495,7 +495,19 @@ When a key hits its rolling 24-hour limit, the `detail` names it:
 }
 ```
 
-**Fix:** Wait for `Retry-After`, top up to a higher tier for a higher limit, or pay per call with x402, which has no daily cap. There is no monthly quota.
+**Fix:** Wait for `Retry-After`, top up to a higher tier for a higher limit, or pay per call with x402, which has no daily cap.
+
+### Monthly Ceiling Reached
+
+A key that reaches its monthly request ceiling gets:
+
+```json
+{
+  "detail": "Monthly request ceiling reached (500/500). This is an abuse cap, not your prepaid balance; it resets next month."
+}
+```
+
+**Fix:** Wait for the first of the next month (UTC), top up to a higher tier, or pay per call with x402: a paid call is never refused by the ceiling.
 
 <Tip>
 Use the `X-Response-Quality: cached` header where acceptable: a cached answer costs less when the entity was already scored within the cache TTL.
