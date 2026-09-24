@@ -27,7 +27,7 @@
     "/v1/entity/check": {
       "post": {
         "summary": "Entity Check",
-        "description": "Full entity trust check.\n\nAlways runs country risk and sanctions; runs each other data source\nwhose identifier is provided (up to 8 total), computes a trust score,\nassigns a cluster, and returns a recommendation.\n\nIdentifiers are optional (kvk_number, cbe_number, domain, iban, vat_number,\nwallet_address). With none, only country risk and sanctions run (plus a KVK\nname search for NL), at lower confidence.",
+        "description": "Full entity trust check.\n\nAlways runs country risk and sanctions; runs each other data source\nwhose identifier is provided (up to 8 total), computes a trust score,\nassigns a cluster, and returns a recommendation.\n\n`entity_name` and `country` are required; identifiers (kvk_number,\ncbe_number, domain, iban, vat_number, wallet_address) are optional and\nraise confidence. With none, only country risk and sanctions run (plus a\nKVK name search for NL), at lower confidence.",
         "operationId": "entity_check_v1_entity_check_post",
         "requestBody": {
           "content": {
@@ -4174,7 +4174,7 @@
           "country"
         ],
         "title": "EntityCheckRequest",
-        "description": "Full entity check request - always runs country risk and sanctions; runs each other data source whose identifier is supplied (up to 8 total)."
+        "description": "Full entity check request - always runs country risk and sanctions; runs each other data source whose identifier is supplied (up to 8 total).\n\n`entity_name` and `country` are required; identifiers (kvk_number, cbe_number, domain, iban, vat_number, wallet_address) are optional and raise confidence."
       },
       "ErasureRequest": {
         "properties": {
