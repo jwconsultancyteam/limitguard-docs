@@ -1,12 +1,16 @@
 ---
 title: "Webhooks"
-description: "Real-time event notifications with HMAC signature verification"
+description: "Webhook registration and signed test deliveries"
 ---
 
 Webhooks let you subscribe to LimitGuard events and receive HTTP POST notifications to your server: a trust score change, a new sanctions match, a trust level downgrade, or a certificate expiring. Instead of polling the API, your system reacts to the four event types below.
 
+<Warning>
+Automatic event delivery is not live yet. You can register, list and delete webhooks and send a signed test delivery (`POST /v1/webhooks/{webhook_id}/test`), but LimitGuard does not send any of the events below on its own yet. Registrations are held in memory and are lost when the API restarts. Until delivery is live, poll the matching endpoints instead (for sanctions changes, `GET /v1/compliance/alerts`).
+</Warning>
+
 <Note>
-Webhooks require an API key with the `starter` tier or above. Sandbox webhooks fire with simulated payloads and do not count against your quota.
+Webhooks require an API key with the `starter` tier or above.
 </Note>
 
 ## How It Works
@@ -533,7 +537,7 @@ All event payloads share the same outer envelope:
     Interactive playground for all four webhook endpoints
   </Card>
   <Card title="Rate Limits" icon="gauge" href="/guides/rate-limits">
-    Understand quota limits and how they apply to webhook-triggering calls
+    Understand the per-minute and daily limits
   </Card>
   <Card title="Error Handling" icon="triangle-exclamation" href="/guides/errors">
     Complete error catalog — including webhook delivery failures

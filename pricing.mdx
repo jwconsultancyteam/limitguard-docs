@@ -63,7 +63,7 @@ The [5 MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are *
 
 ## API Key Tier Upgrades
 
-Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key — see [Authentication](/authentication#api-key-authentication) for the full tier ladder. Quotas reset on the first day of each calendar month (UTC).
+Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key — see [Authentication](/authentication#api-key-authentication) for the full tier ladder. The balance does not expire or reset.
 
 | Endpoint | Price | Unlocks |
 |----------|-------|---------|
@@ -127,7 +127,7 @@ For x402 integration — amounts use 6 decimal places (`1_000_000 = $1.00`):
 
 ## Dynamic Pricing
 
-Pricing can adjust based on volume. Query current prices:
+Query current list prices (and an indicative volume quote):
 
 ```bash
 # All endpoint prices with volume discount
@@ -137,4 +137,4 @@ curl "https://api.limitguard.ai/v1/sales/pricing?monthly_calls=1000"
 curl "https://api.limitguard.ai/v1/sales/pricing/v1%2Fentity%2Fcheck?monthly_calls=1000"
 ```
 
-Volume discounts are applied automatically based on your `monthly_calls` parameter.
+The `monthly_calls` parameter returns an indicative volume quote only; the price charged per call is the list price. For volume pricing, ask for a quote.

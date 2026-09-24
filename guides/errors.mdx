@@ -23,7 +23,7 @@ The `type` field is always `"about:blank"` in the current API version. Future ve
 | `404` | Not Found | Entity, webhook, or resource ID does not exist |
 | `409` | Conflict | Duplicate resource (e.g., webhook URL already registered) |
 | `422` | Unprocessable Entity | Request parsed but field values are invalid |
-| `429` | Too Many Requests | Rate limit or monthly quota exceeded |
+| `429` | Too Many Requests | Per-minute or rolling 24-hour rate limit exceeded |
 | `500` | Internal Server Error | Unexpected server error — safe to retry |
 | `503` | Service Unavailable | Planned maintenance or cascading dependency failure |
 
@@ -436,16 +436,17 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
 
 ## 429 Too Many Requests
 
-LimitGuard enforces two independent limits: a per-minute rate limit and a monthly quota.
+LimitGuard enforces two independent limits per key: a per-minute limit and a rolling 24-hour limit. A verified x402 payer has a per-minute limit only.
 
 ### Rate Limit Response
 
 ```json
 {
   "type": "about:blank",
-  "title": "Too Many Requests",
+  "title": "Rate Limit Exceeded",
   "status": 429,
-  "detail": "Rate limit exceeded. Retry after 34 seconds."
+  "detail": "Exceeded per-minute limit of 10 requests for free tier.",
+  "retry_after": 60
 }
 ```
 
@@ -455,50 +456,49 @@ Every 429 response includes a `Retry-After` header with the number of seconds to
 
 ```
 HTTP/1.1 429 Too Many Requests
-Retry-After: 34
-X-RateLimit-Limit: 60
+Retry-After: 60
+X-RateLimit-Limit: 10
 X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 1740052800
 ```
 
 | Header | Description |
 |--------|-------------|
-| `Retry-After` | Seconds until the rate limit window resets |
-| `X-RateLimit-Limit` | Maximum requests allowed per minute for your tier |
-| `X-RateLimit-Remaining` | Requests remaining in the current window |
-| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+| `Retry-After` | Seconds to wait: 60 for a per-minute limit, 3600 for the 24-hour limit |
+| `X-RateLimit-Limit` | The limit that was hit, in requests per its window |
+| `X-RateLimit-Remaining` | Requests remaining in that window (0 on a 429) |
 
 ### Rate Limits by Tier
 
-| Tier | Requests/min | Monthly Quota |
-|------|-------------|---------------|
-| Sandbox | 10 | Unlimited |
-| Free | 60 | 500 |
-| Indie | TBD | 1,000 |
-| Starter | 300 | 10,000 |
-| Growth | TBD | 50,000 |
-| Pro | 1,000 | 250,000 |
-| x402 (no key) | No limit | Unlimited (pay-per-use) |
+| Tier | Requests/min | Requests / 24 h |
+|------|-------------|-----------------|
+| Unauthenticated (per IP) | 10 | No daily cap |
+| Free | 10 | 500 |
+| Indie | 30 | 1,000 |
+| Starter | 60 | 10,000 |
+| Growth | 120 | 50,000 |
+| Pro | 300 | 250,000 |
+| x402 payer (no key) | 60 | No daily cap |
 
 See [Rate Limits](/guides/rate-limits#rate-limits-by-tier) for the authoritative table and [Pricing](/pricing#api-key-tier-upgrades) for upgrade prices.
 
-### Monthly Quota Exceeded
+### Daily Limit Reached
 
-When your monthly quota is exhausted, the `detail` changes:
+When a key hits its rolling 24-hour limit, the `detail` names it:
 
 ```json
 {
   "type": "about:blank",
-  "title": "Too Many Requests",
+  "title": "Rate Limit Exceeded",
   "status": 429,
-  "detail": "Monthly quota of 500 requests exceeded. Quota resets on 2026-03-01."
+  "detail": "Exceeded per-day limit of 500 requests for free tier.",
+  "retry_after": 3600
 }
 ```
 
-**Fix:** Upgrade your tier or switch to x402 pay-per-use for the remainder of the month. Monthly quotas reset on the first of each month UTC.
+**Fix:** Wait for `Retry-After`, top up to a higher tier for a higher limit, or pay per call with x402, which has no daily cap. There is no monthly quota.
 
 <Tip>
-Use the `X-Response-Quality: cached` header where acceptable — cached responses do not consume monthly quota if the entity was already scored within the cache TTL.
+Use the `X-Response-Quality: cached` header where acceptable: a cached answer costs less when the entity was already scored within the cache TTL.
 </Tip>
 
 ---
@@ -942,7 +942,7 @@ These endpoints always return 200 and never require authentication or payment. T
 
 <CardGroup cols={2}>
   <Card title="Rate Limits" icon="gauge" href="/guides/rate-limits">
-    Per-tier limits, burst handling, and quota management
+    Per-tier limits and burst handling
   </Card>
   <Card title="x402 Protocol" icon="credit-card" href="/x402-protocol">
     Full x402 implementation guide with EVM and Solana examples
@@ -951,6 +951,6 @@ These endpoints always return 200 and never require authentication or payment. T
     API keys, sandbox mode, and key management
   </Card>
   <Card title="Sandbox" icon="flask" href="/sandbox">
-    Test all error scenarios for free without quota
+    Test all error scenarios for free
   </Card>
 </CardGroup>

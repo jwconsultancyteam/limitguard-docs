@@ -57,7 +57,7 @@ Save the `api_key` immediately — it is shown **once only**. The plaintext key 
 
 <Step title="Try Sandbox Mode (Free)">
 
-Test the API without using real data sources or quota by adding the sandbox header:
+Test the API without calling real data sources or paying for calls by adding the sandbox header:
 
 <CodeGroup>
 
@@ -111,13 +111,13 @@ console.log(result);
 
 </CodeGroup>
 
-Sandbox returns deterministic mock data — same input always gives the same output. No real data sources are called and no quota is consumed.
+Sandbox returns deterministic mock data — same input always gives the same output. No real data sources are called and nothing is charged.
 
 </Step>
 
 <Step title="Make a Live Entity Check">
 
-Remove the sandbox header for real results against 8 data sources:
+Remove the sandbox header for real results from up to 7 data sources (the ones your request gives identifiers for):
 
 <CodeGroup>
 

@@ -287,7 +287,7 @@ curl https://api.limitguard.ai/.well-known/agent.json
 {
   "schema_version": "1.0",
   "name": "LimitGuard Trust Intelligence",
-  "description": "Real-time trust scoring for AI agents, businesses, and transactions. 8 data sources. One API call.",
+  "description": "Real-time trust scoring for AI agents, businesses, and transactions. Up to 7 data sources. One API call.",
   "url": "https://api.limitguard.ai",
   "version": "1.0.0",
   "capabilities": {
@@ -1422,7 +1422,7 @@ Two approaches depending on your agent's authentication method:
 import httpx
 
 def verify_entity_sandbox(entity_name: str, country: str, api_key: str) -> dict:
-    """Sandbox mode — deterministic mock data, no payment, no quota."""
+    """Sandbox mode — deterministic mock data, no payment."""
     response = httpx.post(
         "https://api.limitguard.ai/v1/entity/check",
         headers={
@@ -1486,10 +1486,10 @@ async function verifyEntity(entityName, country) {
 
 | Property | Sandbox | Production |
 |----------|---------|------------|
-| Data sources | Mock only — no real KVK, sanctions, VIES | Up to 8 sources, live (which ones run depends on the identifiers you send) |
+| Data sources | Mock only — no real KVK, sanctions, VIES | Up to 7 sources, live (which ones run depends on the identifiers you send) |
 | Responses | Deterministic (same input = same output) | Live results |
 | x402 payment | Skipped entirely | Required (or API key) |
-| Quota | Not consumed | Consumed |
+| Balance | Not debited | Debited per call (or paid per call with x402) |
 | Rate limit | 10 req/min per IP | Tier-based |
 | Response time | ~5ms | ~250-500ms |
 
@@ -1656,7 +1656,7 @@ The facilitator address is returned dynamically in each 402 response. Always rea
 | **Authentication** | API key via manifest config | API key or x402 | USDC wallet (no account) |
 | **Discovery** | `/.well-known/mcp.json` | `/.well-known/agent.json` | `/.well-known/x402.json` |
 | **Human setup required** | Minimal (configure MCP server) | Minimal (discover card) | None |
-| **Cost model** | Subscription or quota | Subscription or quota | Pay-per-call USDC |
+| **Cost model** | Prepaid API key balance | Prepaid balance or x402 per call | Pay-per-call USDC |
 | **Capability negotiation** | Tool definitions | Skill catalog | Endpoint + pricing listing |
 | **Production maturity** | GA | Beta | GA |
 
