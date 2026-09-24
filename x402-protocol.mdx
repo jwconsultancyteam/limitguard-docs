@@ -238,8 +238,13 @@ select schemes they have registered — so it costs them nothing.
 
 LimitGuard verifies on-chain that the transaction succeeded, emitted a USDC `Transfer` of at
 least the endpoint price to `payTo`, and was mined within the last ~150 blocks (~5 minutes).
-Each hash is accepted once (24-hour replay window). A hash that is not yet mined returns
-402 `invalid_signature`; retry after confirmation. Solana uses `txSignature` (see above).
+Each hash is accepted once (24-hour replay window). If our RPC node cannot see the
+transaction yet (not found, or its view of the chain head is still behind the transaction's
+block, which a load-balanced RPC often is right after mining), the server re-reads for a few
+seconds before answering. If it still cannot see it, you get 402 `settlement_not_yet_visible`
+with a `Retry-After` header. The hash has not been consumed and stays valid for the rest of
+the 150-block window, so send the same request again (same hash, same `X-Payment-Challenge`).
+Solana uses `txSignature` (see above).
 
 When a proof fails verification its replay claim is released so you can retry once the
 transaction confirms. That release is retried a bounded number of times (3 attempts); if it
