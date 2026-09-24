@@ -8,7 +8,7 @@ description: "Zero-access model, data flow, and security architecture"
 That is the operating philosophy behind every architectural decision at LimitGuard. We are a trust infrastructure provider — and trust infrastructure must be independently verifiable. This document explains exactly how the system is built, what data it touches, where it lives, and how you can confirm every claim we make.
 
 <Note>
-LimitGuard is self-verifying. Our own trust score is publicly available at `GET /v1/self-verify` — we run ourselves through the same 8-source verification we run on every entity you submit.
+LimitGuard is self-verifying. Our own trust score is publicly available at `GET /v1/self-verify`; we run ourselves through the same 7-source verification we run on every entity you submit.
 </Note>
 
 ---
@@ -33,8 +33,8 @@ LimitGuard is built on a zero-access principle: we minimize what we store, we ma
   <Card title="Hash Chain Audit Trail" icon="link">
     Every verification event is recorded in a tamper-evident hash chain. No entry can be modified without breaking the chain.
   </Card>
-  <Card title="On-Chain Certificates" icon="certificate">
-    Trust certificates are anchored on-chain via ERC-8004. Immutable, publicly queryable, no intermediary required.
+  <Card title="Certificate Records" icon="certificate">
+    Trust certificates are API records issued and verified via `/v1/certificate/*`, not written to any blockchain or contract. LimitGuard's only on-chain footprint is its own ERC-8004 agent identity (agent 95545 on Base).
   </Card>
   <Card title="Security Transparency" icon="eye">
     Responsible disclosure via RFC 9116. Our `/.well-known/security.txt` is public. Encrypted communications via Proton Mail.
@@ -45,7 +45,7 @@ LimitGuard is built on a zero-access principle: we minimize what we store, we ma
 
 ## Data Flow
 
-A single `POST /v1/entity/check` request moves through the following stages. All 8 data sources are queried in **parallel** — not sequentially — which is why median response time is under 500ms.
+A single `POST /v1/entity/check` request moves through the following stages. All 7 data sources are queried in **parallel**, not sequentially, which is why median response time is under 500ms.
 
 ```mermaid
 flowchart TD
@@ -59,7 +59,7 @@ flowchart TD
     G -- No --> I[x402 Payment Verification]
     I --> J[Router]
 
-    J --> K[Fan-out: 8 Parallel Checks]
+    J --> K[Fan-out: 7 Parallel Checks]
 
     K --> L1[KVK / CBE Registry]
     K --> L2[OpenSanctions]
@@ -67,10 +67,8 @@ flowchart TD
     K --> L4[Domain Intelligence]
     K --> L5[IBAN Validation]
     K --> L6[VAT / VIES]
-    K --> L7[Wallet Risk]
-    K --> L8[x402 Payment History]
-
-    L1 & L2 & L3 & L4 & L5 & L6 & L7 & L8 --> M[Trust Score Engine]
+    K --> L7[Wallet Format Check]
+    L1 & L2 & L3 & L4 & L5 & L6 & L7 --> M[Trust Score Engine]
 
     M --> N[Weighted Scoring]
     N --> O[Cluster Classification]
@@ -111,9 +109,9 @@ Security headers are set at the middleware layer, not the application layer. Thi
 
 ---
 
-## The 8 Data Sources
+## The 7 Data Sources
 
-LimitGuard queries 8 independent data sources in parallel. No single source determines the outcome — the trust score is a weighted composite across all available signals.
+LimitGuard queries 7 independent data sources in parallel. No single source determines the outcome: the trust score is a weighted composite across all available signals.
 
 <CardGroup cols={2}>
   <Card title="1. KVK / CBE Registry" icon="building">
@@ -146,15 +144,10 @@ LimitGuard queries 8 independent data sources in parallel. No single source dete
 
     Confirms that the provided VAT number is active and registered to the declared entity name. VIES is the authoritative EU source for cross-border VAT verification — used by tax authorities across all 27 member states.
   </Card>
-  <Card title="7. Wallet Risk" icon="wallet">
-    **On-chain wallet screening for ETH, BTC, and SOL addresses.**
+  <Card title="7. Wallet Format Check" icon="wallet">
+    **Address-format validation for ETH/EVM, BTC, and SOL addresses.**
 
-    Checks provided wallet addresses against known mixer, darknet, and sanctioned wallet lists. Transaction graph heuristics identify wallets with direct exposure to high-risk counterparties. Supports Ethereum, Bitcoin, and Solana.
-  </Card>
-  <Card title="8. x402 Payment History" icon="clock-rotate-left">
-    **On-chain payment trust record via LimitGuard's own transaction history.**
-
-    Entities with a verified history of x402 USDC payments receive a positive trust signal. This is a LimitGuard-native data source: entities that transact through the protocol build a verifiable on-chain trust record over time.
+    The entity check only validates that a submitted wallet address is well-formed for its chain (regex match, no lookups). It does not screen against mixer, darknet, or sanctioned-wallet lists, and it is not factored into the trust score. For real wallet screening (OFAC SDN match, on-chain signals, and named risk rules), use the separate, free wallet screening tool (`verify_wallet` / `POST /v1/mcp/verify-wallet`).
   </Card>
 </CardGroup>
 
@@ -171,8 +164,7 @@ Not every source is queried on every request. Source selection depends on which 
 | Domain Intelligence | `domain` | When provided |
 | IBAN Validation | `iban` | When provided |
 | VAT / VIES | `vat_number` | When provided |
-| Wallet Risk | `wallet_address` | When provided |
-| x402 History | `wallet_address` | When provided |
+| Wallet Format Check | `wallet_address` | When provided |
 
 <Note>
 More identifiers = higher confidence. An entity check that includes a KVK number, domain, VAT number, and IBAN will produce a significantly more accurate score than one submitted with name and country only.
@@ -246,7 +238,7 @@ The `cluster` field classifies entities into behavioural archetypes based on sig
 
 ### Confidence Score
 
-The `confidence` field (0–1) reflects how much data was available to produce the score. An entity verified across 7 of 8 sources scores `0.96+`. An entity verified with name and country only may score `0.55`.
+The `confidence` field (0–1) reflects how much data was available to produce the score. An entity verified across 6 of 7 sources scores `0.96+`. An entity verified with name and country only may score `0.55`.
 
 <Tip>
 Build confidence thresholds into your integration policy. For example: require `confidence >= 0.80` before automated approval, regardless of the trust score itself.
@@ -403,24 +395,24 @@ We recommend integrating `/v1/self-verify` into your vendor due diligence workfl
 
 ---
 
-## On-Chain Trust Certificates (ERC-8004)
+## Trust Certificates (API Records, Not On-Chain)
 
-Trust certificates are anchored on-chain using the ERC-8004 standard. Once issued, a certificate is immutable, publicly queryable, and independent of LimitGuard's uptime.
+Trust certificates are records LimitGuard issues, stores, and verifies over its own REST API. They are **not** written to a blockchain, anchored to a contract, or backed by the ERC-8004 standard: nothing about certificate storage or verification touches a chain. The only on-chain element anywhere in LimitGuard is its own agent identity: agent `95545` on the [ERC-8004 Identity Registry](https://basescan.org/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432) on Base, which is unrelated to certificate issuance.
 
 ### How Certificates Work
 
 <Steps>
-  <Step title="Verification completed">
-    A `POST /v1/entity/check` or `POST /v1/kyb/check` request is processed at `enhanced` tier.
+  <Step title="Certificate requested">
+    A caller with an API key sends `POST /v1/certificate/issue` with an entity name, country, and the `trust_score` / `trust_level` to record.
   </Step>
-  <Step title="Certificate issued">
-    If the entity reaches `trust_level: high` with `confidence >= 0.90`, a certificate is issued and anchored on Base (EVM).
+  <Step title="Not derived automatically">
+    The trust score on a certificate is supplied by the caller in the request; it is not computed or re-verified server-side from a completed `/v1/entity/check`. Issuance is being restricted to LimitGuard admins for this reason.
   </Step>
-  <Step title="On-chain record">
-    The certificate contains the entity hash, trust score, sources checked, issuer address, and timestamp. The entity identifier itself is never written on-chain — only the hash.
+  <Step title="Stored as an API record">
+    LimitGuard holds the certificate in its own store (`certificate_id`, entity name, country, trust score/level, `issued_at`, `expires_at`, and a SHA-256 `certificate_hash` of those fields). Certificates expire based on `valid_days` (default 365) and can be revoked by their owner.
   </Step>
   <Step title="Public verification">
-    Anyone can verify a certificate by querying the contract directly, or via `GET /v1/certificates/{entity_hash}`.
+    Anyone can verify a certificate via `GET /v1/certificate/{certificate_hash}` (public, no auth). There is no separate on-chain copy to cross-check it against; this API response is the record.
   </Step>
 </Steps>
 
@@ -428,26 +420,28 @@ Trust certificates are anchored on-chain using the ERC-8004 standard. Once issue
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `entity_hash` | `bytes32` | SHA-256 of entity identifiers |
-| `trust_score` | `uint8` | Score at time of issuance (0–100) |
-| `issued_at` | `uint256` | Unix timestamp |
-| `issuer` | `address` | LimitGuard signing address |
-| `sources_bitmap` | `uint8` | Bitmask of sources verified |
-| `certificate_id` | `bytes32` | Unique certificate identifier |
+| `certificate_id` | `string` | Unique certificate UUID |
+| `entity_name` | `string` | Name of the certified entity |
+| `trust_score` | `int` | Score recorded at issuance (0–100), as supplied in the issue request |
+| `issued_at` / `expires_at` | `datetime` | Issuance timestamp and expiry (`valid_days` after issuance, default 365) |
+| `certificate_hash` | `string` | SHA-256 hash of the certificate's content fields |
+| `status` | `string` | `active` or `revoked` |
 
 ### Querying Certificates
 
 ```bash
-# REST
-GET /v1/certificates/{entity_hash}
+# Issue (requires an API key; being restricted to LimitGuard admins)
+POST /v1/certificate/issue
 
-# Direct contract query (no LimitGuard dependency)
-cast call 0xCertificateContract "getCertificate(bytes32)(uint8,uint256,address)" \
-  0xb94d27b9934d3e08...
+# Verify (public, no auth)
+GET /v1/certificate/{certificate_hash}
+
+# Revoke (requires an API key; tenant-scoped to the issuing key)
+POST /v1/certificate/{certificate_hash}/revoke
 ```
 
 <Note>
-Certificates do not expire automatically, but they carry a `trust_score` that reflects the state at time of issuance. Consumers should check the `issued_at` timestamp and re-verify entities whose certificates are older than their risk tolerance window.
+Certificates do expire: `verify_certificate` checks the current time against `expires_at` and marks the certificate invalid once it has passed, alongside `active`/`revoked` status. There is no smart contract to query directly: verification is entirely through the endpoint above, so it depends on LimitGuard's own uptime like any other endpoint.
 </Note>
 
 ---
@@ -490,7 +484,7 @@ We operate a responsible disclosure programme. Security researchers who identify
 | No PII stored | `GET /v1/legal/privacy` — data retention policy, confirmed by Art. 17 erasure support |
 | GDPR Art. 17 erasure | `DELETE /v1/legal/erasure` — functional endpoint, not just a policy |
 | Hash chain integrity | `GET /v1/audit/{entity_hash}` — replay the chain yourself |
-| On-chain certificates | Query the ERC-8004 contract directly — no LimitGuard dependency |
+| Trust certificates | `GET /v1/certificate/{certificate_hash}`: public verification endpoint; the record lives in LimitGuard's API, not on a blockchain |
 | Self-verifying | `GET /v1/self-verify` — our score, produced by our own API, public |
 | Security contact | `GET /.well-known/security.txt` — RFC 9116 compliant |
 
@@ -507,7 +501,7 @@ Every claim in this document is backed by a verifiable endpoint or public record
     Machine-readable JSON methodology document — source weights, cluster definitions, and confidence calculation
   </Card>
   <Card title="x402 Protocol" icon="credit-card" href="/x402-protocol">
-    How x402 payment verification works and how it feeds the payment history trust signal
+    How x402 payment verification works
   </Card>
   <Card title="Sandbox Mode" icon="flask" href="/sandbox">
     Test the full verification flow without touching real data sources
