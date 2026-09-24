@@ -2304,7 +2304,7 @@
     "/v1/compliance/subscribe": {
       "post": {
         "summary": "Create Subscription",
-        "description": "Create a compliance alert subscription.",
+        "description": "Create a compliance alert subscription.\n\nThe alert feed is not populated yet (#480), so the response carries a\n``notice`` saying no digest or webhook will fire until it is (#521).",
         "operationId": "create_subscription_v1_compliance_subscribe_post",
         "security": [
           {
@@ -2390,7 +2390,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AlertSubscription"
+                  "$ref": "#/components/schemas/AlertSubscriptionCreated"
                 }
               }
             }
@@ -3282,7 +3282,7 @@
         ],
         "title": "AlertSeverity"
       },
-      "AlertSubscription": {
+      "AlertSubscriptionCreated": {
         "properties": {
           "id": {
             "type": "string",
@@ -3333,14 +3333,20 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "description": "Whether the subscribed alert feed has anything to deliver"
           }
         },
         "type": "object",
         "required": [
-          "id"
+          "id",
+          "notice"
         ],
-        "title": "AlertSubscription",
-        "description": "Subscription to compliance alerts."
+        "title": "AlertSubscriptionCreated",
+        "description": "A new subscription plus the delivery status of its alert feed (#521)."
       },
       "BadgeData": {
         "properties": {
