@@ -6123,6 +6123,24 @@
             "minimum": 0.0,
             "title": "Failed Settlement Queue Depth",
             "default": 0
+          },
+          "solana_fee_payer_balance_sol": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solana Fee Payer Balance Sol",
+            "description": "Fee payer's SOL balance, or null when solana_settlement_configured is false or the RPC read failed (not the same as a genuine zero)."
+          },
+          "solana_fee_payer_low_balance": {
+            "type": "boolean",
+            "title": "Solana Fee Payer Low Balance",
+            "description": "True when solana_fee_payer_balance_sol is below SOLANA_FEE_PAYER_LOW_BALANCE_SOL (default 0.05). Always false when the balance could not be read.",
+            "default": false
           }
         },
         "type": "object",
