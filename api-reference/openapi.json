@@ -2459,7 +2459,7 @@
     "/v1/compliance/report/{entity_id}": {
       "get": {
         "summary": "Compliance Report",
-        "description": "De-listed compliance report (#426): answers 410 Gone, charges nothing.\n\nUntil #426 this route sold a \"full compliance assessment for an entity\" at\n$0.50, and computed ``classify_ai_risk(\"trust_scoring\")`` and\n``calculate_readiness_score([])`` regardless of ``entity_id`` \u2014 every entity\nreceived byte-identical output, and only the alert summary was even\ntenant-scoped. There is no per-entity AI-Act data (system type, deployment\ncontext, data categories) stored anywhere to substitute in, so unlike the\n/v1/reputation/history fix in 8cef926 there is nothing real to serve.\nSame philosophy as that fix: stop selling data the product does not have.\n\nThe route is kept as a tombstone rather than deleted so an agent that still\nholds the old listing gets a clear, machine-readable answer instead of a\nbare 404. It is absent from ENDPOINT_PRICING_PREFIXES, so the payment gate\nnever quotes a 402 for it, and it takes no API key because the response\nreveals nothing. Sandbox callers get the same 410: there is no mock either.",
+        "description": "De-listed compliance report (#426): answers 410 Gone, charges nothing.\n\nUntil #426 this route sold a \"full compliance assessment for an entity\" at\n$0.50, and computed ``classify_ai_risk(\"trust_scoring\")`` and\n``calculate_readiness_score([])`` regardless of ``entity_id`` \u2014 every entity\nreceived byte-identical output, and only the alert summary was even\ntenant-scoped. There is no per-entity AI-Act data (system type, deployment\ncontext, data categories) stored anywhere to substitute in, so unlike the\n/v1/reputation/history fix in 8cef926 there is nothing real to serve.\nSame philosophy as that fix: stop selling data the product does not have.\n\nThe route is kept as a tombstone rather than deleted so an agent that still\nholds the old listing gets a clear, machine-readable answer instead of a\nbare 404. It is absent from ENDPOINT_PRICING_PREFIXES, so the payment gate\nnever quotes a 402 for it, and it takes no API key because the response\nreveals nothing. Sandbox callers get the same 410: there is no mock either.\n\n#537: once the per-entity report is live (enabled AND priced), the body also\npoints to POST /v1/reports/entity; while it is dark the body is unchanged.",
         "operationId": "compliance_report_v1_compliance_report__entity_id__get",
         "parameters": [
           {
@@ -3766,7 +3766,8 @@
           "audit_trail",
           "api_keys",
           "webhook_deliveries",
-          "funnel_telemetry"
+          "funnel_telemetry",
+          "entity_reports"
         ],
         "title": "DataCategory"
       },
