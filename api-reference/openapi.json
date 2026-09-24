@@ -91,7 +91,7 @@
     "/v1/entity/deep-check": {
       "post": {
         "summary": "Entity Deep Check",
-        "description": "Deep check: extended PEP/RCA exposure screening (#396), the Dutch insolvency\nregister on every tier (#403), adverse media on the extended tier (#402).\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\nTwo tiers, resolved from X-Response-Quality by the x402 middleware:\n`fresh` (default; the `deep` tier, $0.75) returns pep_extended and\ninsolvency_records; `enhanced` (the `extended` tier, $1.50) adds\n`adverse_media` from dilisense. There is no cache-only branch, so `cached` is\nquoted, charged and served as `fresh`. If a source of the requested tier cannot\nbe reached the answer is a 503 (`pep_source_unavailable`,\n`insolvency_source_unavailable` or `adverse_media_source_unavailable`), never\na fabricated clean screen, and the x402 gate settles only on a 2xx so the call\nis not charged.",
+        "description": "Deep check: extended PEP/RCA exposure screening (#396), the Dutch insolvency\nregister on every tier (#403), adverse media on the extended tier (#402), an\nItalian credit report on the credit tier (#404).\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.75) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.50) adds `adverse_media` from dilisense;\n`credit` ($2.25, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
         "operationId": "entity_deep_check_v1_entity_deep_check_post",
         "requestBody": {
           "content": {
@@ -248,7 +248,7 @@
     "/v1/keys/usage": {
       "get": {
         "summary": "Get Usage",
-        "description": "Check current API key usage, remaining quota and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from (#434).",
+        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from (#434).\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.",
         "operationId": "get_usage_v1_keys_usage_get",
         "responses": {
           "200": {
@@ -1991,7 +1991,7 @@
     "/v1/wallet/balance": {
       "get": {
         "summary": "Wallet Balance",
-        "description": "WaaS endpoint: get USDC balance for an ERC-8004 registered agent.\n\n`agent_id` is the agent's wallet address (EVM 0x..., Base mainnet). The\nwallet must be registered in the configured ERC-8004 Identity Registry;\na well-formed but unregistered wallet answers 404.\n\nFails closed rather than quoting a balance it could not read (#432):\n503 wallet_registry_unconfigured when no registry address is configured,\n503 wallet_rpc_unavailable when the Base read fails or the breaker is open.",
+        "description": "WaaS endpoint: get USDC balance for an ERC-8004 registered agent.\n\n`agent_id` is either the agent's wallet address (EVM 0x..., Base mainnet)\nor a numeric ERC-8004 agentId. A wallet must be registered in the\nconfigured ERC-8004 Identity Registry (one balanceOf call); a numeric id\nmust have been minted (ownerOf does not revert). Either shape that is\nwell-formed but not found answers 404; a malformed value answers 422.\n\nFails closed rather than quoting a balance it could not read (#432):\n503 wallet_registry_unconfigured when no registry address is configured,\n503 wallet_rpc_unavailable when the Base read fails or the breaker is\nopen past its 24h stale-cache ceiling.",
         "operationId": "wallet_balance_v1_wallet_balance_get",
         "security": [
           {
@@ -2005,10 +2005,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "Agent's wallet address (EVM 0x\u2026, Base mainnet); must be a registered ERC-8004 agent",
+              "description": "Agent's wallet address (EVM 0x\u2026, Base mainnet), or a numeric ERC-8004 agentId (the registry's own token id, digits only) -- resolved to that agent's payment wallet (getAgentWallet, falling back to its owner) directly, so an agent whose payment wallet differs from the wallet holding its identity NFT is still found",
               "title": "Agent Id"
             },
-            "description": "Agent's wallet address (EVM 0x\u2026, Base mainnet); must be a registered ERC-8004 agent"
+            "description": "Agent's wallet address (EVM 0x\u2026, Base mainnet), or a numeric ERC-8004 agentId (the registry's own token id, digits only) -- resolved to that agent's payment wallet (getAgentWallet, falling back to its owner) directly, so an agent whose payment wallet differs from the wallet holding its identity NFT is still found"
           }
         ],
         "responses": {
@@ -3493,25 +3493,45 @@
             "title": "Screened",
             "description": "True when the provider was actually queried"
           },
+          "applicable": {
+            "type": "boolean",
+            "title": "Applicable",
+            "description": "False when `country` has no registered provider (Italy only today) or no credit_report_identifier was supplied -- a different fact from a clean negative, and never to be read as one"
+          },
           "risk_score": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Risk Score",
-            "description": "Normalised verdict: green, yellow, red, or unknown"
+            "description": "Normalised verdict: green, yellow, red, or unknown; None when not applicable"
           },
           "risk_band_available": {
             "type": "boolean",
             "title": "Risk Band Available",
-            "description": "True when the provider returned an assessment rather than grey/ND"
+            "description": "True when the provider returned an assessment rather than grey/ND",
+            "default": false
           },
           "provider": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Provider",
-            "description": "Identifier of the provider queried"
+            "description": "Identifier of the provider queried; None when not applicable"
           },
           "country": {
             "type": "string",
             "title": "Country",
-            "description": "ISO 3166-1 alpha-2 country the provider covers"
+            "description": "ISO 3166-1 alpha-2 country that was requested"
           },
           "organization_name": {
             "anyOf": [
@@ -3546,14 +3566,12 @@
         "type": "object",
         "required": [
           "screened",
-          "risk_score",
-          "risk_band_available",
-          "provider",
+          "applicable",
           "country",
           "retrieved_at"
         ],
         "title": "CreditReportResult",
-        "description": "Result of the `credit_report` source. `screened` is never False on a 200.\n\nMirrors AdverseMediaResult: app/services/credit_report.py raises rather than\nfabricating a verdict, and the router turns that into a 503 so the payment is\nnever settled (#284, #404). `screened` and `risk_score` are separate fields so a\ncaller can tell \"looked, low risk\" from \"did not look\" -- and because coverage is\nper country, \"no provider for this country\" is a raised error, never a green\nverdict.\n\nA green score is the provider's assessment of the company at query time, not a\nguarantee of solvency and not a recommendation to extend credit. `risk_score` is\na normalised value from a closed set (green / yellow / red / unknown), not the raw\nvendor string; `risk_band_available` is False when the provider declined to assess\n(its documented grey/ND answer, e.g. a closed company), which is a different fact\nfrom a low-risk verdict."
+        "description": "Result of the `credit_report` source, sold on the `credit` deep-check tier\n(#404 Stage 2). `screened` is never False while `applicable` is True.\n\nMirrors InsolvencyRecordsResult, not AdverseMediaResult: coverage is a single\ncountry (Italy), so \"we do not cover this country\" is a 200 with\n`applicable: false` from app/services/credit_report.py, the same pattern the\ninsolvency register uses for non-NL -- never a raise, because that would be a\npaid 503 for a caller who explicitly opted into this tier. A supported country\nwhose screen fails for any other reason (unset key, vendor outage, unparseable\nverdict) still raises CreditReportUnavailable, and the router turns that into a\n503 so the payment is never settled (#284).\n\nA green score is the provider's assessment of the company at query time, not a\nguarantee of solvency and not a recommendation to extend credit. `risk_score` is\na normalised value from a closed set (green / yellow / red / unknown), not the raw\nvendor string, and is None exactly when `applicable` is False; `risk_band_available`\nis False when the provider declined to assess (its documented grey/ND answer, e.g.\na closed company), which is a different fact from a low-risk verdict."
       },
       "CustomerUsageResponse": {
         "properties": {
@@ -3703,6 +3721,19 @@
             ],
             "title": "Kvk Number",
             "description": "Dutch KVK number (8 digits); enables an exact insolvency-register lookup"
+          },
+          "credit_report_identifier": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credit Report Identifier",
+            "description": "VAT number, tax code or company ID for the `credit` tier's provider (Italy only today); without it the tier still runs but credit_report comes back applicable: false, same as an unsupported country"
           }
         },
         "additionalProperties": false,
@@ -3712,7 +3743,7 @@
           "country"
         ],
         "title": "DeepCheckRequest",
-        "description": "Request for POST /v1/entity/deep-check (#396, #403).\n\nTakes entity fields rather than an ``entity_id`` from a prior check: the audit\ntrail is keyed by sha256(entity_name) and is one-way, so an id could not be\nresolved back to the name the screens have to query. ``kvk_number`` is optional\nand only consulted by the insolvency source (#403): the Centraal\nInsolventieregister keys ``searchUndertaking`` on the KvK number, which is an\nexact lookup where a trade-name search is a fuzzy one."
+        "description": "Request for POST /v1/entity/deep-check (#396, #403, #404).\n\nTakes entity fields rather than an ``entity_id`` from a prior check: the audit\ntrail is keyed by sha256(entity_name) and is one-way, so an id could not be\nresolved back to the name the screens have to query. ``kvk_number`` is optional\nand only consulted by the insolvency source (#403): the Centraal\nInsolventieregister keys ``searchUndertaking`` on the KvK number, which is an\nexact lookup where a trade-name search is a fuzzy one. ``credit_report_identifier``\nis only consulted by the `credit` tier's source (#404): Openapi.com's Italian\ncredit-score lookup keys on a VAT number, tax code or company ID rather than a\nname, and reports back in `identifier_type` which one it matched."
       },
       "DeepCheckResponse": {
         "properties": {
@@ -3727,7 +3758,7 @@
           "quality": {
             "type": "string",
             "title": "Quality",
-            "description": "deep (fresh) or extended (enhanced); see DEEP_CHECK_TIER_NAMES",
+            "description": "deep (fresh), extended (enhanced) or credit; see DEEP_CHECK_TIER_NAMES. `credit` only resolves while OPENAPI_CREDIT_API_KEY is configured (#404).",
             "default": "deep"
           },
           "sources_returned": {
@@ -3772,7 +3803,7 @@
                 "type": "null"
               }
             ],
-            "description": "Populated only on a tier whose adds include `credit_report`, and only for a country with a registered provider. None means the tier did not include it -- never that a screen ran and found no credit risk."
+            "description": "Populated only on the `credit` tier (#404 Stage 2). None means the tier did not include it -- never that a screen ran and found no credit risk. `applicable: false` inside it (never omission) means the tier was requested but the country has no provider or no identifier was sent."
           },
           "processing_time_ms": {
             "type": "integer",
@@ -3813,12 +3844,12 @@
           "quality": {
             "type": "string",
             "title": "Quality",
-            "description": "deep or extended"
+            "description": "deep, extended or credit"
           },
           "response_quality": {
             "type": "string",
             "title": "Response Quality",
-            "description": "X-Response-Quality value that buys this tier (fresh or enhanced)"
+            "description": "X-Response-Quality value that buys this tier (fresh, enhanced or credit)"
           },
           "price_usdc": {
             "type": "number",
@@ -4663,25 +4694,35 @@
             "title": "Tier",
             "description": "Current pricing tier"
           },
+          "rate_limit_per_minute": {
+            "type": "integer",
+            "title": "Rate Limit Per Minute",
+            "description": "Real enforced burst cap: max requests per minute for this tier"
+          },
+          "rate_limit_per_day": {
+            "type": "integer",
+            "title": "Rate Limit Per Day",
+            "description": "Real enforced cap: max requests per rolling 24h for this tier"
+          },
           "monthly_usage": {
             "type": "integer",
             "title": "Monthly Usage",
-            "description": "Requests used this billing period"
+            "description": "Requests this key made in the current calendar month (UTC), counted against monthly_limit."
           },
           "monthly_limit": {
             "type": "integer",
             "title": "Monthly Limit",
-            "description": "Monthly request ceiling for this tier (an abuse cap, not prepaid calls)"
+            "description": "Monthly request ceiling for this tier: an abuse cap enforced on key calls (429 when reached, resets on the first of the month UTC), not a number of prepaid calls. Calls paid per call with x402 are never refused by it."
           },
           "remaining": {
             "type": "integer",
             "title": "Remaining",
-            "description": "Requests remaining this period"
+            "description": "Requests left before the monthly ceiling this calendar month"
           },
           "usage_percent": {
             "type": "number",
             "title": "Usage Percent",
-            "description": "Percentage of quota used (0-100)"
+            "description": "Percentage of the monthly ceiling used this calendar month (0-100)"
           },
           "balance_usd": {
             "type": "number",
@@ -4694,13 +4735,15 @@
         "required": [
           "key_id",
           "tier",
+          "rate_limit_per_minute",
+          "rate_limit_per_day",
           "monthly_usage",
           "monthly_limit",
           "remaining",
           "usage_percent"
         ],
         "title": "KeyUsageResponse",
-        "description": "Response showing current API key usage, remaining quota and prepaid balance."
+        "description": "Response showing current API key usage, the tier's real enforced rate\nlimits, and prepaid balance.\n\n#434 moved pricing to a prepaid balance debited per call; the limits that\nactually throttle a caller day-to-day are the per-minute burst cap and the\nrolling 24h cap (app.middleware.rate_limit.TIER_RATE_LIMITS) -- not the\nmonthly_* fields below, which are a separate, much looser abuse ceiling\nthat a steady low-rate caller could in principle still cross once a month\neven while always under the per-minute/per-day caps."
       },
       "LegalDocument": {
         "properties": {
@@ -5090,7 +5133,7 @@
               }
             ],
             "title": "Agent Id",
-            "description": "ERC-8004 agent ID for verification"
+            "description": "ERC-8004 agent for verification: a numeric agentId (the registry's token id) or the agent's wallet address (EVM 0x\u2026, Base mainnet)"
           }
         },
         "type": "object",
@@ -6080,6 +6123,24 @@
             "minimum": 0.0,
             "title": "Failed Settlement Queue Depth",
             "default": 0
+          },
+          "solana_fee_payer_balance_sol": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solana Fee Payer Balance Sol",
+            "description": "Fee payer's SOL balance, or null when solana_settlement_configured is false or the RPC read failed (not the same as a genuine zero)."
+          },
+          "solana_fee_payer_low_balance": {
+            "type": "boolean",
+            "title": "Solana Fee Payer Low Balance",
+            "description": "True when solana_fee_payer_balance_sol is below SOLANA_FEE_PAYER_LOW_BALANCE_SOL (default 0.05). Always false when the balance could not be read.",
+            "default": false
           }
         },
         "type": "object",

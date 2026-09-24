@@ -401,12 +401,16 @@ served at the `fresh` amount above (850,000), not the old 1,500,000 — the 402 
 `info.note` says so. The same retirement applies to `/v1/risk/score`,
 `/v1/reputation/score` and `/v1/kyb/check`.
 
-Not every tiered endpoint sells every tier. `POST /v1/entity/deep-check` sells two of
-the three: `fresh` ($0.75, 750,000: PEP/RCA + Dutch insolvency register) and
-`enhanced` ($1.50, 1,500,000, adds adverse media) — it is unaffected by the #405
-retirement above, since its `enhanced` tier genuinely reaches a source `fresh` does
-not. It has no cache-only branch, so `X-Response-Quality: cached` is quoted, charged
-and served as `fresh`.
+Not every tiered endpoint sells every tier. `POST /v1/entity/deep-check` sells `fresh`
+($0.75, 750,000: PEP/RCA + Dutch insolvency register) and `enhanced` ($1.50, 1,500,000,
+adds adverse media) always -- it is unaffected by the #405 retirement above, since its
+`enhanced` tier genuinely reaches a source `fresh` does not -- plus a third, separately
+opt-in `credit` tier ($2.25, 2,250,000, adds an Italian credit report) only while
+`OPENAPI_CREDIT_API_KEY` is configured -- `X-Response-Quality: credit` is otherwise
+quoted, charged and served as `fresh`, and even once configured a non-Italian request on
+the `credit` tier is requoted down to the `fresh` amount before payment is ever required.
+It has no cache-only branch, so `X-Response-Quality: cached` is quoted, charged and served
+as `fresh`.
 
 `cached` is served only from cache. If nothing is cached for the entity, the response is
 `404` with `errorCode: "not_cached"` and a `retry` block naming `X-Response-Quality: fresh`
