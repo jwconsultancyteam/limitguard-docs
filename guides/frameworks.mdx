@@ -1,0 +1,167 @@
+---
+title: "Framework Integrations"
+description: "Connect LangChain, CrewAI, or the OpenAI Agents SDK to LimitGuard's remote MCP server"
+---
+
+LimitGuard's MCP server is a standard remote **Streamable HTTP** endpoint at `https://api.limitguard.ai/mcp`. Any framework with a generic MCP client can connect to it directly - there is no LimitGuard-specific package or wrapper for LangChain, CrewAI, or the OpenAI Agents SDK. The examples below use each framework's own remote-MCP client against that single URL.
+
+<Note>
+For the raw MCP manifest (`/.well-known/mcp.json`), the 5 tools it lists, and their pricing, see [AI Agent Integration](/guides/ai-agent-integration#mcp-model-context-protocol). This page is about wiring a framework's MCP client to that server, not about the tool catalog itself.
+</Note>
+
+## Authenticating the MCP Connection
+
+`tools/list` never requires authentication - any MCP client can discover LimitGuard's tools without a key or a wallet. Calling a tool is different:
+
+- **With an API key** - send it as a Bearer token on the MCP connection: `Authorization: Bearer lg_live_xxxxxxxxxxxxxxxxxxxx`. A paid-tier key debits its prepaid balance per call, the same as REST.
+- **Without a key** - `tools/list` still works, and `verify_wallet` (wallet risk screening) is real and free ($0), callable with no key and no payment. Any other tool called without a key or a payment header gets back a JSON-RPC error naming the price and how to pay - there is no HTTP 402 on this transport, since a JSON-RPC error has no status-code channel.
+
+Every example below shows the Bearer-token form; drop the `headers` entry (or the `Authorization` key inside it) to connect keyless.
+
+<Warning>
+Verify each framework's MCP client API against its own current docs before shipping - these client classes change between minor releases. The imports and parameters below were checked against `langchain-mcp-adapters` 0.3.2, `openai-agents` 0.22.3, and `crewai-tools` 1.15.22.
+</Warning>
+
+## LangChain
+
+`langchain-mcp-adapters` turns any MCP server into LangChain tools via `MultiServerMCPClient`. Its `streamable_http` transport takes the URL and an optional `headers` dict - that's where the Bearer token goes.
+
+```bash
+pip install langchain-mcp-adapters langchain
+```
+
+```python
+import asyncio
+
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+
+async def main() -> None:
+    client = MultiServerMCPClient(
+        {
+            "limitguard": {
+                "transport": "streamable_http",
+                "url": "https://api.limitguard.ai/mcp",
+                # Omit "headers" entirely to connect without a key -- tools/list
+                # and verify_wallet still work; other tools return a
+                # payment-required error until you attach one.
+                "headers": {"Authorization": "Bearer lg_live_xxxxxxxxxxxxxxxxxxxx"},
+            }
+        }
+    )
+
+    tools = await client.get_tools()
+    print([tool.name for tool in tools])
+
+    # Bind the tools to a LangChain chat model and let it call check_entity,
+    # get_risk_score, or verify_wallet like any other LangChain tool.
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+`get_tools()` opens a new MCP session per call by default. For an agent that calls LimitGuard tools repeatedly in one process, keep the `MultiServerMCPClient` instance alive and reuse it rather than constructing it per request.
+
+## OpenAI Agents SDK
+
+The Agents SDK's `MCPServerStreamableHttp` takes a `params` dict with `url` and `headers`, and is passed to an `Agent` via `mcp_servers`.
+
+```bash
+pip install openai-agents
+```
+
+```python
+import asyncio
+
+from agents import Agent, Runner
+from agents.mcp import MCPServerStreamableHttp
+
+
+async def main() -> None:
+    async with MCPServerStreamableHttp(
+        name="LimitGuard",
+        params={
+            "url": "https://api.limitguard.ai/mcp",
+            # Omit "headers" to connect without a key.
+            "headers": {"Authorization": "Bearer lg_live_xxxxxxxxxxxxxxxxxxxx"},
+        },
+    ) as server:
+        agent = Agent(
+            name="Payments Assistant",
+            instructions=(
+                "Before approving any payment, call check_entity or "
+                "verify_wallet on the counterparty. Block if the "
+                "recommendation is 'block'."
+            ),
+            mcp_servers=[server],
+        )
+
+        result = await Runner.run(
+            agent,
+            "Should I pay an invoice from Acme Corp BV (NL, KVK 12345678)?",
+        )
+        print(result.final_output)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+The `async with MCPServerStreamableHttp(...)` block opens the connection for the lifetime of the run and closes it on exit - construct the `Agent` inside that block, as shown.
+
+## CrewAI
+
+`crewai-tools` ships `MCPServerAdapter`, built on the framework-agnostic `mcpadapt` library. Pass a plain dict with `transport: "streamable-http"` (hyphenated, unlike LangChain's `streamable_http`) plus `url` and `headers`.
+
+```bash
+pip install crewai crewai-tools
+```
+
+```python
+from crewai import Agent, Crew, Task
+from crewai_tools import MCPServerAdapter
+
+server_params = {
+    "url": "https://api.limitguard.ai/mcp",
+    "transport": "streamable-http",
+    # Omit "headers" to connect without a key.
+    "headers": {"Authorization": "Bearer lg_live_xxxxxxxxxxxxxxxxxxxx"},
+}
+
+with MCPServerAdapter(server_params) as limitguard_tools:
+    print([tool.name for tool in limitguard_tools])
+
+    payments_agent = Agent(
+        role="Payments Reviewer",
+        goal="Verify a counterparty's trust score before any payment is approved",
+        backstory="Checks every new supplier against LimitGuard before sign-off.",
+        tools=limitguard_tools,
+    )
+
+    review_task = Task(
+        description=(
+            "Check the trust score for Acme Corp BV (NL, KVK 12345678) and "
+            "recommend whether to proceed with payment."
+        ),
+        expected_output="A proceed/review/block recommendation with the trust score.",
+        agent=payments_agent,
+    )
+
+    crew = Crew(agents=[payments_agent], tasks=[review_task])
+    result = crew.kickoff()
+    print(result)
+```
+
+`MCPServerAdapter` connects as soon as it's constructed and disconnects when the `with` block exits (or call `.stop()` manually if you construct it outside a context manager).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AI Agent Integration" icon="plug" href="/guides/ai-agent-integration">
+    The full MCP tool catalog, A2A, and x402 - including pricing per tool
+  </Card>
+  <Card title="Pay Per Call" icon="credit-card" href="/guides/pay-per-call">
+    Skip the API key entirely and pay per call with a USDC wallet
+  </Card>
+</CardGroup>
