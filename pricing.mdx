@@ -5,7 +5,9 @@ description: "Pay only for what you use — USDC per API call"
 
 All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol), or hold a paid-tier [API key](/authentication) with a prepaid balance that each priced call is debited from.
 
-**Start here:** Free sandbox key, no wallet. $0.65-0.85 fresh; $0.10 cached when available.
+**What it is:** LimitGuard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU.
+
+**Start here:** Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached when available.
 
 ## Tiered Pricing
 
@@ -40,7 +42,7 @@ These endpoints have a single price regardless of quality tier:
 |----------|-------|
 | `GET /v1/reputation/history/{entity_hash}` | $0.10 |
 | `GET /v1/wallet/balance` | $0.10 |
-| `GET /v1/compliance/alerts` | $0.10 |
+| `GET /v1/compliance/alerts` | $0.00 |
 | `GET /v1/compliance/readiness/{entity_id}` | $0.10 |
 
 ## MCP Tool Endpoints
