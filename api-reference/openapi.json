@@ -3767,6 +3767,7 @@
           "api_keys",
           "webhook_deliveries",
           "funnel_telemetry",
+          "check_records",
           "entity_reports"
         ],
         "title": "DataCategory"
