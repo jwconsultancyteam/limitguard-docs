@@ -6182,6 +6182,14 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "delivered_events": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            },
+            "type": "array",
+            "title": "Delivered Events",
+            "description": "Subset of `events` actually sent today; the rest are registrable but not yet emitted by anything"
           }
         },
         "type": "object",
@@ -6191,10 +6199,11 @@
           "events",
           "secret",
           "active",
-          "created_at"
+          "created_at",
+          "delivered_events"
         ],
         "title": "WebhookCreateResponse",
-        "description": "Response for POST /v1/webhooks \u2014 includes secret (one-time display)."
+        "description": "Response for POST /v1/webhooks -- includes secret (one-time display)."
       },
       "WebhookEventType": {
         "type": "string",
@@ -6231,6 +6240,13 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "delivered_events": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            },
+            "type": "array",
+            "title": "Delivered Events"
           }
         },
         "type": "object",
@@ -6239,10 +6255,11 @@
           "url",
           "events",
           "active",
-          "created_at"
+          "created_at",
+          "delivered_events"
         ],
         "title": "WebhookListResponse",
-        "description": "Response for GET /v1/webhooks \u2014 secret excluded (DYN-405)."
+        "description": "Response for GET /v1/webhooks -- secret excluded (DYN-405)."
       },
       "app__models__request__RiskScoreRequest": {
         "properties": {
