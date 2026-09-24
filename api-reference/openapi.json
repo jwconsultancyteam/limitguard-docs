@@ -2922,7 +2922,7 @@
           "mcp"
         ],
         "summary": "Mcp Verify Wallet",
-        "description": "Check wallet trust score (MCP-compatible endpoint).",
+        "description": "Screen a wallet: OFAC SDN match, on-chain signals, named rules (#527). Free ($0).",
         "operationId": "mcp_verify_wallet_v1_mcp_verify_wallet_post",
         "requestBody": {
           "content": {
@@ -4124,6 +4124,18 @@
             "minLength": 1,
             "title": "Entity Name",
             "description": "Entity to erase"
+          },
+          "wallet_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wallet Address",
+            "description": "Also erase this wallet's verify_wallet screening records (#583)"
           },
           "reason": {
             "type": "string",
