@@ -394,12 +394,19 @@ The amount in `X-PAYMENT` must match or exceed the price for the selected tier:
 |---|---|
 | `cached` | 100,000 ($0.10) |
 | `fresh` | 850,000 ($0.85) |
-| `enhanced` | 1,500,000 ($1.50) |
+
+`enhanced` was retired on `/v1/entity/check` 2026-09-24 (#405): it took the identical
+fan-out as `fresh`, so `X-Response-Quality: enhanced` is now quoted, charged and
+served at the `fresh` amount above (850,000), not the old 1,500,000 — the 402 body's
+`info.note` says so. The same retirement applies to `/v1/risk/score`,
+`/v1/reputation/score` and `/v1/kyb/check`.
 
 Not every tiered endpoint sells every tier. `POST /v1/entity/deep-check` sells two of
 the three: `fresh` ($0.75, 750,000: PEP/RCA + Dutch insolvency register) and
-`enhanced` ($1.50, 1,500,000, adds adverse media). It has no cache-only branch, so
-`X-Response-Quality: cached` is quoted, charged and served as `fresh`.
+`enhanced` ($1.50, 1,500,000, adds adverse media) — it is unaffected by the #405
+retirement above, since its `enhanced` tier genuinely reaches a source `fresh` does
+not. It has no cache-only branch, so `X-Response-Quality: cached` is quoted, charged
+and served as `fresh`.
 
 `cached` is served only from cache. If nothing is cached for the entity, the response is
 `404` with `errorCode: "not_cached"` and a `retry` block naming `X-Response-Quality: fresh`

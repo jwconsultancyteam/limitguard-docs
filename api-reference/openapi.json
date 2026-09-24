@@ -1313,50 +1313,6 @@
         }
       }
     },
-    "/v1/certificate/issue": {
-      "post": {
-        "summary": "Issue Certificate",
-        "description": "Issue a new trust certificate.\n\nRequires authentication via X-API-Key header.\n\nArgs:\n    request: Certificate issuance request\n    api_key: Validated API key from header\n\nReturns:\n    Issued TrustCertificate with hash and JSON-LD",
-        "operationId": "issue_certificate_v1_certificate_issue_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CertificateIssueRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TrustCertificate"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ]
-      }
-    },
     "/v1/certificate/{certificate_hash}": {
       "get": {
         "summary": "Verify Certificate",
@@ -1380,53 +1336,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CertificateVerifyResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/certificate/{certificate_hash}/revoke": {
-      "post": {
-        "summary": "Revoke Certificate",
-        "description": "Revoke a certificate.\n\nRequires authentication via X-API-Key header.\n\nArgs:\n    certificate_hash: SHA-256 hash of certificate\n    api_key: Validated API key from header\n\nReturns:\n    Success message\n\nRaises:\n    HTTPException: 404 if certificate not found",
-        "operationId": "revoke_certificate_v1_certificate__certificate_hash__revoke_post",
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "certificate_hash",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Certificate Hash"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Revoke Certificate V1 Certificate  Certificate Hash  Revoke Post"
                 }
               }
             }
@@ -3392,51 +3301,6 @@
         "title": "BadgeVariant",
         "description": "Badge display variants."
       },
-      "CertificateIssueRequest": {
-        "properties": {
-          "entity_name": {
-            "type": "string",
-            "title": "Entity Name",
-            "description": "Name of the entity receiving certificate"
-          },
-          "country": {
-            "type": "string",
-            "maxLength": 2,
-            "minLength": 2,
-            "title": "Country",
-            "description": "2-character ISO country code"
-          },
-          "trust_score": {
-            "type": "integer",
-            "maximum": 100.0,
-            "minimum": 0.0,
-            "title": "Trust Score",
-            "description": "Trust score 0-100"
-          },
-          "trust_level": {
-            "type": "string",
-            "title": "Trust Level",
-            "description": "Trust level (HIGH, MEDIUM, LOW)"
-          },
-          "valid_days": {
-            "type": "integer",
-            "maximum": 3650.0,
-            "minimum": 1.0,
-            "title": "Valid Days",
-            "description": "Certificate validity in days",
-            "default": 365
-          }
-        },
-        "type": "object",
-        "required": [
-          "entity_name",
-          "country",
-          "trust_score",
-          "trust_level"
-        ],
-        "title": "CertificateIssueRequest",
-        "description": "Request to issue a new trust certificate."
-      },
       "CertificateVerifyResponse": {
         "properties": {
           "certificate": {
@@ -3448,22 +3312,16 @@
             "title": "Valid",
             "description": "Whether certificate is currently valid"
           },
-          "chain_verified": {
-            "type": "boolean",
-            "title": "Chain Verified",
-            "description": "Whether certificate chain is verified"
-          },
           "issuer_trusted": {
             "type": "boolean",
             "title": "Issuer Trusted",
-            "description": "Whether issuer is trusted"
+            "description": "True when the certificate was issued by an admin-role API key"
           }
         },
         "type": "object",
         "required": [
           "certificate",
           "valid",
-          "chain_verified",
           "issuer_trusted"
         ],
         "title": "CertificateVerifyResponse",
@@ -5298,6 +5156,20 @@
             "type": "integer",
             "minimum": 0.0,
             "title": "Processing Time Ms"
+          },
+          "response_quality": {
+            "type": "string",
+            "title": "Response Quality",
+            "description": "Quality tier used for this response: cached or fresh",
+            "default": "fresh"
+          },
+          "disclaimers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Disclaimers",
+            "description": "Notes about this response, e.g. a retired pricing tier (#405)"
           }
         },
         "type": "object",
@@ -5488,19 +5360,6 @@
             "type": "string",
             "title": "Scoring Methodology Url",
             "description": "URL to published scoring methodology"
-          },
-          "on_chain_proof": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "On Chain Proof",
-            "description": "On-chain verification proof (ERC-8004)"
           }
         },
         "type": "object",
