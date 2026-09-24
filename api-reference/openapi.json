@@ -27,7 +27,7 @@
     "/v1/entity/check": {
       "post": {
         "summary": "Entity Check",
-        "description": "Full entity trust check.\n\nAlways runs country risk and sanctions; runs each other data source\nwhose identifier is provided (up to 8 total), computes a trust score,\nassigns a cluster, and returns a recommendation.\n\nIdentifiers are optional (kvk_number, cbe_number, domain, iban, vat_number,\nwallet_address). With none, only country risk and sanctions run (plus a KVK\nname search for NL), at lower confidence.",
+        "description": "Full entity trust check.\n\nAlways runs country risk and sanctions; runs each other data source\nwhose identifier is provided (up to 8 total), computes a trust score,\nassigns a cluster, and returns a recommendation.\n\n`entity_name` and `country` are required; identifiers (kvk_number,\ncbe_number, domain, iban, vat_number, wallet_address) are optional and\nraise confidence. With none, only country risk and sanctions run (plus a\nKVK name search for NL), at lower confidence.",
         "operationId": "entity_check_v1_entity_check_post",
         "requestBody": {
           "content": {
@@ -1957,7 +1957,7 @@
     "/v1/financial/health": {
       "get": {
         "summary": "Financial Health",
-        "description": "Get overall financial system health status.\n\nThe settlement fields are operator-wide and only disclosed to admin keys\n(#291); other callers do not receive them at all. Revenue scope follows\nthe same split (#427): an admin sees the platform-wide total -- every\nkey's prepaid revenue plus anonymous x402 wallet revenue that belongs to no\ntenant; anyone else sees only revenue attributed to their own key.",
+        "description": "Get overall financial system health status.\n\nThe settlement fields are operator-wide and only disclosed to admin keys\n(#291); other callers do not receive them at all. So is\ntreasury_balance_usdc, the platform treasury rather than the caller's\n(#525). Revenue scope follows the same split (#427): an admin sees the\nplatform-wide total -- every key's prepaid revenue plus anonymous x402\nwallet revenue that belongs to no tenant; anyone else sees only revenue\nattributed to their own key.",
         "operationId": "financial_health_v1_financial_health_get",
         "responses": {
           "200": {
@@ -1966,30 +1966,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WalletHealth"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ]
-      }
-    },
-    "/v1/treasury/balance": {
-      "get": {
-        "summary": "Treasury Balance",
-        "description": "Get current USDC treasury balance.\n\nNot tenant-scoped (#427): there is a single treasury wallet behind every\nsettlement, regardless of which key or wallet paid.",
-        "operationId": "treasury_balance_v1_treasury_balance_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TreasuryBalance"
                 }
               }
             }
@@ -2304,7 +2280,7 @@
     "/v1/compliance/subscribe": {
       "post": {
         "summary": "Create Subscription",
-        "description": "Create a compliance alert subscription.",
+        "description": "Create a compliance alert subscription.\n\nThe alert feed is not populated yet (#480), so the response carries a\n``notice`` saying no digest or webhook will fire until it is (#521).",
         "operationId": "create_subscription_v1_compliance_subscribe_post",
         "security": [
           {
@@ -2390,7 +2366,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AlertSubscription"
+                  "$ref": "#/components/schemas/AlertSubscriptionCreated"
                 }
               }
             }
@@ -3282,7 +3258,7 @@
         ],
         "title": "AlertSeverity"
       },
-      "AlertSubscription": {
+      "AlertSubscriptionCreated": {
         "properties": {
           "id": {
             "type": "string",
@@ -3333,14 +3309,20 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "description": "Whether the subscribed alert feed has anything to deliver"
           }
         },
         "type": "object",
         "required": [
-          "id"
+          "id",
+          "notice"
         ],
-        "title": "AlertSubscription",
-        "description": "Subscription to compliance alerts."
+        "title": "AlertSubscriptionCreated",
+        "description": "A new subscription plus the delivery status of its alert feed (#521)."
       },
       "BadgeData": {
         "properties": {
@@ -3486,41 +3468,6 @@
         ],
         "title": "CertificateVerifyResponse",
         "description": "Response for certificate verification."
-      },
-      "ChainBalance": {
-        "properties": {
-          "chain": {
-            "type": "string",
-            "title": "Chain",
-            "description": "Blockchain network: base or solana"
-          },
-          "wallet_address": {
-            "type": "string",
-            "title": "Wallet Address",
-            "description": "Configured USDC recipient on this chain, or empty when unset"
-          },
-          "balance_usdc": {
-            "type": "number",
-            "minimum": 0.0,
-            "title": "Balance Usdc",
-            "description": "USDC credited on this chain (human-readable)"
-          },
-          "balance_raw": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Balance Raw",
-            "description": "USDC credited on this chain in smallest unit"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chain",
-          "wallet_address",
-          "balance_usdc",
-          "balance_raw"
-        ],
-        "title": "ChainBalance",
-        "description": "One chain's share of the treasury balance (#490)."
       },
       "CheckAgentRequest": {
         "properties": {
@@ -4168,7 +4115,7 @@
           "country"
         ],
         "title": "EntityCheckRequest",
-        "description": "Full entity check request - always runs country risk and sanctions; runs each other data source whose identifier is supplied (up to 8 total)."
+        "description": "Full entity check request - always runs country risk and sanctions; runs each other data source whose identifier is supplied (up to 8 total).\n\n`entity_name` and `country` are required; identifiers (kvk_number, cbe_number, domain, iban, vat_number, wallet_address) are optional and raise confidence."
       },
       "ErasureRequest": {
         "properties": {
@@ -5591,67 +5538,6 @@
           "weight"
         ],
         "title": "TopFactor"
-      },
-      "TreasuryBalance": {
-        "properties": {
-          "balance_usdc": {
-            "type": "number",
-            "minimum": 0.0,
-            "title": "Balance Usdc",
-            "description": "USDC balance across all chains (human-readable)"
-          },
-          "balance_raw": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Balance Raw",
-            "description": "USDC balance across all chains in smallest unit (6 decimals)"
-          },
-          "chain": {
-            "type": "string",
-            "title": "Chain",
-            "description": "Chain of wallet_address: base, or solana when only a Solana recipient is configured. balance_raw is NOT limited to this chain; see wallets for the per-chain split",
-            "default": "base"
-          },
-          "wallet_address": {
-            "type": "string",
-            "title": "Wallet Address",
-            "description": "Treasury wallet address on `chain`"
-          },
-          "wallets": {
-            "items": {
-              "$ref": "#/components/schemas/ChainBalance"
-            },
-            "type": "array",
-            "title": "Wallets",
-            "description": "Per-chain breakdown: every chain with a configured recipient or a tracked balance"
-          },
-          "unattributed_raw": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Unattributed Raw",
-            "description": "Part of balance_raw credited before per-chain tracking existed (#490), so it cannot be assigned to a chain",
-            "default": 0
-          },
-          "frozen": {
-            "type": "boolean",
-            "title": "Frozen",
-            "description": "Emergency freeze active",
-            "default": false
-          },
-          "last_updated": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Last Updated"
-          }
-        },
-        "type": "object",
-        "required": [
-          "balance_usdc",
-          "balance_raw",
-          "wallet_address"
-        ],
-        "title": "TreasuryBalance",
-        "description": "Current treasury USDC holdings."
       },
       "TrustCertificate": {
         "properties": {
