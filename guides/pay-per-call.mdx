@@ -64,7 +64,7 @@ pip install "limitguard[solana]>=0.1.4"
 ```
 
 <Warning>
-Pin `limitguard[solana]>=0.1.4`, not just `limitguard[solana]`. As of this writing PyPI's latest published `limitguard` is 0.1.3, and 0.1.3's Solana payment path breaks against current `solana-py` releases (the SDK's `TransferCheckedParams` import moved in `solana-py` 0.36+, which `limitguard[solana]`'s own `solana>=0.34` floor allows a fresh install to pull in). 0.1.4 fixes this and is being released - if `pip install "limitguard[solana]>=0.1.4"` fails to resolve, the release has not landed on PyPI yet; check back or open an issue.
+Pin `limitguard[solana]>=0.1.4`, not just `limitguard[solana]`. 0.1.3 and earlier break against current `solana-py` releases: the SDK's `TransferCheckedParams` import moved in `solana-py` 0.36+, which the `solana>=0.34` floor lets a fresh install pull in, and their payment memo was not valid UTF-8, so the Memo program rejected the transaction. 0.1.4 (on PyPI since 2026-09-24) fixes both.
 </Warning>
 
 ```python
