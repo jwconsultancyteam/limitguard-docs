@@ -2280,7 +2280,7 @@
     "/v1/compliance/subscribe": {
       "post": {
         "summary": "Create Subscription",
-        "description": "Create a compliance alert subscription.\n\nThe alert feed is not populated yet (#480), so the response carries a\n``notice`` saying no digest or webhook will fire until it is (#521).",
+        "description": "Create a compliance alert subscription.\n\nThe subscription narrows what GET /v1/compliance/alerts returns for this key\n(#528); there is still no push delivery, so the response carries a ``notice``\nsaying delivery is by polling that route, not by digest or webhook (#521).",
         "operationId": "create_subscription_v1_compliance_subscribe_post",
         "security": [
           {
