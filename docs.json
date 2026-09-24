@@ -103,6 +103,7 @@
           {
             "group": "Changelog",
             "pages": [
+              "changelog/2026-09-24",
               "changelog/2026-09-08",
               "changelog/2026-09-07",
               "changelog/2026-09-05",

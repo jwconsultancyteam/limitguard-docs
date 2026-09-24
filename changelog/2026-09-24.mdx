@@ -1,0 +1,27 @@
+---
+title: "September 24, 2026"
+description: "Trust scores now count company age for KVK and CBE founding dates"
+---
+
+## Company age now counts for Dutch and Belgian companies
+
+KVK and CBE return a company's founding date without a time of day (`20180115`,
+`2018-01-15`). The API could not compute an age from that format, so for most Dutch and
+Belgian companies `registry.age_years` came back `null` and the age-based parts of the
+trust score never applied.
+
+From today they do:
+
+- The registry component adds its age credit: +7 for a company registered more than 5
+  years ago, +3 for more than 2, +1 for more than 1.
+- Older verified EU companies can reach the `established_eu_enterprise` and
+  `established_eu_sme` clusters.
+- `correlations.registry_domain_age_consistency` is computed when both the registry age
+  and the domain age are known.
+
+<Warning>
+  A fresh check of an older NL or BE company can now score higher than the same check did
+  before this date. If you store trust scores or compare them over time, expect that step.
+  Responses served from the result cache (`quality: "cached"`) keep the score of the
+  fresh check they came from.
+</Warning>
