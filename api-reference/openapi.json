@@ -6191,6 +6191,93 @@
             "title": "Rescore Interval",
             "description": "Seconds between rescores",
             "default": 604800
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-2 country code. #749: with a country and at least one typed identifier, the entry is under change monitoring on plans that include it (weekly re-check, changes sent as identifier.change.new webhooks)."
+          },
+          "kvk_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kvk Number",
+            "description": "Dutch KVK number (8 digits)"
+          },
+          "cbe_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cbe Number",
+            "description": "Belgian CBE number"
+          },
+          "vat_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vat Number",
+            "description": "EU VAT number"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 253
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain",
+            "description": "Entity website domain"
+          },
+          "wallet_address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wallet Address",
+            "description": "Crypto wallet address"
+          },
+          "wallet_chain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wallet Chain",
+            "description": "Chain of wallet_address"
           }
         },
         "type": "object",
@@ -6284,7 +6371,8 @@
           "trust.score.changed",
           "sanctions.match.new",
           "trust.level.downgrade",
-          "certificate.expired"
+          "certificate.expired",
+          "identifier.change.new"
         ],
         "title": "WebhookEventType"
       },
