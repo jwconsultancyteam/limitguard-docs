@@ -35,3 +35,11 @@ Daily totals as measured by the status-page monitors. The monitors report per-da
 | **Total** | **89 min** | **49 min** |
 
 The causes of these windows are still being investigated, and none of them has been ruled a false positive yet. This page will be updated with a cause per row. Any that turns out to be a real outage over a few minutes will also get its own entry on the status page, whose incident history currently shows none of them.
+
+**Candidate contributor, added 2026-09-23:** every deploy to `main` stops the running
+API before the new one listens, producing an empty-body 503 for roughly 43–45 s
+(measured in `infra/contabo/README.md`, "Deploy window (#430)"). 119 commits landed
+on `main` in this window, but they do not line up with the daily totals: 2026-09-08
+had the most (over 75) and only 3 minutes of API downtime, while 2026-09-13 had none
+and 7 minutes. Deploys can explain part of some rows at most, not the pattern as a
+whole — this has not been reconciled per-row yet.
