@@ -8,7 +8,7 @@ description: "Zero-access model, data flow, and security architecture"
 That is the operating philosophy behind every architectural decision at LimitGuard. We are a trust infrastructure provider — and trust infrastructure must be independently verifiable. This document explains exactly how the system is built, what data it touches, where it lives, and how you can confirm every claim we make.
 
 <Note>
-LimitGuard is self-verifying. Our own trust score is publicly available at `GET /v1/self-verify`; we run ourselves through the same 7-source verification we run on every entity you submit.
+LimitGuard publishes its own trust signals at `GET /v1/self-verify`: public, free, no key needed. Every signal links to evidence you can check yourself, starting with the Dutch business register (KVK) entry of the company that operates LimitGuard.
 </Note>
 
 ---
@@ -18,14 +18,14 @@ LimitGuard is self-verifying. Our own trust score is publicly available at `GET 
 LimitGuard is built on a zero-access principle: we minimize what we store, we make what we do store auditable, and we give you the tools to verify us independently.
 
 <CardGroup cols={3}>
-  <Card title="No PII Retention" icon="user-slash">
-    Entity data is used only for the verification window. No personal identifiers are stored beyond what is needed to produce the trust score.
+  <Card title="Data Minimisation" icon="user-slash">
+    Only the fields you submit are processed. Check records are kept for 365 days, the audit log stores one-way hashes of entity identifiers, and `GET /v1/data/retention` lists every retention period.
   </Card>
   <Card title="EU Data Residency" icon="shield-halved">
-    All processing and storage occurs on European infrastructure. Belgian legal entity (DYNIQ BV). GDPR-compliant by design, not by retrofit.
+    Application data is stored in the EU. LimitGuard is operated by Ambulatio Consulting B.V. (trading as LimitGuard), a Dutch company registered with the KVK under 77272471.
   </Card>
   <Card title="Self-Verifying" icon="circle-check">
-    LimitGuard verifies itself with its own API. Our score is public. If we don't meet our own trust bar, you'll see it.
+    LimitGuard verifies itself with its own API. The result is public at `GET /v1/self-verify`, and each signal carries a link to its evidence.
   </Card>
 </CardGroup>
 
@@ -37,7 +37,7 @@ LimitGuard is built on a zero-access principle: we minimize what we store, we ma
     Trust certificates are API records issued and verified via `/v1/certificate/*`, not written to any blockchain or contract. LimitGuard's only on-chain footprint is its own ERC-8004 agent identity (agent 95545 on Base).
   </Card>
   <Card title="Security Transparency" icon="eye">
-    Responsible disclosure via RFC 9116. Our `/.well-known/security.txt` is public. Encrypted communications via Proton Mail.
+    Responsible disclosure via RFC 9116. Our `/.well-known/security.txt` is public. The security mailbox is hosted on Proton Mail.
   </Card>
 </CardGroup>
 
@@ -252,13 +252,14 @@ Build confidence thresholds into your integration policy. For example: require `
 
 | Layer | Location | Provider |
 |-------|----------|----------|
-| API servers | EU (Contabo VPS) | Contabo GmbH — German-owned, EU-hosted |
-| Database | EU | Self-hosted on EU infrastructure |
-| Cache (Redis) | EU | Co-located with API servers |
-| Legal entity | Belgium | DYNIQ BV |
+| API, audit log and cache (Redis) | EU | Contabo GmbH (VPS) |
+| Dashboard application | Germany (Falkenstein) | Hetzner Online GmbH |
+| Database: dashboard accounts, workspaces and check records | Ireland (AWS eu-west-1) | Supabase |
+| CDN and web application firewall | Global edge network | Cloudflare, Inc. |
+| Operator | Breda, the Netherlands | Ambulatio Consulting B.V. (trading as LimitGuard), KVK 77272471 |
 
 <Note>
-LimitGuard does not use AWS, GCP, or Azure. All infrastructure is self-hosted on European VPS infrastructure under a Belgian legal entity. There is no US data transfer and no reliance on hyperscaler data processing agreements.
+Application data (API requests, check records, audit logs and dashboard accounts) is stored in the EU. Cloudflare, a US company, routes and filters traffic to LimitGuard under the EU-US Data Privacy Framework; the [privacy policy](https://limitguard.ai/privacy) describes its role.
 </Note>
 
 ### GDPR Compliance
@@ -269,17 +270,17 @@ LimitGuard is GDPR-compliant by default — not through configuration.
   <Step title="Data minimization">
     Only the fields you submit are processed. We do not enrich requests with additional personal data beyond what is required for verification.
   </Step>
-  <Step title="No PII retention">
-    Entity data is used only within the verification window. Raw input fields are not stored after the trust score is produced. Hashed identifiers are retained for audit trail integrity only.
+  <Step title="Limited retention">
+    Each non-sandbox check is stored with its normalised identifiers (IBANs only as a keyed hash) for 365 days, then deleted. The audit log stores one-way hashes of entity identifiers, never the identifiers themselves. `GET /v1/data/retention` (any API key) lists every data category and its retention period.
   </Step>
   <Step title="Right to erasure (Art. 17)">
-    GDPR Article 17 right to erasure is supported. Submit a deletion request via `DELETE /v1/legal/erasure` with your entity hash. Audit trail entries are zeroed; the hash chain remains intact.
+    GDPR Article 17 right to erasure is supported. Send `DELETE /v1/data/purge` with the `entity_name` (and optionally a `wallet_address`) to erase that entity's records held for your API key, including its check records. Matching audit entries are tombstoned rather than removed, so `GET /v1/audit/verify` can still check the chain.
   </Step>
   <Step title="EU data residency">
-    All processing occurs on EU infrastructure under a Belgian legal entity. No cross-border transfers to third countries outside the EEA.
+    Application data is stored in the EU (see the table above). Cloudflare routes traffic under the EU-US Data Privacy Framework.
   </Step>
   <Step title="Legal documents">
-    Privacy policy, data processing addendum (DPA), and terms of service are available at `/v1/legal/*` and updated in real time.
+    The [privacy policy](https://limitguard.ai/privacy), [data processing agreement](https://limitguard.ai/dpa) and [terms of service](https://limitguard.ai/terms) are published on limitguard.ai. The API also serves them at `GET /v1/legal/privacy`, `/v1/legal/dpa` and `/v1/legal/terms`.
   </Step>
 </Steps>
 
@@ -304,16 +305,19 @@ If any historical entry is modified, its hash changes — which breaks every sub
 
 ```json
 {
-  "entry_id": "audit_01JQ...",
+  "event_id": "7f3c9a1e-...",
   "timestamp": "2026-02-20T09:14:33.421Z",
-  "event_type": "entity_check",
-  "tenant_id": "tenant_hash_only",
-  "entity_hash": "sha256:b94d27...",
-  "sources_checked": ["kvk", "sanctions", "country_risk", "domain", "vat"],
+  "entity_hash": "b94d27b9...",
   "trust_score": 87,
   "trust_level": "high",
-  "prev_hash": "sha256:3e4f2a...",
-  "entry_hash": "sha256:9c1b8d..."
+  "cluster": "established_eu_sme",
+  "recommendation": "proceed",
+  "sources_checked": 5,
+  "processing_time_ms": 412,
+  "previous_hash": "3e4f2a1c...",
+  "entry_hash": "9c1b8d0e...",
+  "erased_at": "",
+  "erasure_request_id": ""
 }
 ```
 
@@ -323,33 +327,32 @@ Audit entries contain **hashes of entity identifiers**, not the identifiers them
 
 ### Querying the Audit Trail
 
+Both endpoints are scoped to your own API key.
+
 ```bash
-# Retrieve audit history for a hashed entity
-GET /v1/audit/{entity_hash}
-X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx
+# Your audit entries for one entity (entity_id is the entity_hash), newest first
+curl "https://api.limitguard.ai/v1/audit/query?entity_id=b94d27b9...&limit=100" \
+  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx"
+
+# Check the hash chain
+curl https://api.limitguard.ai/v1/audit/verify \
+  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx"
 ```
 
 ```json
 {
-  "entity_hash": "sha256:b94d27...",
-  "entries": [
-    {
-      "timestamp": "2026-02-20T09:14:33.421Z",
-      "trust_score": 87,
-      "trust_level": "high",
-      "chain_valid": true
-    }
-  ],
-  "chain_integrity": "valid",
-  "entry_count": 1
+  "chain_valid": true,
+  "records_checked": 1824
 }
 ```
+
+`GET /v1/audit/query` also takes `from`, `to` and `offset`, and returns `{"entries": [...], "count", "limit", "offset"}` with each entry in the shape above.
 
 ---
 
 ## Self-Verification
 
-LimitGuard verifies itself using its own API. This endpoint is public, free, and unauthenticated.
+LimitGuard verifies itself using its own API. This endpoint is public, free, and unauthenticated. It returns six published signals about the operator, each with an evidence link, and the score they add up to.
 
 ```bash
 curl https://api.limitguard.ai/v1/self-verify
@@ -357,40 +360,60 @@ curl https://api.limitguard.ai/v1/self-verify
 
 ```json
 {
-  "entity": "DYNIQ BV",
-  "country": "BE",
-  "trust_score": 91,
-  "trust_level": "high",
-  "cluster": "established_eu_sme",
-  "recommendation": "proceed",
-  "confidence": 0.97,
-  "verified_at": "2026-02-20T06:00:00Z",
-  "sources_checked": ["cbe", "sanctions", "country_risk", "domain", "vat"],
-  "top_factors": [
+  "entity_name": "Ambulatio Consulting BV (trading as LimitGuard)",
+  "trust_score": 100,
+  "trust_level": "HIGH",
+  "verified_at": "2026-09-25T19:06:06Z",
+  "signals": [
     {
-      "source": "cbe",
-      "signal": "Active Belgian CBE registration",
-      "impact": "positive",
-      "weight": 0.35
+      "signal_name": "Dutch EU Entity",
+      "status": "verified",
+      "verifiable": true,
+      "evidence_url": "https://www.kvk.nl/zoeken/",
+      "description": "Registered Dutch entity (KVK 77272471, Ambulatio Consulting BV)"
     },
     {
-      "source": "sanctions",
-      "signal": "No match across 80+ lists",
-      "impact": "positive",
-      "weight": 0.25
+      "signal_name": "GDPR Compliance",
+      "status": "verified",
+      "verifiable": true,
+      "evidence_url": "https://limitguard.ai/privacy",
+      "description": "EU-based hosting, data minimization, right to erasure"
     },
     {
-      "source": "vat",
-      "signal": "VIES verified Belgian VAT",
-      "impact": "positive",
-      "weight": 0.20
+      "signal_name": "Open Methodology",
+      "status": "verified",
+      "verifiable": true,
+      "evidence_url": "https://api.limitguard.ai/v1/methodology",
+      "description": "Scoring algorithm and weights published publicly"
+    },
+    {
+      "signal_name": "Multi-Source Consensus",
+      "status": "verified",
+      "verifiable": true,
+      "evidence_url": "https://api.limitguard.ai/v1/methodology",
+      "description": "Trust scores derived from multiple independent sources"
+    },
+    {
+      "signal_name": "Audit Trail",
+      "status": "verified",
+      "verifiable": true,
+      "evidence_url": "https://api.limitguard.ai/v1/audit/verify",
+      "description": "Scored checks are recorded in a tamper-evident, hash-chained audit log; any API key can check the chain"
+    },
+    {
+      "signal_name": "ERC-8004 Identity",
+      "status": "verified",
+      "verifiable": true,
+      "evidence_url": "https://api.limitguard.ai/.well-known/agent-registration.json",
+      "description": "Registered as agent 95545 on the ERC-8004 Identity Registry (eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432)"
     }
-  ]
+  ],
+  "scoring_methodology_url": "https://api.limitguard.ai/v1/methodology"
 }
 ```
 
 <Tip>
-We recommend integrating `/v1/self-verify` into your vendor due diligence workflow. If LimitGuard's own trust score drops below `high`, you will see it before we tell you. The endpoint is cached with a 1-hour TTL and refreshed every 6 hours.
+We recommend integrating `/v1/self-verify` into your vendor due diligence workflow. The response is computed on every request, not cached.
 </Tip>
 
 ---
@@ -457,21 +480,23 @@ curl https://api.limitguard.ai/.well-known/security.txt
 ```
 
 ```
-Contact: security@limitguard.ai
-Contact: https://limitguard.ai/security
-Encryption: https://proton.me/security
+Contact: mailto:security@limitguard.ai
+Expires: 2027-09-25T19:07:15.000Z
 Preferred-Languages: en, nl
-Policy: https://limitguard.ai/security/policy
 Canonical: https://api.limitguard.ai/.well-known/security.txt
+Canonical: https://limitguard.ai/.well-known/security.txt
+Policy: https://limitguard.ai/security
 ```
+
+`Expires` is always one year ahead of the request.
 
 ### Encrypted Communications
 
-All security disclosures are handled via **Proton Mail** — end-to-end encrypted, zero-knowledge, Swiss-hosted. No disclosure is processed through standard email infrastructure.
+`security@limitguard.ai` is hosted on **Proton Mail** (Switzerland). Messages from other Proton Mail users are end-to-end encrypted; messages from other providers are encrypted at rest once received.
 
 ### Responsible Disclosure
 
-We operate a responsible disclosure programme. Security researchers who identify vulnerabilities in good faith will receive acknowledgement, coordinated disclosure timelines, and credit. See `https://limitguard.ai/security/policy` for the full programme terms.
+We operate a responsible disclosure programme. Security researchers who identify vulnerabilities in good faith will receive acknowledgement, coordinated disclosure timelines, and credit. See [limitguard.ai/security](https://limitguard.ai/security) for the full programme terms.
 
 ---
 
@@ -479,11 +504,11 @@ We operate a responsible disclosure programme. Security researchers who identify
 
 | Claim | How to Verify |
 |-------|--------------|
-| EU-only data processing | `GET /v1/legal/dpa` — data processing addendum with infrastructure details |
-| Belgian legal entity | CBE registry: search DYNIQ BV |
-| No PII stored | `GET /v1/legal/privacy` — data retention policy, confirmed by Art. 17 erasure support |
-| GDPR Art. 17 erasure | `DELETE /v1/legal/erasure` — functional endpoint, not just a policy |
-| Hash chain integrity | `GET /v1/audit/{entity_hash}` — replay the chain yourself |
+| EU data storage | [Privacy policy](https://limitguard.ai/privacy) and [DPA](https://limitguard.ai/dpa): providers, locations and purposes |
+| Dutch operator | KVK register: Ambulatio Consulting B.V. (trading as LimitGuard), KVK 77272471 |
+| Limited retention | `GET /v1/data/retention`: every data category and its retention period |
+| GDPR Art. 17 erasure | `DELETE /v1/data/purge`: functional endpoint, not just a policy |
+| Hash chain integrity | `GET /v1/audit/verify` and `GET /v1/audit/query`: check the chain and your own entries |
 | Trust certificates | `GET /v1/certificate/{certificate_hash}`: public verification endpoint; the record lives in LimitGuard's API, not on a blockchain |
 | Self-verifying | `GET /v1/self-verify` — our score, produced by our own API, public |
 | Security contact | `GET /.well-known/security.txt` — RFC 9116 compliant |
@@ -497,8 +522,8 @@ Every claim in this document is backed by a verifiable endpoint or public record
 ## Further Reading
 
 <CardGroup cols={2}>
-  <Card title="Scoring Methodology" icon="chart-bar" href="https://api.limitguard.ai/v1/methodology">
-    Machine-readable JSON methodology document — source weights, cluster definitions, and confidence calculation
+  <Card title="Self-Verification Methodology" icon="chart-bar" href="https://api.limitguard.ai/v1/methodology">
+    Machine-readable JSON: the signals, weights and evidence sources behind `GET /v1/self-verify`
   </Card>
   <Card title="x402 Protocol" icon="credit-card" href="/x402-protocol">
     How x402 payment verification works

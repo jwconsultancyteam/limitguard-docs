@@ -75,53 +75,55 @@ curl https://api.limitguard.ai/.well-known/mcp.json
 {
   "name": "limitguard",
   "version": "1.0",
-  "description": "LimitGuard Trust Intelligence - entity verification and risk scoring tools for AI agents",
+  "description": "LimitGuard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU. Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached ($0.25 KYB) when available. Entity verification and risk scoring tools for AI agents.",
   "tools": [
     {
       "name": "check_entity",
-      "description": "MCP tool: full entity trust check for LLM agents. Same as /v1/entity/check with MCP-native interface.",
+      "description": "MCP tool: entity trust check for LLM agents. Runs the /v1/entity/check engine on entity_name, country, kvk_number and domain only, so up to 5 sources (no IBAN, VAT or wallet).",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "entity_name": { "type": "string" },
-          "country": { "type": "string", "description": "ISO country code (NL, BE, etc.)" },
-          "kvk_number": { "type": "string" },
-          "domain": { "type": "string" }
+          "entity_name": {
+            "type": "string",
+            "description": "Full legal name of the entity"
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO country code (NL, BE, etc.)"
+          },
+          "kvk_number": {
+            "type": "string",
+            "description": "Dutch KVK number"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Entity website domain"
+          }
         },
-        "required": ["entity_name", "country"]
-      }
-    },
-    {
-      "name": "check_agent",
-      "description": "MCP tool: verify AI agent identity and reputation score before inter-agent transactions.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "agent_id": { "type": "string" },
-          "agent_name": { "type": "string" }
-        },
-        "required": ["agent_id", "agent_name"]
-      }
-    },
-    {
-      "name": "get_trust_score",
-      "description": "MCP tool: get entity trust score (0-100) with cluster assignment and recommendation.",
-      "inputSchema": {
-        "type": "object",
-        "properties": { "entity_id": { "type": "string" } },
-        "required": ["entity_id"]
+        "required": [
+          "entity_name",
+          "country"
+        ]
       }
     },
     {
       "name": "verify_wallet",
-      "description": "Screen a wallet: OFAC SDN address match, on-chain signals (contract check, native and USDC balance, transaction count, first seen on Base) and named risk rules with up to 3 advice items. On Base, also reports any ERC-8004 agent the wallet owns and its open on-chain reputation as descriptive signals, never scored. Free ($0). Supports EVM and Solana addresses.",
+      "description": "MCP tool: Screen a wallet: OFAC SDN address match, on-chain signals (contract check, native and USDC balance, transaction count, first seen on Base) and named risk rules with up to 3 advice items. On Base, also reports any ERC-8004 agent the wallet owns and its open on-chain reputation as descriptive signals, never scored. Free ($0). Accepts EVM (0x...) and Solana (base58) addresses.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "wallet_address": { "type": "string" },
-          "chain_id": { "type": "string", "description": "CAIP-2 chain ID (default: eip155:8453)" }
+          "wallet_address": {
+            "type": "string",
+            "description": "Blockchain wallet address"
+          },
+          "chain_id": {
+            "type": "string",
+            "description": "CAIP-2 chain ID (default: eip155:8453); base, eth, solana, btc also accepted"
+          }
         },
-        "required": ["wallet_address"]
+        "required": [
+          "wallet_address"
+        ]
       }
     },
     {
@@ -130,17 +132,77 @@ curl https://api.limitguard.ai/.well-known/mcp.json
       "inputSchema": {
         "type": "object",
         "properties": {
-          "entity_name": { "type": "string" },
-          "country": { "type": "string" }
+          "entity_name": {
+            "type": "string",
+            "description": "Full legal name"
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO country code"
+          }
         },
-        "required": ["entity_name", "country"]
+        "required": [
+          "entity_name",
+          "country"
+        ]
+      }
+    },
+    {
+      "name": "get_compliance_report",
+      "description": "Per-entity report built from one real check's signals: identity, sanctions and PEP screening, domain signals, risk score, correlations with the caller's earlier reports, sources and an evidence hash. A source that did not answer is shown unavailable, never clean.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "check_id": {
+            "type": "string",
+            "description": "Id of a check stored by an earlier /v1/reports/entity call"
+          },
+          "entity_name": {
+            "type": "string",
+            "description": "Legal entity name"
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO 3166-1 alpha-2 country code"
+          },
+          "kvk_number": {
+            "type": "string",
+            "description": "Dutch KVK number (8 digits)"
+          },
+          "cbe_number": {
+            "type": "string",
+            "description": "Belgian CBE number (0XXX.XXX.XXX)"
+          },
+          "vat_number": {
+            "type": "string",
+            "description": "EU VAT number"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Entity website domain"
+          },
+          "iban": {
+            "type": "string",
+            "description": "IBAN for financial validation"
+          },
+          "wallet_address": {
+            "type": "string",
+            "description": "Crypto wallet address (format check only; no on-chain lookup)"
+          },
+          "wallet_chain": {
+            "type": "string",
+            "description": "Blockchain the address is checked against"
+          }
+        },
+        "required": []
       }
     }
-  ]
+  ],
+  "a2a_endpoint": "https://api.limitguard.ai/a2a"
 }
 ```
 
-All 5 tools are priced via x402 — see [Pricing](/pricing#mcp-tool-endpoints). They are not free just because they're callable as native tools.
+Each tool in the manifest above also carries `annotations` (title and read-only hints), trimmed here. `check_entity` ($0.85) and `get_risk_score` ($0.65) cost the same as the `fresh` tier of their REST endpoints, `get_compliance_report` costs $1.50 like `POST /v1/reports/entity`, and `verify_wallet` is free. See [Pricing](/pricing#mcp-tool-endpoints).
 
 ### Configuring an LLM Agent
 
@@ -285,50 +347,114 @@ curl https://api.limitguard.ai/.well-known/agent.json
 
 ```json Response
 {
-  "schema_version": "1.0",
   "name": "LimitGuard Trust Intelligence",
-  "description": "Real-time trust scoring for AI agents, businesses, and transactions. Up to 7 data sources. One API call.",
-  "url": "https://api.limitguard.ai",
-  "version": "1.0.0",
+  "description": "LimitGuard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU. Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached ($0.25 KYB) when available. Enables AI agents to verify counterparty trust before transacting.",
+  "protocolVersion": "0.3.0",
+  "version": "1.0",
+  "url": "https://api.limitguard.ai/a2a",
+  "preferredTransport": "JSONRPC",
+  "provider": {
+    "organization": "LimitGuard",
+    "url": "https://limitguard.ai"
+  },
+  "documentationUrl": "https://docs.limitguard.ai/x402-protocol",
   "capabilities": {
     "streaming": false,
-    "pushNotifications": true,
+    "pushNotifications": false,
     "stateTransitionHistory": false
   },
-  "defaultInputModes": ["application/json"],
-  "defaultOutputModes": ["application/json"],
+  "defaultInputModes": [
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "application/json"
+  ],
+  "securitySchemes": {
+    "apiKey": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "X-API-Key",
+      "description": "LimitGuard key (lg_live_...); free via POST /v1/keys/create"
+    },
+    "bearer": {
+      "type": "http",
+      "scheme": "bearer",
+      "description": "The same key as Authorization: Bearer lg_live_..."
+    }
+  },
+  "security": [
+    {
+      "apiKey": []
+    },
+    {
+      "bearer": []
+    }
+  ],
   "skills": [
     {
-      "id": "entity_trust_check",
-      "name": "Entity Trust Check",
-      "description": "Full 8-source trust verification. Returns score, cluster, recommendation, and supporting evidence.",
-      "tags": ["trust", "kyb", "compliance", "entity-verification"],
-      "examples": [
-        "Check trust for Acme Corp BV, NL, KVK 12345678",
-        "Is this supplier safe to pay? Domain: acme-corp.nl"
+      "id": "entity_check",
+      "name": "entity_check",
+      "tags": [
+        "entity_verification",
+        "risk_scoring",
+        "reputation_tracking",
+        "wallet_verification",
+        "sanctions",
+        "kyb"
       ],
-      "inputModes": ["application/json"],
-      "outputModes": ["application/json"]
+      "description": "Full entity trust check across up to 8 data sources, depending on the identifiers supplied. Returns trust score 0-100, cluster, and recommendation.",
+      "endpoint": "/v1/entity/check",
+      "method": "POST",
+      "price_usdc": 0.85
     },
     {
       "id": "risk_score",
-      "name": "Risk Score",
-      "description": "Fast risk-only pre-screening (2 sources). Cheaper than full entity check.",
-      "tags": ["risk", "screening", "fast"],
-      "inputModes": ["application/json"],
-      "outputModes": ["application/json"]
+      "name": "risk_score",
+      "tags": [
+        "risk_scoring"
+      ],
+      "description": "Quick risk score assessment. Faster than full entity check.",
+      "endpoint": "/v1/risk/score",
+      "method": "POST",
+      "price_usdc": 0.65
     },
     {
-      "id": "wallet_screening",
-      "name": "Wallet Screening",
-      "description": "Crypto wallet risk assessment — ETH, BTC, SOL. Checks for sanctions and known fraud.",
-      "tags": ["crypto", "wallet", "sanctions"],
-      "inputModes": ["application/json"],
-      "outputModes": ["application/json"]
+      "id": "kyb_check",
+      "name": "kyb_check",
+      "tags": [
+        "kyb_verification",
+        "sanctions",
+        "compliance_monitoring"
+      ],
+      "description": "Know Your Business verification with sanctions check and company registration.",
+      "endpoint": "/v1/kyb/check",
+      "method": "POST",
+      "price_usdc": 1.5
     }
   ],
   "authentication": {
-    "schemes": ["ApiKey", "x402"]
+    "schemes": [
+      "x402",
+      "api_key"
+    ],
+    "x402": {
+      "protocol": "x402-v2",
+      "chains": [
+        "eip155:8453",
+        "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      ],
+      "currency": "USDC"
+    },
+    "api_key": {
+      "header": "X-API-Key",
+      "prefix": "lg_live_"
+    }
+  },
+  "documentation_url": "https://docs.limitguard.ai/x402-protocol",
+  "sandbox": {
+    "url": "https://api.limitguard.ai/v1/keys/create",
+    "curl": "curl -s -X POST https://api.limitguard.ai/v1/keys/create -H 'Content-Type: application/json' -d '{\"email\": \"you@example.com\", \"tier\": \"sandbox\"}'",
+    "note": "Free sandbox key, no wallet. POST here with tier=sandbox to get an lg_sandbox_ key; send it as X-API-Key for mock data at no charge (10 req/min)."
   }
 }
 ```
@@ -370,19 +496,10 @@ class LimitGuardA2AClient:
         if skill is None:
             raise ValueError(f"Skill '{skill_id}' not found in agent card")
 
-        # Map skill IDs to LimitGuard endpoints
-        endpoint_map = {
-            "entity_trust_check": "/v1/entity/check",
-            "risk_score": "/v1/risk/score",
-            "wallet_screening": "/v1/wallet/screen",
-        }
-
-        endpoint = endpoint_map.get(skill_id)
-        if endpoint is None:
-            raise ValueError(f"No endpoint mapped for skill '{skill_id}'")
-
-        response = httpx.post(
-            f"{self.BASE_URL}{endpoint}",
+        # Every skill in the agent card names its own REST endpoint and method
+        response = httpx.request(
+            skill["method"],
+            f"{self.BASE_URL}{skill['endpoint']}",
             headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
             json=payload,
             timeout=10.0,
@@ -397,11 +514,11 @@ client = LimitGuardA2AClient(api_key="lg_live_xxxxxxxxxxxxxxxxxxxx")
 # Discover what LimitGuard can do
 card = client.discover()
 print(f"Available skills: {[s['id'] for s in card['skills']]}")
-# Available skills: ['entity_trust_check', 'risk_score', 'wallet_screening']
+# Available skills: ['entity_check', 'risk_score', 'kyb_check']
 
 # Invoke entity trust check
 result = client.invoke(
-    "entity_trust_check",
+    "entity_check",
     {"entity_name": "Acme Corp BV", "country": "NL", "kvk_number": "12345678"},
 )
 print(f"Trust score: {result['trust_score']} — {result['recommendation']}")
@@ -432,17 +549,9 @@ class LimitGuardA2AClient {
     const skill = await this.getSkill(skillId);
     if (!skill) throw new Error(`Skill '${skillId}' not found in agent card`);
 
-    const endpointMap = {
-      entity_trust_check: "/v1/entity/check",
-      risk_score: "/v1/risk/score",
-      wallet_screening: "/v1/wallet/screen",
-    };
-
-    const endpoint = endpointMap[skillId];
-    if (!endpoint) throw new Error(`No endpoint mapped for skill '${skillId}'`);
-
-    const res = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "POST",
+    // Every skill in the agent card names its own REST endpoint and method
+    const res = await fetch(`${this.baseUrl}${skill.endpoint}`, {
+      method: skill.method,
       headers: {
         "X-API-Key": this.apiKey,
         "Content-Type": "application/json",
@@ -461,7 +570,7 @@ const client = new LimitGuardA2AClient("lg_live_xxxxxxxxxxxxxxxxxxxx");
 const card = await client.discover();
 console.log("Skills:", card.skills.map((s) => s.id));
 
-const result = await client.invoke("entity_trust_check", {
+const result = await client.invoke("entity_check", {
   entity_name: "Acme Corp BV",
   country: "NL",
   kvk_number: "12345678",
