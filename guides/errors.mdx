@@ -487,7 +487,7 @@ When a key hits its rolling 24-hour limit, the `detail` names it:
 }
 ```
 
-**Fix:** Wait for `Retry-After`, top up to a higher tier for a higher limit, or pay per call with x402, which has no daily cap. There is no monthly quota.
+**Fix:** Wait for `Retry-After`, top up to a higher tier for a higher limit, or pay per call with x402, which has no daily cap. The monthly request caps on keys are abuse limits, not a usage allowance you buy.
 
 <Tip>
 Use the `X-Response-Quality: cached` header where acceptable: a cached answer costs less when the entity was already scored within the cache TTL.
