@@ -79,7 +79,7 @@ const { api_key } = await response.json();
 
 </CodeGroup>
 
-`POST /v1/keys/create` can only provision `free` or `sandbox` tiers directly. To move up the ladder, create a free key first, then pay via `GET /v1/keys/upgrade/{tier}` (x402 required even if you already hold a key — see [Pricing](/pricing#api-key-tier-upgrades)):
+`POST /v1/keys/create` can only provision `free` or `sandbox` tiers directly. To move up the ladder, create a free key first, then pay via `POST /v1/keys/upgrade/{tier}` (x402 required even if you already hold a key — see [Pricing](/pricing#api-key-tier-upgrades)):
 
 | Tier | Top-up (credited to the prepaid balance) | Rate limits |
 |------|------------------------------------------|-------------|
