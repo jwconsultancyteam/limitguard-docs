@@ -248,7 +248,7 @@
     "/v1/keys/usage": {
       "get": {
         "summary": "Get Usage",
-        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from (#434).\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.",
+        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from (#434).\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.\nWith TIER_SUBSCRIPTION_ENABLED, `tier_expires_at`/`tier_queue` are the\nactive Growth/Pro term and the terms queued behind it (null otherwise, #854).",
         "operationId": "get_usage_v1_keys_usage_get",
         "responses": {
           "200": {
@@ -4751,6 +4751,34 @@
             "title": "Balance Usd",
             "description": "Prepaid balance in USD; each priced call is debited at the price in the pricing table",
             "default": 0.0
+          },
+          "tier_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier Expires At",
+            "description": "When the active Growth/Pro term ends (null without a term, or with TIER_SUBSCRIPTION_ENABLED off). The key then moves to the first queued term, or back to the tier it had before"
+          },
+          "tier_queue": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QueuedTerm"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier Queue",
+            "description": "Terms bought during a higher active term (Growth during Pro), oldest first, each with the time it starts (null when there are none)"
           }
         },
         "type": "object",
