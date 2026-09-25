@@ -3644,7 +3644,8 @@
           "webhook_deliveries",
           "funnel_telemetry",
           "check_records",
-          "entity_reports"
+          "entity_reports",
+          "sales_leads"
         ],
         "title": "DataCategory"
       },
