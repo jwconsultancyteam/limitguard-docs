@@ -47,6 +47,18 @@ These endpoints have a single price regardless of quality tier:
 
 `POST /v1/reports/entity` builds a per-entity report from one real check: registry identity, sanctions and PEP screening, domain signals, risk score, up to 3 findings, a per-source status table (a source that did not answer is shown unavailable, never clean) and an evidence hash. Send identifiers or the `check_id` of an earlier report's check. Reading a stored report back with `GET /v1/reports/{report_id}` is free (`?format=pdf` for a PDF). Sandbox keys cannot create reports: they are built only from real checks.
 
+### Deep check
+
+`POST /v1/entity/deep-check` has its own two tiers and no cached tier: `deep` is its `fresh` tier (the default) and `extended` is its `enhanced` tier.
+
+| Endpoint | Fresh (default) | Enhanced |
+|----------|-----------------|----------|
+| `POST /v1/entity/deep-check` | $0.75 | $1.50 |
+
+- `deep` (`fresh`): PEP and relative/close-associate matches from OpenSanctions, plus a Dutch Centraal Insolventieregister insolvency screen (NL only).
+- `extended` (`enhanced`): the same, plus adverse media screening against a global news index.
+- `credit` (Italy only, available when enabled): the same as `deep`, plus an Italian credit report from Openapi.com.
+
 ## MCP Tool Endpoints
 
 The [5 MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are **not** free, even though they're callable as native LLM tools. Where a tool mirrors a tiered REST endpoint it costs the same as that endpoint's `fresh` tier; the remaining three are flat-priced:
