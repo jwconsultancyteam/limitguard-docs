@@ -4668,6 +4668,27 @@
             "type": "number",
             "title": "Balance Usd",
             "description": "Prepaid balance after this credit"
+          },
+          "tier_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier Expires At",
+            "description": "When the active Growth/Pro term ends (null without a term). The key then moves to the first queued term, or back to the tier it had before"
+          },
+          "queued_terms": {
+            "items": {
+              "$ref": "#/components/schemas/QueuedTerm"
+            },
+            "type": "array",
+            "title": "Queued Terms",
+            "description": "Terms bought during a higher active term (Growth during Pro), oldest first; each starts when the one ahead of it ends"
           }
         },
         "type": "object",
@@ -4985,6 +5006,28 @@
         ],
         "title": "ProviderRegistrationRequest",
         "description": "Request to register a validation provider."
+      },
+      "QueuedTerm": {
+        "properties": {
+          "tier": {
+            "type": "string",
+            "title": "Tier",
+            "description": "Tier the key moves to when this term starts"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At",
+            "description": "When this term starts (the term ahead of it ends)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tier",
+          "starts_at"
+        ],
+        "title": "QueuedTerm",
+        "description": "#823: a lower-tier term bought during a higher active term, waiting its turn."
       },
       "ReadinessScore": {
         "properties": {
