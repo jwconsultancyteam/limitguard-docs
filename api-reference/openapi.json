@@ -2296,7 +2296,7 @@
     "/v1/compliance/readiness/{entity_id}": {
       "get": {
         "summary": "Ai Act Readiness",
-        "description": "Get EU AI Act readiness score for an entity.",
+        "description": "EU AI Act readiness self-assessment for one AI system.\n\nThe result depends only on system_type and the completed_items the caller\nsends; entity_id is echoed as a label and nothing is looked up about it, so\nthe response says so in `basis` and `note` (2026-09-24: a paid call for a\ncompany name returned the same generic 0/7 as any other).",
         "operationId": "ai_act_readiness_v1_compliance_readiness__entity_id__get",
         "security": [
           {
@@ -2319,11 +2319,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "AI system type (credit_scoring, trust_scoring, etc.)",
+              "description": "AI system type: credit_scoring, trust_scoring, biometric_identification or employment_screening (others answer UNDETERMINED)",
               "default": "trust_scoring",
               "title": "System Type"
             },
-            "description": "AI system type (credit_scoring, trust_scoring, etc.)"
+            "description": "AI system type: credit_scoring, trust_scoring, biometric_identification or employment_screening (others answer UNDETERMINED)"
           },
           {
             "name": "completed_items",
@@ -2334,11 +2334,11 @@
               "items": {
                 "type": "string"
               },
-              "description": "Completed readiness checklist items",
+              "description": "Checklist items you have completed, one parameter per item: risk_management, data_governance, technical_docs, record_keeping, transparency, human_oversight, accuracy_robustness",
               "default": [],
               "title": "Completed Items"
             },
-            "description": "Completed readiness checklist items"
+            "description": "Checklist items you have completed, one parameter per item: risk_management, data_governance, technical_docs, record_keeping, transparency, human_oversight, accuracy_robustness"
           }
         ],
         "responses": {
@@ -5037,6 +5037,17 @@
             "type": "string",
             "title": "Urgency",
             "description": "normal, high, or critical"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis",
+            "description": "self_assessment: scored from the completed_items you sent",
+            "default": "self_assessment"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": "Self-assessment: the score counts the completed_items you sent against the 7 EU AI Act high-risk obligations. entity_id is your label; nothing is looked up about it."
           }
         },
         "type": "object",
