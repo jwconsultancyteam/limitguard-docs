@@ -145,5 +145,11 @@
       "og:site_name": "LimitGuard",
       "og:description": "LimitGuard API docs: KYB, sanctions and PEP screening, Dutch and Belgian company registry checks and entity trust scores for AI agents, via x402 pay-per-call, API keys or MCP."
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/errors",
+      "destination": "/guides/errors"
+    }
+  ]
 }

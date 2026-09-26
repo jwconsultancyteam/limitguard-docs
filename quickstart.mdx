@@ -57,14 +57,19 @@ Save the `api_key` immediately — it is shown **once only**. The plaintext key 
 
 <Step title="Try Sandbox Mode (Free)">
 
-Test the API without calling real data sources or paying for calls by adding the sandbox header:
+Test the API without calling real data sources or paying for calls with a free sandbox key. Sandbox mode is decided by the key (`lg_sandbox_...`), not by a header:
 
 <CodeGroup>
 
 ```bash curl
+# 1. A free sandbox key: no wallet, no payment
+curl -X POST https://api.limitguard.ai/v1/keys/create \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "tier": "sandbox"}'
+
+# 2. Any call with it returns mock data
 curl -X POST https://api.limitguard.ai/v1/entity/check \
-  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx" \
-  -H "X-LimitGuard-Mode: sandbox" \
+  -H "X-API-Key: lg_sandbox_xxxxxxxxxxxxxxxxxxxx" \
   -H "Content-Type: application/json" \
   -d '{
     "entity_name": "Acme Corp BV",
@@ -76,12 +81,14 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
 ```python Python
 import httpx
 
+key = httpx.post(
+    "https://api.limitguard.ai/v1/keys/create",
+    json={"email": "you@example.com", "tier": "sandbox"},
+).json()["api_key"]  # lg_sandbox_...
+
 response = httpx.post(
     "https://api.limitguard.ai/v1/entity/check",
-    headers={
-        "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx",
-        "X-LimitGuard-Mode": "sandbox",
-    },
+    headers={"X-API-Key": key},
     json={
         "entity_name": "Acme Corp BV",
         "country": "NL",
@@ -92,11 +99,16 @@ print(response.json())
 ```
 
 ```javascript JavaScript
+const { api_key } = await (await fetch("https://api.limitguard.ai/v1/keys/create", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email: "you@example.com", tier: "sandbox" }),
+})).json(); // lg_sandbox_...
+
 const response = await fetch("https://api.limitguard.ai/v1/entity/check", {
   method: "POST",
   headers: {
-    "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx",
-    "X-LimitGuard-Mode": "sandbox",
+    "X-API-Key": api_key,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
@@ -117,7 +129,7 @@ Sandbox returns deterministic mock data — same input always gives the same out
 
 <Step title="Make a Live Entity Check">
 
-Remove the sandbox header for real results from up to 7 data sources (the ones your request gives identifiers for):
+Use your `lg_live_` key (or pay per call with x402) for real results from up to 7 data sources (the ones your request gives identifiers for):
 
 <CodeGroup>
 

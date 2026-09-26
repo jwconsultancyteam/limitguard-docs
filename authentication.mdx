@@ -48,7 +48,7 @@ A paid-tier API key skips the per-call x402 payment: each call is debited at lis
 | Prefix | Type | Use |
 |--------|------|-----|
 | `lg_live_` | Production key | Live data, real sources |
-| `lg_test_` | Test / sandbox key | Automatically activates sandbox mode |
+| `lg_sandbox_` | Sandbox key (`"tier": "sandbox"` on `POST /v1/keys/create`) | Mock data, never charged, 10 requests per minute per IP |
 
 ### Creating Keys
 

@@ -119,7 +119,7 @@ Poll `X-RateLimit-Remaining` on each response to detect approaching limits befor
 
 ### 4. Never Load Test Production
 
-Use sandbox mode (`X-LimitGuard-Mode: sandbox`) for load testing. The 10 req/min sandbox limit exists to prevent accidental load on real data sources.
+Use a sandbox key (`lg_sandbox_...`) for load testing. The 10 req/min sandbox limit exists to prevent accidental load on real data sources.
 
 ---
 

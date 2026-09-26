@@ -1495,24 +1495,24 @@ Use `/llms.txt` (concise) for general-purpose agents where token budget matters.
 Agents calling one endpoint can discover complementary services at runtime:
 
 ```bash
-curl "https://api.limitguard.ai/v1/sales/recommendations?current_endpoint=/v1/risk/score&trust_score=45"
+curl "https://api.limitguard.ai/v1/sales/recommendations?current_endpoint=/v1/risk/score" \
+  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx"
 ```
 
 ```json Response
 {
+  "current_endpoint": "/v1/risk/score",
   "recommendations": [
     {
       "endpoint": "/v1/entity/check",
-      "reason": "Risk score 45 is borderline — full entity check provides 6 more data sources for higher confidence",
-      "estimated_uplift": "30-40% more signal"
-    },
-    {
-      "endpoint": "/v1/compliance/readiness/{entity_id}",
-      "reason": "Low-medium scores often reveal compliance gaps worth investigating before onboarding"
+      "reason": "Full entity check for deeper intelligence",
+      "price_usdc": 0.85
     }
   ]
 }
 ```
+
+The endpoint needs an API key (a free or sandbox key works). An optional `trust_score` parameter is accepted but does not change the answer today.
 
 Agents can use this to self-direct their verification strategy without hardcoded decision trees.
 
@@ -1524,68 +1524,47 @@ Build and test your agent integration without spending USDC or calling real data
 
 ### Activating Sandbox for Agents
 
-Two approaches depending on your agent's authentication method:
+Sandbox mode is decided by the key: create a free `lg_sandbox_` key once and send it like any other key. There is no sandbox header, and `lg_test_` keys are refused in production.
 
 <CodeGroup>
 
-```python Python (Header — any auth method)
+```python Python
 import httpx
 
-def verify_entity_sandbox(entity_name: str, country: str, api_key: str) -> dict:
-    """Sandbox mode — deterministic mock data, no payment."""
+# Once: a free sandbox key (no wallet, no payment)
+SANDBOX_KEY = httpx.post(
+    "https://api.limitguard.ai/v1/keys/create",
+    json={"email": "you@example.com", "tier": "sandbox"},
+).json()["api_key"]  # lg_sandbox_...
+
+def verify_entity(entity_name: str, country: str, api_key: str) -> dict:
+    """The same call in sandbox and production; only the key differs."""
     response = httpx.post(
         "https://api.limitguard.ai/v1/entity/check",
-        headers={
-            "X-API-Key": api_key,
-            "X-LimitGuard-Mode": "sandbox",
-            "Content-Type": "application/json",
-        },
+        headers={"X-API-Key": api_key, "Content-Type": "application/json"},
         json={"entity_name": entity_name, "country": country},
-        timeout=5.0,
+        timeout=10.0,
     )
     response.raise_for_status()
     return response.json()
 
-# Sandbox response is deterministic — useful for unit tests
-result = verify_entity_sandbox("Any Company", "NL", api_key="lg_live_xxxxxxxxxxxxxxxxxxxx")
-# Always returns: trust_score: 75, recommendation: "review"
-```
-
-```python Python (Test key — automatic sandbox)
-import httpx
-
-# lg_test_ keys automatically activate sandbox for all requests
-# No header needed — useful for CI/CD where you don't want accidental live calls
-def verify_entity(entity_name: str, country: str) -> dict:
-    response = httpx.post(
-        "https://api.limitguard.ai/v1/entity/check",
-        headers={"X-API-Key": "lg_test_xxxxxxxxxxxxxxxxxxxx"},
-        json={"entity_name": entity_name, "country": country},
-    )
-    response.raise_for_status()
-    return response.json()
+# Sandbox response is deterministic: useful for unit tests
+result = verify_entity("Any Company", "NL", api_key=SANDBOX_KEY)
+# Always returns: trust_score: 75, recommendation: "review", sandbox: true
 ```
 
 ```javascript JavaScript
-// Sandbox via environment variable toggle
-const isSandbox = process.env.NODE_ENV !== "production";
+// Pick the key by environment: the sandbox key can never trigger a paid call
+const apiKey = process.env.NODE_ENV === "production"
+  ? process.env.LIMITGUARD_API_KEY          // lg_live_...
+  : process.env.LIMITGUARD_SANDBOX_KEY;     // lg_sandbox_...
 
 async function verifyEntity(entityName, country) {
-  const headers = {
-    "X-API-Key": process.env.LIMITGUARD_API_KEY,
-    "Content-Type": "application/json",
-  };
-
-  if (isSandbox) {
-    headers["X-LimitGuard-Mode"] = "sandbox";
-  }
-
   const res = await fetch("https://api.limitguard.ai/v1/entity/check", {
     method: "POST",
-    headers,
+    headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({ entity_name: entityName, country }),
   });
-
   return res.json();
 }
 ```
@@ -1597,11 +1576,10 @@ async function verifyEntity(entityName, country) {
 | Property | Sandbox | Production |
 |----------|---------|------------|
 | Data sources | Mock only — no real KVK, sanctions, VIES | Up to 7 sources, live (which ones run depends on the identifiers you send) |
-| Responses | Deterministic (same input = same output) | Live results |
+| Responses | Deterministic (same input = same output), `sandbox: true` | Live results |
 | x402 payment | Skipped entirely | Required (or API key) |
 | Balance | Not debited | Debited per call (or paid per call with x402) |
 | Rate limit | 10 req/min per IP | Tier-based |
-| Response time | ~5ms | ~250-500ms |
 
 ### Writing Agent Tests with Sandbox
 
@@ -1609,7 +1587,7 @@ async function verifyEntity(entityName, country) {
 import pytest
 import httpx
 
-API_KEY = "lg_test_xxxxxxxxxxxxxxxxxxxx"  # lg_test_ auto-activates sandbox
+API_KEY = "lg_sandbox_xxxxxxxxxxxxxxxxxxxx"  # a sandbox key: mock data, never charged
 
 
 @pytest.mark.asyncio
