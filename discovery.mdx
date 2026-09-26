@@ -3,7 +3,7 @@ title: "Discovery"
 description: "Machine-readable discovery for AI agents — MCP, A2A, x402, and llms.txt"
 ---
 
-LimitGuard publishes machine-readable discovery files for three AI agent protocols. All discovery endpoints are **free and require no authentication**.
+Limitguard publishes machine-readable discovery files for three AI agent protocols. All discovery endpoints are **free and require no authentication**.
 
 ## Discovery Endpoints
 
@@ -30,7 +30,7 @@ curl https://api.limitguard.ai/.well-known/x402.json
 
 ```json Response
 {
-  "service": "LimitGuard.ai",
+  "service": "Limitguard.ai",
   "version": "1.0",
   "protocol": "x402-v2",
   "x402Version": 2,
@@ -61,7 +61,7 @@ Google's Agent-to-Agent (A2A) protocol for agent capability discovery.
 curl https://api.limitguard.ai/.well-known/agent.json
 ```
 
-Returns capabilities, skills, and how to invoke LimitGuard as an A2A agent. Other agents can discover what LimitGuard can do and how to interact with it programmatically.
+Returns capabilities, skills, and how to invoke Limitguard as an A2A agent. Other agents can discover what Limitguard can do and how to interact with it programmatically.
 
 ## MCP Manifest
 
@@ -71,7 +71,7 @@ Model Context Protocol tools for LLM agents (Claude, GPT-4, etc.).
 curl https://api.limitguard.ai/.well-known/mcp.json
 ```
 
-Returns tool definitions that LLM agents can use to call LimitGuard endpoints as native tools. See the [AI Agent Integration guide](/guides/ai-agent-integration) for usage examples.
+Returns tool definitions that LLM agents can use to call Limitguard endpoints as native tools. See the [AI Agent Integration guide](/guides/ai-agent-integration) for usage examples.
 
 ## llms.txt
 
@@ -98,7 +98,7 @@ Needs an API key (a free or sandbox key works). Returns the complementary endpoi
 
 ## Integration Example
 
-An AI agent discovering and using LimitGuard autonomously:
+An AI agent discovering and using Limitguard autonomously:
 
 <CodeGroup>
 

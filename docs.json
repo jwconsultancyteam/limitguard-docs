@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "LimitGuard",
+  "name": "Limitguard",
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
@@ -131,7 +131,7 @@
     "suggestEdit": true
   },
   "search": {
-    "prompt": "Search LimitGuard docs..."
+    "prompt": "Search Limitguard docs..."
   },
   "footer": {
     "socials": {
@@ -142,8 +142,8 @@
   "seo": {
     "indexing": "navigable",
     "metatags": {
-      "og:site_name": "LimitGuard",
-      "og:description": "LimitGuard API docs: KYB, sanctions and PEP screening, Dutch and Belgian company registry checks and entity trust scores for AI agents, via x402 pay-per-call, API keys or MCP."
+      "og:site_name": "Limitguard",
+      "og:description": "Limitguard API docs: KYB, sanctions and PEP screening, Dutch and Belgian company registry checks and entity trust scores for AI agents, via x402 pay-per-call, API keys or MCP."
     }
   },
   "redirects": [

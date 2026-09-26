@@ -3,7 +3,7 @@ title: "Sandbox Mode"
 description: "Test the API for free with a sandbox key: no wallet, no payment, mock data"
 ---
 
-Sandbox mode lets you test the LimitGuard API without calling real data sources, making USDC payments, or spending a prepaid balance.
+Sandbox mode lets you test the Limitguard API without calling real data sources, making USDC payments, or spending a prepaid balance.
 
 ## How to Activate
 
@@ -53,7 +53,7 @@ const response = await fetch("https://api.limitguard.ai/v1/entity/check", {
 </CodeGroup>
 
 <Warning>
-There is no sandbox header. An `X-LimitGuard-Mode: sandbox` header is ignored, so a request that sends it with a live key is a normal, paid call. Keys starting with `lg_test_` are refused in production with `401 Test keys not accepted in production`.
+There is no sandbox header. An `X-Limitguard-Mode: sandbox` header is ignored, so a request that sends it with a live key is a normal, paid call. Keys starting with `lg_test_` are refused in production with `401 Test keys not accepted in production`.
 </Warning>
 
 `POST /v1/reports/entity` (and the MCP `get_compliance_report` tool) refuses sandbox keys with `403`: reports are built only from real checks.

@@ -1,9 +1,9 @@
 ---
 title: "Framework Integrations"
-description: "Connect LangChain, CrewAI, or the OpenAI Agents SDK to LimitGuard's remote MCP server"
+description: "Connect LangChain, CrewAI, or the OpenAI Agents SDK to Limitguard's remote MCP server"
 ---
 
-LimitGuard's MCP server is a standard remote **Streamable HTTP** endpoint at `https://api.limitguard.ai/mcp`. Any framework with a generic MCP client can connect to it directly - there is no LimitGuard-specific package or wrapper for LangChain, CrewAI, or the OpenAI Agents SDK. The examples below use each framework's own remote-MCP client against that single URL.
+Limitguard's MCP server is a standard remote **Streamable HTTP** endpoint at `https://api.limitguard.ai/mcp`. Any framework with a generic MCP client can connect to it directly - there is no Limitguard-specific package or wrapper for LangChain, CrewAI, or the OpenAI Agents SDK. The examples below use each framework's own remote-MCP client against that single URL.
 
 <Note>
 For the raw MCP manifest (`/.well-known/mcp.json`), the tools it lists, and their pricing, see [AI Agent Integration](/guides/ai-agent-integration#mcp-model-context-protocol). This page is about wiring a framework's MCP client to that server, not about the tool catalog itself.
@@ -11,7 +11,7 @@ For the raw MCP manifest (`/.well-known/mcp.json`), the tools it lists, and thei
 
 ## Authenticating the MCP Connection
 
-`tools/list` never requires authentication - any MCP client can discover LimitGuard's tools without a key or a wallet. Calling a tool is different:
+`tools/list` never requires authentication - any MCP client can discover Limitguard's tools without a key or a wallet. Calling a tool is different:
 
 - **With an API key** - send it as a Bearer token on the MCP connection: `Authorization: Bearer lg_live_xxxxxxxxxxxxxxxxxxxx`. A paid-tier key debits its prepaid balance per call, the same as REST.
 - **Without a key** - `tools/list` still works, and `verify_wallet` (wallet risk screening) is real and free ($0), callable with no key and no payment. Any other tool called without a key or a payment header gets back a JSON-RPC error naming the price and how to pay - there is no HTTP 402 on this transport, since a JSON-RPC error has no status-code channel.
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-`get_tools()` opens a new MCP session per call by default. For an agent that calls LimitGuard tools repeatedly in one process, keep the `MultiServerMCPClient` instance alive and reuse it rather than constructing it per request.
+`get_tools()` opens a new MCP session per call by default. For an agent that calls Limitguard tools repeatedly in one process, keep the `MultiServerMCPClient` instance alive and reuse it rather than constructing it per request.
 
 ## OpenAI Agents SDK
 
@@ -80,7 +80,7 @@ from agents.mcp import MCPServerStreamableHttp
 
 async def main() -> None:
     async with MCPServerStreamableHttp(
-        name="LimitGuard",
+        name="Limitguard",
         params={
             "url": "https://api.limitguard.ai/mcp",
             # Omit "headers" to connect without a key.
@@ -135,7 +135,7 @@ with MCPServerAdapter(server_params) as limitguard_tools:
     payments_agent = Agent(
         role="Payments Reviewer",
         goal="Verify a counterparty's trust score before any payment is approved",
-        backstory="Checks every new supplier against LimitGuard before sign-off.",
+        backstory="Checks every new supplier against Limitguard before sign-off.",
         tools=limitguard_tools,
     )
 

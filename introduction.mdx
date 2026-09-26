@@ -6,22 +6,22 @@ description: "Trust Intelligence API for the Agent Economy"
 <img
   className="block dark:hidden"
   src="/logo/light.svg"
-  alt="LimitGuard"
+  alt="Limitguard"
   width="60"
 />
 <img
   className="hidden dark:block"
   src="/logo/dark.svg"
-  alt="LimitGuard"
+  alt="Limitguard"
   width="60"
 />
 
-# LimitGuard
+# Limitguard
 
 **Real-time trust scoring for AI agents, businesses, and transactions.**
 Up to 7 data sources. One API call. Paid per call in USDC or with an API key.
 
-LimitGuard is a Trust Intelligence API that lets AI agents and developers verify the trustworthiness of any business entity before transacting. We aggregate up to 7 independent data sources (business registries, sanctions lists, jurisdiction risk, domain intelligence, IBAN validation, VAT verification, and wallet address format validation) into a single trust score.
+Limitguard is a Trust Intelligence API that lets AI agents and developers verify the trustworthiness of any business entity before transacting. We aggregate up to 7 independent data sources (business registries, sanctions lists, jurisdiction risk, domain intelligence, IBAN validation, VAT verification, and wallet address format validation) into a single trust score.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
@@ -38,11 +38,11 @@ LimitGuard is a Trust Intelligence API that lets AI agents and developers verify
   </Card>
 </CardGroup>
 
-## Why LimitGuard?
+## Why Limitguard?
 
 AI agents transact billions daily without trust verification. There's no standard way for an agent to know if a counterparty is legitimate, sanctioned, or fraudulent before sending funds.
 
-LimitGuard solves this with a single API call:
+Limitguard solves this with a single API call:
 
 ```bash
 curl -X POST https://api.limitguard.ai/v1/entity/check \
@@ -95,7 +95,7 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
     POST the entity name, country, and any identifiers you have — KVK number, domain, IBAN, VAT, or wallet address.
   </Step>
   <Step title="Parallel checks">
-    LimitGuard queries every data source your identifiers allow, in parallel: business registry, sanctions and PEP, jurisdiction risk, domain and financial checks.
+    Limitguard queries every data source your identifiers allow, in parallel: business registry, sanctions and PEP, jurisdiction risk, domain and financial checks.
   </Step>
   <Step title="Get trust score">
     Receive a trust score (0-100), risk level, entity cluster, and recommendation: **proceed**, **review**, **enhanced due diligence**, or **block**.
@@ -109,11 +109,11 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
 | **Pay-per-use** | No subscription required. Pay with USDC via x402 protocol. |
 | **Sandbox mode** | Test free with realistic mock data. No wallet needed. |
 | **Two quality tiers** | Choose cached or fresh: $0.10 / $0.85 on `/v1/entity/check`. |
-| **AI agent native** | MCP, A2A, and x402 discovery. Agents find and use LimitGuard autonomously. |
-| **GDPR compliant** | Operated by Ambulatio Consulting B.V. (trading as LimitGuard) in the Netherlands. Application data stored in the EU, with published retention periods. |
-| **Self-verifying** | LimitGuard verifies itself with its own API. Our score is public. |
+| **AI agent native** | MCP, A2A, and x402 discovery. Agents find and use Limitguard autonomously. |
+| **GDPR compliant** | Operated by Ambulatio Consulting B.V. (trading as Limitguard) in the Netherlands. Application data stored in the EU, with published retention periods. |
+| **Self-verifying** | Limitguard verifies itself with its own API. Our score is public. |
 
-## Who Uses LimitGuard
+## Who Uses Limitguard
 
 - **AI agent developers** — Verify counterparties before autonomous transactions
 - **Fintech platforms** — KYB and compliance checks via API

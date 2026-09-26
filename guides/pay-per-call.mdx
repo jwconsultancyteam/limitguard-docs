@@ -1,12 +1,12 @@
 ---
 title: "Pay Per Call"
-description: "Call LimitGuard with a USDC wallet and a client library - no API key, no subscription"
+description: "Call Limitguard with a USDC wallet and a client library - no API key, no subscription"
 ---
 
-No API key, no signup: an agent with a funded USDC wallet can call any priced LimitGuard endpoint directly. Two paths are proven end to end against production:
+No API key, no signup: an agent with a funded USDC wallet can call any priced Limitguard endpoint directly. Two paths are proven end to end against production:
 
 - **Base** - the official PyPI [`x402`](https://pypi.org/project/x402/) client, using the EIP-3009 `exact` scheme settled through Coinbase's facilitator. The wallet needs USDC on Base only - no ETH for gas.
-- **Solana** - the LimitGuard SDK's co-sign mode. LimitGuard's own fee payer covers the Solana network fee, so the wallet needs USDC only - no SOL.
+- **Solana** - the Limitguard SDK's co-sign mode. Limitguard's own fee payer covers the Solana network fee, so the wallet needs USDC only - no SOL.
 
 Both examples call `POST /v1/risk/score`. For the raw HTTP 402 flow behind both (useful if you're not on Python, or want to hand-roll the signature), see [x402 Protocol](/x402-protocol). For what each endpoint costs, see [Pricing](/pricing).
 
@@ -34,7 +34,7 @@ async def check_risk(entity_name: str, country: str) -> dict:
     """POST /v1/risk/score, paying the 402 automatically with USDC on Base."""
     account = Account.from_key(os.environ["EVM_PRIVATE_KEY"])  # 0x-prefixed hex key
 
-    # "eip155:*" matches Base (eip155:8453) and any other EVM chain LimitGuard quotes.
+    # "eip155:*" matches Base (eip155:8453) and any other EVM chain Limitguard quotes.
     client = x402Client().register("eip155:*", ExactEvmScheme(account))
     # Refuse to auto-pay more than $1 for any single call. Raise this for a
     # pricier endpoint (e.g. /v1/kyb/check at $1.50) before calling it.
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
 Set `EVM_PRIVATE_KEY` to a wallet holding at least $0.65 USDC on Base mainnet (`eip155:8453`). The transport handles the 402: it probes the endpoint, signs the EIP-3009 authorization, retries with the payment header, and returns the paid response - nothing else to wire up.
 
-## Solana (LimitGuard SDK, co-sign mode)
+## Solana (Limitguard SDK, co-sign mode)
 
 ```bash
 pip install "limitguard[solana]>=0.1.4"
@@ -79,7 +79,7 @@ from solders.keypair import Keypair
 async def check_risk(entity_name: str, country: str) -> dict:
     """POST /v1/risk/score, paying the 402 with USDC on Solana."""
     keypair = Keypair.from_base58_string(os.environ["SOLANA_PRIVATE_KEY"])
-    # Co-sign mode (the default): LimitGuard's fee payer pays the network fee,
+    # Co-sign mode (the default): Limitguard's fee payer pays the network fee,
     # so this wallet needs USDC only, no SOL.
     wallet = SolanaWallet(keypair=keypair)
 

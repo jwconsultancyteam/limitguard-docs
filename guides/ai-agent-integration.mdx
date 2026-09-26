@@ -1,11 +1,11 @@
 ---
 title: "AI Agent Integration"
-description: "How AI agents discover and use LimitGuard — MCP, A2A, and x402"
+description: "How AI agents discover and use Limitguard — MCP, A2A, and x402"
 ---
 
 AI agents are now the dominant counterparty in digital commerce. They invoice, pay, onboard vendors, and execute contracts — all without human review. Yet most agents have no mechanism to verify whether the entity on the other side of a transaction is legitimate.
 
-LimitGuard is built for this gap. It exposes trust intelligence through three agent-native protocols — MCP, A2A, and x402 — so any capable agent can discover, pay for, and act on trust scores without human configuration.
+Limitguard is built for this gap. It exposes trust intelligence through three agent-native protocols — MCP, A2A, and x402 — so any capable agent can discover, pay for, and act on trust scores without human configuration.
 
 <CardGroup cols={3}>
   <Card title="MCP" icon="plug" href="#mcp-model-context-protocol">
@@ -20,7 +20,7 @@ LimitGuard is built for this gap. It exposes trust intelligence through three ag
 </CardGroup>
 
 <Note>
-All discovery endpoints (`/.well-known/*`, `/llms.txt`, `/llms-full.txt`) are **free and unauthenticated**. An agent can discover LimitGuard's full capabilities without a wallet or API key.
+All discovery endpoints (`/.well-known/*`, `/llms.txt`, `/llms-full.txt`) are **free and unauthenticated**. An agent can discover Limitguard's full capabilities without a wallet or API key.
 </Note>
 
 ---
@@ -37,7 +37,7 @@ A supplier claiming to be "Acme Corp BV" in Amsterdam could be:
 
 Without trust verification, agents must either halt for human review (defeating the purpose of automation) or proceed blind (accepting counterparty risk they cannot quantify).
 
-LimitGuard resolves this in a single API call — returning a 0-100 trust score, a recommendation (`proceed` / `review` / `enhanced_due_diligence` / `block`), and the evidence behind it.
+Limitguard resolves this in a single API call — returning a 0-100 trust score, a recommendation (`proceed` / `review` / `enhanced_due_diligence` / `block`), and the evidence behind it.
 
 ### Agent Decision Framework
 
@@ -63,7 +63,7 @@ LimitGuard resolves this in a single API call — returning a 0-100 trust score,
 
 ## MCP (Model Context Protocol)
 
-MCP is Anthropic's standard for exposing APIs as native tools to LLM agents. When an LLM is configured with LimitGuard's MCP manifest, it can call trust verification endpoints the same way it calls any built-in tool — no prompt engineering required.
+MCP is Anthropic's standard for exposing APIs as native tools to LLM agents. When an LLM is configured with Limitguard's MCP manifest, it can call trust verification endpoints the same way it calls any built-in tool — no prompt engineering required.
 
 ### Discovery
 
@@ -75,7 +75,7 @@ curl https://api.limitguard.ai/.well-known/mcp.json
 {
   "name": "limitguard",
   "version": "1.0",
-  "description": "LimitGuard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU. Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached ($0.25 KYB) when available. Entity verification and risk scoring tools for AI agents.",
+  "description": "Limitguard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU. Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached ($0.25 KYB) when available. Entity verification and risk scoring tools for AI agents.",
   "tools": [
     {
       "name": "check_entity",
@@ -213,7 +213,7 @@ import anthropic
 
 client = anthropic.Anthropic()
 
-# Register LimitGuard as an MCP server
+# Register Limitguard as an MCP server
 # Claude will call check_entity automatically when it needs to verify an entity
 response = client.beta.messages.create(
     model="claude-opus-4-6",
@@ -248,7 +248,7 @@ import OpenAI from "openai";
 
 const client = new OpenAI();
 
-// Define LimitGuard tools from the MCP manifest
+// Define Limitguard tools from the MCP manifest
 const tools = [
   {
     type: "function",
@@ -337,7 +337,7 @@ When writing system prompts, instruct the agent explicitly: "Before executing an
 
 ## A2A (Agent-to-Agent)
 
-Google's Agent-to-Agent protocol defines a standard for agents to discover and invoke other agents as structured services. LimitGuard publishes an Agent Card that exposes its capabilities, skills, and invocation interface to any A2A-compatible agent.
+Google's Agent-to-Agent protocol defines a standard for agents to discover and invoke other agents as structured services. Limitguard publishes an Agent Card that exposes its capabilities, skills, and invocation interface to any A2A-compatible agent.
 
 ### Discovery
 
@@ -347,14 +347,14 @@ curl https://api.limitguard.ai/.well-known/agent.json
 
 ```json Response
 {
-  "name": "LimitGuard Trust Intelligence",
-  "description": "LimitGuard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU. Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached ($0.25 KYB) when available. Enables AI agents to verify counterparty trust before transacting.",
+  "name": "Limitguard Trust Intelligence",
+  "description": "Limitguard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU. Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached ($0.25 KYB) when available. Enables AI agents to verify counterparty trust before transacting.",
   "protocolVersion": "0.3.0",
   "version": "1.0",
   "url": "https://api.limitguard.ai/a2a",
   "preferredTransport": "JSONRPC",
   "provider": {
-    "organization": "LimitGuard",
+    "organization": "Limitguard",
     "url": "https://limitguard.ai"
   },
   "documentationUrl": "https://docs.limitguard.ai/x402-protocol",
@@ -374,7 +374,7 @@ curl https://api.limitguard.ai/.well-known/agent.json
       "type": "apiKey",
       "in": "header",
       "name": "X-API-Key",
-      "description": "LimitGuard key (lg_live_...); free via POST /v1/keys/create"
+      "description": "Limitguard key (lg_live_...); free via POST /v1/keys/create"
     },
     "bearer": {
       "type": "http",
@@ -467,7 +467,7 @@ curl https://api.limitguard.ai/.well-known/agent.json
 import httpx
 
 class LimitGuardA2AClient:
-    """A2A client for LimitGuard trust verification."""
+    """A2A client for Limitguard trust verification."""
 
     AGENT_CARD_URL = "https://api.limitguard.ai/.well-known/agent.json"
     BASE_URL = "https://api.limitguard.ai"
@@ -491,7 +491,7 @@ class LimitGuardA2AClient:
         )
 
     def invoke(self, skill_id: str, payload: dict) -> dict:
-        """Invoke a LimitGuard skill via A2A."""
+        """Invoke a Limitguard skill via A2A."""
         skill = self.get_skill(skill_id)
         if skill is None:
             raise ValueError(f"Skill '{skill_id}' not found in agent card")
@@ -511,7 +511,7 @@ class LimitGuardA2AClient:
 # Usage in an orchestrator agent
 client = LimitGuardA2AClient(api_key="lg_live_xxxxxxxxxxxxxxxxxxxx")
 
-# Discover what LimitGuard can do
+# Discover what Limitguard can do
 card = client.discover()
 print(f"Available skills: {[s['id'] for s in card['skills']]}")
 # Available skills: ['entity_check', 'risk_score', 'kyb_check']
@@ -559,7 +559,7 @@ class LimitGuardA2AClient {
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) throw new Error(`LimitGuard error: ${res.status}`);
+    if (!res.ok) throw new Error(`Limitguard error: ${res.status}`);
     return res.json();
   }
 }
@@ -584,7 +584,7 @@ console.log(`Trust score: ${result.trust_score} — ${result.recommendation}`);
 
 ## x402 Micropayments
 
-x402 is the HTTP native payment protocol for AI agents. An agent with a funded USDC wallet can call LimitGuard endpoints **without a subscription or API key** — it discovers pricing, builds a cryptographic payment signature, and includes it in the request header.
+x402 is the HTTP native payment protocol for AI agents. An agent with a funded USDC wallet can call Limitguard endpoints **without a subscription or API key** — it discovers pricing, builds a cryptographic payment signature, and includes it in the request header.
 
 This is the fully autonomous path: no human creates an account, no API key is provisioned, no billing is configured.
 
@@ -596,7 +596,7 @@ curl https://api.limitguard.ai/.well-known/x402.json
 
 ```json Response
 {
-  "service": "LimitGuard.ai",
+  "service": "Limitguard.ai",
   "version": "1.0",
   "protocol": "x402-v2",
   "x402Version": 2,
@@ -644,7 +644,7 @@ Truncated to three entries; the live response lists every priced endpoint. `pric
     Serialize the payment payload to JSON and base64-encode it. This becomes the `X-PAYMENT` header value.
   </Step>
   <Step title="Retry the request with X-PAYMENT">
-    Send the original request again, including the `X-PAYMENT` header. LimitGuard verifies the signature on-chain, executes the transfer, and returns the trust score.
+    Send the original request again, including the `X-PAYMENT` header. Limitguard verifies the signature on-chain, executes the transfer, and returns the trust score.
   </Step>
   <Step title="Check response headers">
     Confirm `X-Payment-Verified: true`. If you see `X-Payment-Fallback: true`, the circuit breaker triggered a cached-wallet path (rare).
@@ -856,7 +856,7 @@ async function verifyEntityX402(entityName, country, signer, quality = "fresh") 
     body: JSON.stringify({ entity_name: entityName, country }),
   });
 
-  if (!response.ok) throw new Error(`LimitGuard error: ${response.status}`);
+  if (!response.ok) throw new Error(`Limitguard error: ${response.status}`);
   return response.json();
 }
 
@@ -894,29 +894,29 @@ This example shows a complete autonomous payment agent — from cold start to de
 ```mermaid
 sequenceDiagram
     participant Agent
-    participant LimitGuard
+    participant Limitguard
     participant Blockchain
 
-    Agent->>LimitGuard: GET /.well-known/x402.json
-    LimitGuard-->>Agent: Pricing + endpoints + networks
+    Agent->>Limitguard: GET /.well-known/x402.json
+    Limitguard-->>Agent: Pricing + endpoints + networks
 
     Note over Agent: Invoice received: Acme Corp BV, €500
 
-    Agent->>LimitGuard: POST /v1/risk/score (probe, no payment)
-    LimitGuard-->>Agent: HTTP 402 — amount: 100000, recipient: 0xFaci...
+    Agent->>Limitguard: POST /v1/risk/score (probe, no payment)
+    Limitguard-->>Agent: HTTP 402 — amount: 100000, recipient: 0xFaci...
 
     Agent->>Blockchain: EIP-3009 TransferWithAuthorization signature
     Note over Agent: Signs locally — no on-chain tx yet
 
-    Agent->>LimitGuard: POST /v1/risk/score (X-PAYMENT header)
-    LimitGuard->>Blockchain: Verify + settle signature
-    Blockchain-->>LimitGuard: Confirmed
-    LimitGuard-->>Agent: risk_score: 22, recommendation: review
+    Agent->>Limitguard: POST /v1/risk/score (X-PAYMENT header)
+    Limitguard->>Blockchain: Verify + settle signature
+    Blockchain-->>Limitguard: Confirmed
+    Limitguard-->>Agent: risk_score: 22, recommendation: review
 
     Note over Agent: Risk score low — upgrade to full check
 
-    Agent->>LimitGuard: POST /v1/entity/check (fresh, $0.85)
-    LimitGuard-->>Agent: trust_score: 87, recommendation: proceed
+    Agent->>Limitguard: POST /v1/entity/check (fresh, $0.85)
+    Limitguard-->>Agent: trust_score: 87, recommendation: proceed
 
     Note over Agent: Score ≥ 80 — proceed autonomously
     Agent->>Agent: Execute payment, log trust_score in audit trail
@@ -1331,7 +1331,7 @@ class TrustGatedAgent {
       },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`LimitGuard error: ${res.status}`);
+    if (!res.ok) throw new Error(`Limitguard error: ${res.status}`);
     return res.json();
   }
 
@@ -1416,7 +1416,7 @@ if (approved) {
 
 ## llms.txt — LLM Context Loading
 
-LimitGuard implements the [llms.txt standard](https://llmstxt.org/) — machine-readable files that let any LLM load a structured API summary into its context window.
+Limitguard implements the [llms.txt standard](https://llmstxt.org/) — machine-readable files that let any LLM load a structured API summary into its context window.
 
 ### Endpoints
 
@@ -1441,7 +1441,7 @@ curl https://api.limitguard.ai/llms-full.txt
 import httpx
 
 def load_limitguard_context(full: bool = False) -> str:
-    """Load LimitGuard API context for injection into an LLM prompt."""
+    """Load Limitguard API context for injection into an LLM prompt."""
     url = "https://api.limitguard.ai/llms-full.txt" if full else "https://api.limitguard.ai/llms.txt"
     response = httpx.get(url, timeout=5.0)
     response.raise_for_status()
@@ -1452,7 +1452,7 @@ def load_limitguard_context(full: bool = False) -> str:
 context = load_limitguard_context(full=True)
 
 system_prompt = f"""You are a payment automation assistant.
-You have access to the LimitGuard Trust Intelligence API.
+You have access to the Limitguard Trust Intelligence API.
 
 {context}
 
@@ -1474,7 +1474,7 @@ async function loadLimitGuardContext(full = false) {
 const context = await loadLimitGuardContext(true);
 
 const systemPrompt = `You are a payment automation assistant.
-You have access to the LimitGuard Trust Intelligence API.
+You have access to the Limitguard Trust Intelligence API.
 
 ${context}
 
@@ -1485,7 +1485,7 @@ Block all transactions where recommendation is 'block'.`;
 </CodeGroup>
 
 <Tip>
-Use `/llms.txt` (concise) for general-purpose agents where token budget matters. Use `/llms-full.txt` when the agent needs to generate code that calls LimitGuard — the full reference includes request/response schemas and error codes.
+Use `/llms.txt` (concise) for general-purpose agents where token budget matters. Use `/llms-full.txt` when the agent needs to generate code that calls Limitguard — the full reference includes request/response schemas and error codes.
 </Tip>
 
 ---

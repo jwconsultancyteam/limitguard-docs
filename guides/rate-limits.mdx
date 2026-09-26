@@ -3,7 +3,7 @@ title: "Rate Limits"
 description: "Rate limit behavior, tiers, and Retry-After headers"
 ---
 
-LimitGuard enforces rate limits to ensure fair access and API stability. They are abuse limits, not a quota you buy: every call is paid for, either per call with x402 or from an API key's prepaid balance. A key's tier (bought as a prepaid top-up) only selects its burst limits.
+Limitguard enforces rate limits to ensure fair access and API stability. They are abuse limits, not a quota you buy: every call is paid for, either per call with x402 or from an API key's prepaid balance. A key's tier (bought as a prepaid top-up) only selects its burst limits.
 
 ## Rate Limits by Tier
 
@@ -291,7 +291,7 @@ async function checkEntity(
     // Non-retryable (4xx other than 429)
     const error = await response.json().catch(() => ({}));
     throw new Error(
-      `LimitGuard API error ${response.status}: ${error.error ?? response.statusText}`
+      `Limitguard API error ${response.status}: ${error.error ?? response.statusText}`
     );
   }
 
