@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Limitguard.ai",
-    "description": "Trust Intelligence API - Entity verification and risk scoring",
+    "description": "KYB and Sanctions Screening API - Entity verification and risk scoring",
     "version": "0.1.0"
   },
   "paths": {
