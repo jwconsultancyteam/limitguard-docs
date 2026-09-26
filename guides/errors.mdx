@@ -131,10 +131,10 @@ When `detail` is an array, iterate over it to surface all field errors at once. 
     **Fix:** Create a new key via `POST /v1/keys/create`. Keys are returned once — if lost, create a new one.
   </Accordion>
 
-  <Accordion title="Key prefix mismatch">
-    **Cause:** A sandbox key (`lg_test_`) is being used without the `X-LimitGuard-Mode: sandbox` header against a live endpoint, or vice versa.
+  <Accordion title="Test key in production">
+    **Cause:** A key starting with `lg_test_` was sent to the production API, which refuses it: `401 Test keys not accepted in production`.
 
-    **Fix:** Use `lg_live_` keys for production. `lg_test_` keys automatically activate sandbox mode regardless of headers.
+    **Fix:** For mock data use a sandbox key (`lg_sandbox_...`, free from `POST /v1/keys/create` with `"tier": "sandbox"`); for real data use an `lg_live_` key. There is no sandbox header: `X-LimitGuard-Mode` is ignored.
   </Accordion>
 </AccordionGroup>
 
@@ -275,33 +275,50 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
 ## 403 Forbidden
 
 <AccordionGroup>
-  <Accordion title="Endpoint not available on current tier">
-    **Cause:** Your API key tier does not include access to the requested endpoint. For example, `/v1/kyb/check` and `/v1/compliance/*` are only available on the `pro` tier.
+  <Accordion title="Entity report with a sandbox key">
+    **Cause:** `POST /v1/reports/entity` (and the MCP `get_compliance_report` tool) was called with a sandbox key. Reports are built only from real checks.
 
     ```json
     {
-      "type": "about:blank",
-      "title": "Forbidden",
+      "type": "https://docs.limitguard.ai/errors#report-not-available-in-sandbox",
+      "title": "Report Not Available In Sandbox",
       "status": 403,
-      "detail": "Endpoint /v1/kyb/check requires pro tier"
+      "detail": "Entity reports are built only from real checks; sandbox keys get no report.",
+      "instance": "/v1/reports/entity",
+      "errorCode": "report_not_available_in_sandbox"
     }
     ```
 
-    **Fix:** Upgrade your tier or use a tier-appropriate endpoint. See the [pricing page](/pricing) for tier access matrix.
+    **Fix:** Use an `lg_live_` key or pay per call with x402.
   </Accordion>
 
-  <Accordion title="Sandbox key on live endpoint">
-    **Cause:** An `lg_test_` key is being used but the request is routed to live data sources.
+  <Accordion title="Operator route">
+    **Cause:** The route is for the service operator (for example `/v1/admin/*`). Customer keys carry the least-privileged role, so the API answers `403` with `Insufficient role` or `Insufficient permissions`.
 
-    **Fix:** Use `lg_live_` keys for production. Test keys are sandboxed — they only return mock data.
+    **Fix:** None needed on your side: these routes are not part of the customer API.
   </Accordion>
 
-  <Accordion title="Read-only key attempting write">
-    **Cause:** The key was provisioned as read-only (e.g., a webhook consumer key) and is attempting a mutating operation.
+  <Accordion title="Watchlist without an API key">
+    **Cause:** The watchlist routes (`/v1/watchlist`) belong to an API key's own tenant. A call that reached them without a key-bound tenant, for example one paid only by x402, is answered `403 Tenant context required`.
 
-    **Fix:** Use the correct key for the operation, or create a new key with the required permissions.
+    **Fix:** Call the watchlist routes with an API key.
   </Accordion>
 </AccordionGroup>
+
+---
+
+## Entity report errors
+
+`POST /v1/reports/entity` and `GET /v1/reports/{report_id}` answer errors as [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807) problem details whose `type` links to the entries below. Each body also carries `instance` (the request path) and `errorCode`.
+
+| `type` anchor | Status | `errorCode` | Meaning |
+|---|---|---|---|
+| <span id="entity-reports-not-available">`entity-reports-not-available`</span> | 404 | `entity_reports_not_available` | Entity reports are switched off on this server. Nothing was charged. |
+| <span id="report-not-available-in-sandbox">`report-not-available-in-sandbox`</span> | 403 | `report_not_available_in_sandbox` | A sandbox key was used; reports are built only from real checks. |
+| <span id="check-not-found">`check-not-found`</span> | 404 | `check_not_found` | The `check_id` is not a check stored by `/v1/reports/entity` for this key. |
+| <span id="report-store-unavailable">`report-store-unavailable`</span> | 503 | `report_store_unavailable` | The report could not be stored, so it is not returned. Nothing was charged; retry. |
+| <span id="invalid-report-id">`invalid-report-id`</span> | 400 | `invalid_report_id` | `report_id` must be a lower-case UUID. |
+| <span id="report-not-found">`report-not-found`</span> | 404 | `report_not_found` | No report with this id for this key or report token. |
 
 ---
 
@@ -874,7 +891,7 @@ async function buildEvmPayment(chainId, amount, signer, recipient, usdcAddress) 
 <AccordionGroup>
   <Accordion title="Getting 401 even with a valid key?">
     - Confirm the header name is exactly `X-API-Key` (capital X, capital A, capital K)
-    - Confirm the key value starts with `lg_live_` or `lg_test_`
+    - Confirm the key value starts with `lg_live_` or `lg_sandbox_` (`lg_test_` keys are refused in production)
     - Check for leading/trailing whitespace in the header value
     - Verify the key has not been revoked — create a new one at `POST /v1/keys/create`
   </Accordion>

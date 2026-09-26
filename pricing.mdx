@@ -61,7 +61,7 @@ These endpoints have a single price regardless of quality tier:
 
 ## MCP Tool Endpoints
 
-The [5 MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are **not** free, even though they're callable as native LLM tools. Where a tool mirrors a tiered REST endpoint it costs the same as that endpoint's `fresh` tier; the remaining three are flat-priced:
+The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are priced per call like the REST API. `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `verify_wallet` is free; `get_compliance_report` is billed as `POST /v1/reports/entity` ($1.50). `check_agent` and `get_trust_score` are unimplemented placeholders: $0.00, and hidden from the MCP tool list. The REST mirrors:
 
 | Endpoint | Tool | Price |
 |----------|------|-------|
@@ -72,7 +72,7 @@ The [5 MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are *
 | `POST /v1/mcp/verify-wallet` | `verify_wallet` | $0.00 |
 
 <Note>
-  The `Endpoint` column shows the REST transport path. MCP clients invoke these by tool name with the arguments declared in the [MCP manifest](/guides/ai-agent-integration#mcp-model-context-protocol). `verify_wallet` is the only tool exposed over `GET`, so its `wallet_address` and `chain_id` arguments are not sent as a JSON body.
+  The `Endpoint` column shows the REST transport path. MCP clients invoke these by tool name with the arguments declared in the [MCP manifest](/guides/ai-agent-integration#mcp-model-context-protocol). Every REST mirror is a `POST` with a JSON body, `verify_wallet` included.
 </Note>
 
 ## API Key Tier Upgrades

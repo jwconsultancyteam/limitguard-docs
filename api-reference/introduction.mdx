@@ -18,7 +18,7 @@ All paid endpoints require one of:
 |--------|--------|-------------|
 | **API Key** | `X-API-Key: lg_live_...` | Prepaid balance, debited at list price per call |
 | **x402 USDC** | `X-PAYMENT: <base64>` | Pay-per-call, no subscription |
-| **Sandbox** | `X-LimitGuard-Mode: sandbox` | Free testing, mock data |
+| **Sandbox** | `X-API-Key: lg_sandbox_...` | Free sandbox key from `POST /v1/keys/create` (`"tier": "sandbox"`), mock data |
 
 See [Authentication](/authentication) for full details.
 
