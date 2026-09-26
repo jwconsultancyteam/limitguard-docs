@@ -5,27 +5,27 @@ description: "Zero-access model, data flow, and security architecture"
 
 **Don't trust us. Verify us.**
 
-That is the operating philosophy behind every architectural decision at LimitGuard. We are a trust infrastructure provider — and trust infrastructure must be independently verifiable. This document explains exactly how the system is built, what data it touches, where it lives, and how you can confirm every claim we make.
+That is the operating philosophy behind every architectural decision at Limitguard. We are a trust infrastructure provider — and trust infrastructure must be independently verifiable. This document explains exactly how the system is built, what data it touches, where it lives, and how you can confirm every claim we make.
 
 <Note>
-LimitGuard publishes its own trust signals at `GET /v1/self-verify`: public, free, no key needed. Every signal links to evidence you can check yourself, starting with the Dutch business register (KVK) entry of the company that operates LimitGuard.
+Limitguard publishes its own trust signals at `GET /v1/self-verify`: public, free, no key needed. Every signal links to evidence you can check yourself, starting with the Dutch business register (KVK) entry of the company that operates Limitguard.
 </Note>
 
 ---
 
 ## Zero-Access Trust Model
 
-LimitGuard is built on a zero-access principle: we minimize what we store, we make what we do store auditable, and we give you the tools to verify us independently.
+Limitguard is built on a zero-access principle: we minimize what we store, we make what we do store auditable, and we give you the tools to verify us independently.
 
 <CardGroup cols={3}>
   <Card title="Data Minimisation" icon="user-slash">
     Only the fields you submit are processed. Check records are kept for 365 days, the audit log stores one-way hashes of entity identifiers, and `GET /v1/data/retention` lists every retention period.
   </Card>
   <Card title="EU Data Residency" icon="shield-halved">
-    Application data is stored in the EU. LimitGuard is operated by Ambulatio Consulting B.V. (trading as LimitGuard), a Dutch company registered with the KVK under 77272471.
+    Application data is stored in the EU. Limitguard is operated by Ambulatio Consulting B.V. (trading as Limitguard), a Dutch company registered with the KVK under 77272471.
   </Card>
   <Card title="Self-Verifying" icon="circle-check">
-    LimitGuard verifies itself with its own API. The result is public at `GET /v1/self-verify`, and each signal carries a link to its evidence.
+    Limitguard verifies itself with its own API. The result is public at `GET /v1/self-verify`, and each signal carries a link to its evidence.
   </Card>
 </CardGroup>
 
@@ -34,7 +34,7 @@ LimitGuard is built on a zero-access principle: we minimize what we store, we ma
     Every verification event is recorded in a tamper-evident hash chain. No entry can be modified without breaking the chain.
   </Card>
   <Card title="Certificate Records" icon="certificate">
-    Trust certificates are API records issued and verified via `/v1/certificate/*`, not written to any blockchain or contract. LimitGuard's only on-chain footprint is its own ERC-8004 agent identity (agent 95545 on Base).
+    Trust certificates are API records issued and verified via `/v1/certificate/*`, not written to any blockchain or contract. Limitguard's only on-chain footprint is its own ERC-8004 agent identity (agent 95545 on Base).
   </Card>
   <Card title="Security Transparency" icon="eye">
     Responsible disclosure via RFC 9116. Our `/.well-known/security.txt` is public. The security mailbox is hosted on Proton Mail.
@@ -111,7 +111,7 @@ Security headers are set at the middleware layer, not the application layer. Thi
 
 ## The 7 Data Sources
 
-LimitGuard queries 7 independent data sources in parallel. No single source determines the outcome: the trust score is a weighted composite across all available signals.
+Limitguard queries 7 independent data sources in parallel. No single source determines the outcome: the trust score is a weighted composite across all available signals.
 
 <CardGroup cols={2}>
   <Card title="1. KVK / CBE Registry" icon="building">
@@ -256,15 +256,15 @@ Build confidence thresholds into your integration policy. For example: require `
 | Dashboard application | Germany (Falkenstein) | Hetzner Online GmbH |
 | Database: dashboard accounts, workspaces and check records | Ireland (AWS eu-west-1) | Supabase |
 | CDN and web application firewall | Global edge network | Cloudflare, Inc. |
-| Operator | Breda, the Netherlands | Ambulatio Consulting B.V. (trading as LimitGuard), KVK 77272471 |
+| Operator | Breda, the Netherlands | Ambulatio Consulting B.V. (trading as Limitguard), KVK 77272471 |
 
 <Note>
-Application data (API requests, check records, audit logs and dashboard accounts) is stored in the EU. Cloudflare, a US company, routes and filters traffic to LimitGuard under the EU-US Data Privacy Framework; the [privacy policy](https://limitguard.ai/privacy) describes its role.
+Application data (API requests, check records, audit logs and dashboard accounts) is stored in the EU. Cloudflare, a US company, routes and filters traffic to Limitguard under the EU-US Data Privacy Framework; the [privacy policy](https://limitguard.ai/privacy) describes its role.
 </Note>
 
 ### GDPR Compliance
 
-LimitGuard is GDPR-compliant by default — not through configuration.
+Limitguard is GDPR-compliant by default — not through configuration.
 
 <Steps>
   <Step title="Data minimization">
@@ -352,7 +352,7 @@ curl https://api.limitguard.ai/v1/audit/verify \
 
 ## Self-Verification
 
-LimitGuard verifies itself using its own API. This endpoint is public, free, and unauthenticated. It returns six published signals about the operator, each with an evidence link, and the score they add up to.
+Limitguard verifies itself using its own API. This endpoint is public, free, and unauthenticated. It returns six published signals about the operator, each with an evidence link, and the score they add up to.
 
 ```bash
 curl https://api.limitguard.ai/v1/self-verify
@@ -360,7 +360,7 @@ curl https://api.limitguard.ai/v1/self-verify
 
 ```json
 {
-  "entity_name": "Ambulatio Consulting BV (trading as LimitGuard)",
+  "entity_name": "Ambulatio Consulting BV (trading as Limitguard)",
   "trust_score": 100,
   "trust_level": "HIGH",
   "verified_at": "2026-09-25T19:06:06Z",
@@ -420,7 +420,7 @@ We recommend integrating `/v1/self-verify` into your vendor due diligence workfl
 
 ## Trust Certificates (API Records, Not On-Chain)
 
-Trust certificates are records LimitGuard issues, stores, and verifies over its own REST API. They are **not** written to a blockchain, anchored to a contract, or backed by the ERC-8004 standard: nothing about certificate storage or verification touches a chain. The only on-chain element anywhere in LimitGuard is its own agent identity: agent `95545` on the [ERC-8004 Identity Registry](https://basescan.org/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432) on Base, which is unrelated to certificate issuance.
+Trust certificates are records Limitguard issues, stores, and verifies over its own REST API. They are **not** written to a blockchain, anchored to a contract, or backed by the ERC-8004 standard: nothing about certificate storage or verification touches a chain. The only on-chain element anywhere in Limitguard is its own agent identity: agent `95545` on the [ERC-8004 Identity Registry](https://basescan.org/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432) on Base, which is unrelated to certificate issuance.
 
 ### How Certificates Work
 
@@ -429,10 +429,10 @@ Trust certificates are records LimitGuard issues, stores, and verifies over its 
     A caller with an API key sends `POST /v1/certificate/issue` with an entity name, country, and the `trust_score` / `trust_level` to record.
   </Step>
   <Step title="Not derived automatically">
-    The trust score on a certificate is supplied by the caller in the request; it is not computed or re-verified server-side from a completed `/v1/entity/check`. Issuance is being restricted to LimitGuard admins for this reason.
+    The trust score on a certificate is supplied by the caller in the request; it is not computed or re-verified server-side from a completed `/v1/entity/check`. Issuance is being restricted to Limitguard admins for this reason.
   </Step>
   <Step title="Stored as an API record">
-    LimitGuard holds the certificate in its own store (`certificate_id`, entity name, country, trust score/level, `issued_at`, `expires_at`, and a SHA-256 `certificate_hash` of those fields). Certificates expire based on `valid_days` (default 365) and can be revoked by their owner.
+    Limitguard holds the certificate in its own store (`certificate_id`, entity name, country, trust score/level, `issued_at`, `expires_at`, and a SHA-256 `certificate_hash` of those fields). Certificates expire based on `valid_days` (default 365) and can be revoked by their owner.
   </Step>
   <Step title="Public verification">
     Anyone can verify a certificate via `GET /v1/certificate/{certificate_hash}` (public, no auth). There is no separate on-chain copy to cross-check it against; this API response is the record.
@@ -453,7 +453,7 @@ Trust certificates are records LimitGuard issues, stores, and verifies over its 
 ### Querying Certificates
 
 ```bash
-# Issue (requires an API key; being restricted to LimitGuard admins)
+# Issue (requires an API key; being restricted to Limitguard admins)
 POST /v1/certificate/issue
 
 # Verify (public, no auth)
@@ -464,7 +464,7 @@ POST /v1/certificate/{certificate_hash}/revoke
 ```
 
 <Note>
-Certificates do expire: `verify_certificate` checks the current time against `expires_at` and marks the certificate invalid once it has passed, alongside `active`/`revoked` status. There is no smart contract to query directly: verification is entirely through the endpoint above, so it depends on LimitGuard's own uptime like any other endpoint.
+Certificates do expire: `verify_certificate` checks the current time against `expires_at` and marks the certificate invalid once it has passed, alongside `active`/`revoked` status. There is no smart contract to query directly: verification is entirely through the endpoint above, so it depends on Limitguard's own uptime like any other endpoint.
 </Note>
 
 ---
@@ -473,7 +473,7 @@ Certificates do expire: `verify_certificate` checks the current time against `ex
 
 ### RFC 9116 Security Contact
 
-LimitGuard publishes a machine-readable security contact per RFC 9116:
+Limitguard publishes a machine-readable security contact per RFC 9116:
 
 ```bash
 curl https://api.limitguard.ai/.well-known/security.txt
@@ -505,11 +505,11 @@ We operate a responsible disclosure programme. Security researchers who identify
 | Claim | How to Verify |
 |-------|--------------|
 | EU data storage | [Privacy policy](https://limitguard.ai/privacy) and [DPA](https://limitguard.ai/dpa): providers, locations and purposes |
-| Dutch operator | KVK register: Ambulatio Consulting B.V. (trading as LimitGuard), KVK 77272471 |
+| Dutch operator | KVK register: Ambulatio Consulting B.V. (trading as Limitguard), KVK 77272471 |
 | Limited retention | `GET /v1/data/retention`: every data category and its retention period |
 | GDPR Art. 17 erasure | `DELETE /v1/data/purge`: functional endpoint, not just a policy |
 | Hash chain integrity | `GET /v1/audit/verify` and `GET /v1/audit/query`: check the chain and your own entries |
-| Trust certificates | `GET /v1/certificate/{certificate_hash}`: public verification endpoint; the record lives in LimitGuard's API, not on a blockchain |
+| Trust certificates | `GET /v1/certificate/{certificate_hash}`: public verification endpoint; the record lives in Limitguard's API, not on a blockchain |
 | Self-verifying | `GET /v1/self-verify` — our score, produced by our own API, public |
 | Security contact | `GET /.well-known/security.txt` — RFC 9116 compliant |
 

@@ -3,7 +3,7 @@ title: "Authentication"
 description: "API keys, x402 USDC micropayments, and sandbox mode"
 ---
 
-LimitGuard supports two authentication modes: **API key** (subscription) and **x402 USDC micropayments** (pay-per-use). [Sandbox mode](/sandbox) is available for testing without either.
+Limitguard supports two authentication modes: **API key** (subscription) and **x402 USDC micropayments** (pay-per-use). [Sandbox mode](/sandbox) is available for testing without either.
 
 ## API Key Authentication
 
@@ -133,7 +133,7 @@ When you make a request without payment, the API returns the payment requirement
       "amount": "850000",
       "decimals": 6,
       "recipient": "0xFacilitatorAddress",
-      "description": "LimitGuard API call (0.85 USDC)"
+      "description": "Limitguard API call (0.85 USDC)"
     }
   ]
 }
@@ -172,7 +172,7 @@ These endpoints never require payment or authentication:
 | `GET /.well-known/agent.json` | A2A agent card |
 | `GET /.well-known/mcp.json` | MCP manifest |
 | `GET /.well-known/security.txt` | Security contact (RFC 9116) |
-| `GET /v1/self-verify` | LimitGuard's own trust score |
+| `GET /v1/self-verify` | Limitguard's own trust score |
 | `GET /v1/methodology` | Scoring methodology |
 | `GET /v1/badge/{entity_id}` | SVG trust badge |
 | `GET /v1/legal/*` | Legal documents |

@@ -3,10 +3,10 @@ title: "Webhooks"
 description: "Get sanctions-list changes that affect you pushed to your server"
 ---
 
-Webhooks let LimitGuard push events to your server as signed HTTP `POST` requests, so you do not have to poll.
+Webhooks let Limitguard push events to your server as signed HTTP `POST` requests, so you do not have to poll.
 
 <Info>
-**Live today: `sanctions.match.new`.** When the OFAC SDN, EU or UN consolidated list changes an entry that matches an entity or wallet you checked, or an entry on your watchlist, LimitGuard sends you the same alert `GET /v1/compliance/alerts` shows you. Registrations and pending deliveries are stored, so they survive restarts and deploys.
+**Live today: `sanctions.match.new`.** When the OFAC SDN, EU or UN consolidated list changes an entry that matches an entity or wallet you checked, or an entry on your watchlist, Limitguard sends you the same alert `GET /v1/compliance/alerts` shows you. Registrations and pending deliveries are stored, so they survive restarts and deploys.
 
 `trust.score.changed`, `trust.level.downgrade` and `certificate.expired` can be registered, but nothing sends them yet. Every registration and list response carries `delivered_events`, the subset of your `events` that is actually sent today.
 </Info>
@@ -17,9 +17,9 @@ Webhooks need an API key (`X-API-Key`). A webhook belongs to the key that regist
 
 ## How It Works
 
-When an event occurs, LimitGuard sends an HTTP `POST` with a JSON body to every active webhook of yours that subscribed to that event type. Respond with any `2xx` status within 10 seconds to acknowledge it. Anything else (a non-`2xx` status, a redirect, a timeout, a TLS or connection error) counts as a failed attempt and is retried with backoff.
+When an event occurs, Limitguard sends an HTTP `POST` with a JSON body to every active webhook of yours that subscribed to that event type. Respond with any `2xx` status within 10 seconds to acknowledge it. Anything else (a non-`2xx` status, a redirect, a timeout, a TLS or connection error) counts as a failed attempt and is retried with backoff.
 
-Each request carries an `X-LimitGuard-Signature` header: the hex HMAC-SHA256 of the raw request body, keyed with the webhook secret you received at registration. **Always verify it before processing the payload.**
+Each request carries an `X-Limitguard-Signature` header: the hex HMAC-SHA256 of the raw request body, keyed with the webhook secret you received at registration. **Always verify it before processing the payload.**
 
 ## Setup
 
@@ -98,7 +98,7 @@ The `secret` is returned **once only**, in this response, and is never shown aga
 
 <Step title="Verify the signature">
 
-Compute the HMAC-SHA256 of the **raw request body** (the exact bytes you received, before any JSON parsing), keyed with your secret string, and compare its hex digest with `X-LimitGuard-Signature` in constant time. The header is the bare hex digest, with no `sha256=` prefix.
+Compute the HMAC-SHA256 of the **raw request body** (the exact bytes you received, before any JSON parsing), keyed with your secret string, and compare its hex digest with `X-Limitguard-Signature` in constant time. The header is the bare hex digest, with no `sha256=` prefix.
 
 <CodeGroup>
 
@@ -121,7 +121,7 @@ WEBHOOK_SECRET = os.environ["LIMITGUARD_WEBHOOK_SECRET"]
 @app.post("/webhooks/limitguard")
 async def handle_webhook(request: Request):
     payload = await request.body()
-    signature = request.headers.get("X-LimitGuard-Signature", "")
+    signature = request.headers.get("X-Limitguard-Signature", "")
     if not verify_signature(payload, signature, WEBHOOK_SECRET):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
@@ -304,9 +304,9 @@ These are the event types you can register. Only `sanctions.match.new` is sent t
 | Header | Example | Description |
 |--------|---------|-------------|
 | `Content-Type` | `application/json` | Always JSON |
-| `X-LimitGuard-Signature` | `a3f8c1...` (64 hex characters) | HMAC-SHA256 of the raw body, keyed with your secret |
-| `X-LimitGuard-Event` | `sanctions.match.new` | The event type (same as `event` in the body) |
-| `X-LimitGuard-Event-Id` | `9c41e2d07b5a...` | Same as `event_id` in the body; unchanged across retries |
+| `X-Limitguard-Signature` | `a3f8c1...` (64 hex characters) | HMAC-SHA256 of the raw body, keyed with your secret |
+| `X-Limitguard-Event` | `sanctions.match.new` | The event type (same as `event` in the body) |
+| `X-Limitguard-Event-Id` | `9c41e2d07b5a...` | Same as `event_id` in the body; unchanged across retries |
 
 There is no timestamp header. Protect against replays by storing the `event_id`s you have processed and ignoring repeats.
 
@@ -325,7 +325,7 @@ A failed attempt is retried with exponential backoff (doubling from 30 seconds, 
 
 After the 6th failed attempt that event is marked failed and is not retried again. Other events keep being delivered.
 
-LimitGuard waits up to **10 seconds** for your response and does not follow redirects. Respond `2xx` immediately and do the work asynchronously.
+Limitguard waits up to **10 seconds** for your response and does not follow redirects. Respond `2xx` immediately and do the work asynchronously.
 
 <Warning>
 **Deactivation.** When 10 events in a row fail all their attempts for the same webhook, that webhook is deactivated: its queued deliveries are dropped and it no longer appears in `GET /v1/webhooks`. Any successful delivery resets the count. To resume, fix your endpoint and register the webhook again; you will get a new secret. You can still poll `GET /v1/compliance/alerts` for anything you missed.
@@ -432,7 +432,7 @@ console.log(await response.json());
 ```json Test delivery body
 {
   "created_at": "2026-09-24T10:05:00.281554+00:00",
-  "data": {"message": "Webhook test delivery from LimitGuard.ai"},
+  "data": {"message": "Webhook test delivery from Limitguard.ai"},
   "event": "test",
   "event_id": "e8b1c7a2-4d6f-4e3a-9b8c-0f1d2e3a4b5c"
 }

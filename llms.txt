@@ -1,6 +1,6 @@
-# LimitGuard
+# Limitguard
 
-> LimitGuard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU.
+> Limitguard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU.
 
 ## Get Started
 
@@ -21,9 +21,9 @@
 - [Rate Limits](https://docs.limitguard.ai/guides/rate-limits.md): Rate limit behavior, tiers, and Retry-After headers
 - [Webhooks](https://docs.limitguard.ai/guides/webhooks.md): Get sanctions-list changes that affect you pushed to your server
 - [Trust Architecture](https://docs.limitguard.ai/guides/trust-architecture.md): Zero-access model, data flow, and security architecture
-- [AI Agent Integration](https://docs.limitguard.ai/guides/ai-agent-integration.md): How AI agents discover and use LimitGuard - MCP, A2A, and x402
-- [Framework Integrations](https://docs.limitguard.ai/guides/frameworks.md): Connect LangChain, CrewAI, or the OpenAI Agents SDK to LimitGuard's remote MCP server
-- [Pay Per Call](https://docs.limitguard.ai/guides/pay-per-call.md): Call LimitGuard with a USDC wallet and a client library - no API key, no subscription
+- [AI Agent Integration](https://docs.limitguard.ai/guides/ai-agent-integration.md): How AI agents discover and use Limitguard - MCP, A2A, and x402
+- [Framework Integrations](https://docs.limitguard.ai/guides/frameworks.md): Connect LangChain, CrewAI, or the OpenAI Agents SDK to Limitguard's remote MCP server
+- [Pay Per Call](https://docs.limitguard.ai/guides/pay-per-call.md): Call Limitguard with a USDC wallet and a client library - no API key, no subscription
 
 ## Post-mortems
 
@@ -32,12 +32,12 @@
 
 ## API Reference
 
-- [API Reference](https://docs.limitguard.ai/api-reference/introduction.md): Complete reference for all 64 LimitGuard API endpoints
+- [API Reference](https://docs.limitguard.ai/api-reference/introduction.md): Complete reference for all 64 Limitguard API endpoints
 
 ## OpenAPI Specs
 
-- [LimitGuard API (docs)](https://docs.limitguard.ai/api-reference/openapi.json)
-- [LimitGuard API (live)](https://api.limitguard.ai/openapi.json)
+- [Limitguard API (docs)](https://docs.limitguard.ai/api-reference/openapi.json)
+- [Limitguard API (live)](https://api.limitguard.ai/openapi.json)
 
 ## Changelog
 
@@ -49,6 +49,6 @@
 
 ## Optional
 
-- [LimitGuard.ai](https://limitguard.ai): Product site
+- [Limitguard.ai](https://limitguard.ai): Product site
 - [API status](https://api.limitguard.ai/health): Live health check
-- [LimitGuard API llms.txt](https://api.limitguard.ai/llms.txt): The live API's own machine-readable summary (distinct from this docs-site index)
+- [Limitguard API llms.txt](https://api.limitguard.ai/llms.txt): The live API's own machine-readable summary (distinct from this docs-site index)
