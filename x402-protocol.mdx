@@ -5,7 +5,7 @@ description: "Pay-per-use USDC micropayments for AI agents — no subscription r
 
 {/* Generated from docs/x402-protocol.md in jwconsultancyteam/limitguard-ai by scripts/sync_public_repos.py. Edit the source, not this page. */}
 
-LimitGuard implements the x402 V2 micropayment protocol for AI agent pay-per-use access. No prepaid key or API key required — agents pay per call in USDC.
+Limitguard implements the x402 V2 micropayment protocol for AI agent pay-per-use access. No prepaid key or API key required — agents pay per call in USDC.
 
 ## Overview
 
@@ -236,7 +236,7 @@ Every 402 advertises this path as the `accepts` entry with `scheme: "settled-tra
 `extra` carries the header name and these rules. The official x402 clients skip it — they only
 select schemes they have registered — so it costs them nothing.
 
-LimitGuard verifies on-chain that the transaction succeeded, emitted a USDC `Transfer` of at
+Limitguard verifies on-chain that the transaction succeeded, emitted a USDC `Transfer` of at
 least the endpoint price to `payTo`, and was mined within the last ~150 blocks (~5 minutes).
 Each hash is accepted once (24-hour replay window). If our RPC node cannot see the
 transaction yet (not found, or its view of the chain head is still behind the transaction's
@@ -492,7 +492,7 @@ The older `X-PAYMENT` header (V1 format with `maxAmountRequired`, `from`, `to` f
 
 ## Circuit Breaker Fallback
 
-If the payment facilitator is unavailable (circuit breaker open), LimitGuard falls back to a verified wallet cache. Wallets that have previously completed verified payments are cached. The response includes `X-Payment-Fallback: true` when this path is used.
+If the payment facilitator is unavailable (circuit breaker open), Limitguard falls back to a verified wallet cache. Wallets that have previously completed verified payments are cached. The response includes `X-Payment-Fallback: true` when this path is used.
 
 Routes settled through the Coinbase CDP facilitator (see `CDP_FACILITATOR_ROUTES` in
 [Configuration](./configuration.md)) are the exception: a CDP outage fails closed with
@@ -501,7 +501,7 @@ never gets served on the same authorization the CDP outage might still land late
 
 ## Discovery
 
-AI agents can discover LimitGuard's x402 payment requirements automatically:
+AI agents can discover Limitguard's x402 payment requirements automatically:
 
 ```bash
 curl https://api.limitguard.ai/.well-known/x402.json

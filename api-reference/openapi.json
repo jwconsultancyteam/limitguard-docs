@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "LimitGuard.ai",
+    "title": "Limitguard.ai",
     "description": "Trust Intelligence API - Entity verification and risk scoring",
     "version": "0.1.0"
   },
@@ -1255,7 +1255,7 @@
     "/v1/self-verify": {
       "get": {
         "summary": "Self Verify",
-        "description": "Run LimitGuard through its own trust verification.\n\nPublic endpoint (no auth) - transparency is the point.\nIncludes CORS headers for embedding.\n\nReturns:\n    SelfVerificationResult with trust score, signals, and methodology",
+        "description": "Run Limitguard through its own trust verification.\n\nPublic endpoint (no auth) - transparency is the point.\nIncludes CORS headers for embedding.\n\nReturns:\n    SelfVerificationResult with trust score, signals, and methodology",
         "operationId": "self_verify_v1_self_verify_get",
         "responses": {
           "200": {
@@ -5498,7 +5498,7 @@
           "scoring_methodology_url"
         ],
         "title": "SelfVerificationResult",
-        "description": "Result of running LimitGuard through its own trust engine."
+        "description": "Result of running Limitguard through its own trust engine."
       },
       "SourceStatus": {
         "properties": {
@@ -5621,7 +5621,7 @@
             "type": "string",
             "title": "Issuer",
             "description": "Certificate issuer",
-            "default": "LimitGuard.ai"
+            "default": "Limitguard.ai"
           },
           "schema_version": {
             "type": "string",
@@ -5655,7 +5655,7 @@
           "json_ld"
         ],
         "title": "TrustCertificate",
-        "description": "Trust certificate issued by LimitGuard.ai."
+        "description": "Trust certificate issued by Limitguard.ai."
       },
       "TrustLevel": {
         "type": "string",
