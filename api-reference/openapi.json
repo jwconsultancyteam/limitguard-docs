@@ -1652,7 +1652,7 @@
     "/v1/reputation/score": {
       "post": {
         "summary": "Reputation Score",
-        "description": "Compute reputation score with trust decay for an entity.\n\nIf trust_score/cluster/last_verified_at are omitted, runs a full entity\ncheck internally to obtain them (requires country field).",
+        "description": "Compute reputation score with trust decay for an entity.\n\nIf trust_score/cluster are omitted, a SIMPLIFIED score is derived from country risk\nand the sanctions screen only (requires country): no registry, domain or financial\ncheck runs. The response says so in ``score_basis``. This docstring used to claim a\nfull entity check; it never was one (Jev 2026-10-02: disclose, trust risk 0.79).",
         "operationId": "reputation_score_v1_reputation_score_post",
         "requestBody": {
           "content": {
@@ -4243,6 +4243,32 @@
         "title": "FeedbackResponse",
         "description": "Confirmation that feedback was received."
       },
+      "Finding": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Action"
+          },
+          "why": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Why"
+          },
+          "expected_result": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Expected Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "why",
+          "expected_result"
+        ],
+        "title": "Finding"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -5709,6 +5735,14 @@
             "type": "object",
             "title": "Correlations",
             "description": "Key correlations between signals"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings",
+            "description": "One action per mismatch the correlations show (same rules as the report)"
           },
           "sources_checked": {
             "type": "integer",
