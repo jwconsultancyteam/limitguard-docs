@@ -3645,7 +3645,8 @@
           "funnel_telemetry",
           "check_records",
           "entity_reports",
-          "sales_leads"
+          "sales_leads",
+          "waitlist_signups"
         ],
         "title": "DataCategory"
       },
