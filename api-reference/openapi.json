@@ -3646,7 +3646,8 @@
           "check_records",
           "entity_reports",
           "sales_leads",
-          "waitlist_signups"
+          "waitlist_signups",
+          "abandoned_signups"
         ],
         "title": "DataCategory"
       },
