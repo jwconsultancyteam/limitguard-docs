@@ -557,6 +557,97 @@ Use the `X-Response-Quality: cached` header where acceptable: a cached answer co
 
 ---
 
+{/* product-errors:start */}
+## Request validation errors
+
+### Validation Error
+
+HTTP `422`, `errorCode` `validation_error`.
+
+**What happened:** The request body does not fit the endpoint. `detail` lists every field that failed with what is wrong with it; a rule about two fields names both. Nothing was charged.
+
+**What to do:** Fix the fields `detail` names and send the request again.
+
+---
+
+## Lead Verify errors
+
+### Lead Verify Not Available
+
+HTTP `404`, `errorCode` `lead_verify_not_available`. The MCP tool answers `status` `rejected` with the same sentence as `error` and `lead_verify_not_available` as `code`.
+
+**What happened:** Lead Verify is not available yet. Nothing was charged.
+
+**What to do:** Lead Verify is switched off for now. Try again later.
+
+### Lead Verify Not Available In Sandbox
+
+HTTP `403`, `errorCode` `lead_verify_not_available_in_sandbox`. The MCP tool answers `status` `rejected` with the same sentence as `error` and `lead_verify_not_available_in_sandbox` as `code`.
+
+**What happened:** Lead Verify only runs on the live company registers, so it does not work with a sandbox key. Use a live key. Nothing was charged.
+
+**What to do:** Use a live key.
+
+### Lead Verify Invalid
+
+HTTP `422`, `errorCode` `lead_verify_invalid`. The MCP tool answers `status` `rejected` with the same sentence as `error` and `lead_verify_invalid` as `code`.
+
+**What happened:** The `company_number` cannot be checked: it is not a KVK or KBO number, or it belongs to the other country. Nothing was charged.
+
+**What to do:** Enter an 8-digit KVK number (NL) or a 10-digit KBO number (BE); put a VAT number in vat_number. Check that `country` matches the number.
+
+### Lead Verify Unavailable
+
+HTTP `503`, `errorCode` `lead_verify_unavailable`. The MCP tool answers `status` `rejected` with the same sentence as `error` and `lead_verify_unavailable` as `code`.
+
+**What happened:** The company register could not be reached. Nothing was charged.
+
+**What to do:** Try again in a few minutes.
+
+---
+
+## Agent check errors
+
+### Agent Check Not Available
+
+HTTP `404`, `errorCode` `agent_check_not_available`. The MCP tool answers `status` `rejected` with the same sentence as `error` and `agent_check_not_available` as `code`.
+
+**What happened:** The agent check is not available yet. Nothing was charged.
+
+**What to do:** The agent check is switched off for now. Try again later.
+
+### Agent Check Not Available In Sandbox
+
+HTTP `403`, `errorCode` `agent_check_not_available_in_sandbox`. The MCP tool answers `status` `rejected` with the same sentence as `error` and `agent_check_not_available_in_sandbox` as `code`.
+
+**What happened:** The agent check only runs on live sources, so it does not work with a sandbox key. Use a live key. Nothing was charged.
+
+**What to do:** Use a live key.
+
+### Agent Check Unavailable
+
+HTTP `503`, `errorCode` `agent_check_unavailable`. The MCP tool answers `status` `rejected` with the same sentence as `error` and `agent_check_unavailable` as `code`.
+
+**What happened:** None of the wallet checks could be completed. Nothing was charged.
+
+**What to do:** Try again in a few minutes.
+
+---
+
+## Cached result errors
+
+### Not Cached
+
+HTTP `404`, `errorCode` `not_cached`.
+
+**What happened:** No cached result for this entity; no data source was called. Nothing was charged.
+
+**What to do:** Send the request again with `X-Response-Quality: fresh` for a full check.
+
+---
+
+{/* product-errors:end */}
+
 ## Error Handling Patterns
 
 ### Recommended Client Logic
