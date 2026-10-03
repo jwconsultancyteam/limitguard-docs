@@ -91,7 +91,7 @@
     "/v1/entity/deep-check": {
       "post": {
         "summary": "Entity Deep Check",
-        "description": "Deep check: extended PEP/RCA exposure screening (#396), the Dutch insolvency\nregister on every tier (#403), adverse media on the extended tier (#402), an\nItalian credit report on the credit tier (#404).\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.75) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.50) adds `adverse_media` from dilisense;\n`credit` ($2.25, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
+        "description": "Deep check: extended PEP/RCA exposure screening, the Dutch insolvency\nregister on every tier, adverse media on the extended tier, an\nItalian credit report on the credit tier.\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.75) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.50) adds `adverse_media` from dilisense;\n`credit` ($2.25, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
         "operationId": "entity_deep_check_v1_entity_deep_check_post",
         "requestBody": {
           "content": {
@@ -125,7 +125,7 @@
             }
           },
           "503": {
-            "description": "A source of the requested tier is unavailable \u2014 payment is not settled (#284)",
+            "description": "A source of the requested tier is unavailable \u2014 payment is not settled",
             "content": {
               "application/json": {
                 "schema": {
@@ -248,7 +248,7 @@
     "/v1/keys/usage": {
       "get": {
         "summary": "Get Usage",
-        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from (#434).\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.\nWith TIER_SUBSCRIPTION_ENABLED, `tier_expires_at`/`tier_queue` are the\nactive Growth/Pro term and the terms queued behind it (null otherwise, #854).",
+        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from.\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.\nWith TIER_SUBSCRIPTION_ENABLED, `tier_expires_at`/`tier_queue` are the\nactive Growth/Pro term and the terms queued behind it (null otherwise).",
         "operationId": "get_usage_v1_keys_usage_get",
         "responses": {
           "200": {
@@ -298,7 +298,7 @@
     "/v1/keys/upgrade/{tier}": {
       "post": {
         "summary": "Upgrade Key",
-        "description": "Buy prepaid balance via x402 USDC payment (#434).\n\nThe x402 price is credited 1:1 to the key's prepaid balance and the tier\nlabel is set to the higher of the current and purchased tier (the label\nselects burst limits in rate_limit.py; it never downgrades). Repeat\npurchases are allowed. Each priced call is then debited at the price in\nthe pricing table.\n\nThe x402 middleware handles payment verification before this handler runs.\nSend X-API-Key header to identify which key to credit.\n\nLadder prices: indie $29, starter $99, growth $299, pro $999.",
+        "description": "Buy prepaid balance via x402 USDC payment.\n\nThe x402 price is credited 1:1 to the key's prepaid balance and the tier\nlabel is set to the higher of the current and purchased tier (the label\nselects burst limits in rate_limit.py; it never downgrades). Repeat\npurchases are allowed. Each priced call is then debited at the price in\nthe pricing table.\n\nThe x402 middleware handles payment verification before this handler runs.\nSend X-API-Key header to identify which key to credit.\n\nLadder prices: indie $29, starter $99, growth $299, pro $999.",
         "operationId": "upgrade_key_v1_keys_upgrade__tier__post",
         "security": [
           {
@@ -343,7 +343,7 @@
     "/v1/keys/topup/{usd}": {
       "post": {
         "summary": "Topup Key",
-        "description": "Top up a key's prepaid balance via x402 USDC payment (#434).\n\nThe x402 middleware prices this path at {usd} dollars and verifies payment\nbefore this handler runs; the amount paid is credited 1:1. Each priced call\nis then debited at the price in the pricing table.",
+        "description": "Top up a key's prepaid balance via x402 USDC payment.\n\nThe x402 middleware prices this path at {usd} dollars and verifies payment\nbefore this handler runs; the amount paid is credited 1:1. Each priced call\nis then debited at the price in the pricing table.",
         "operationId": "topup_key_v1_keys_topup__usd__post",
         "security": [
           {
@@ -1652,7 +1652,7 @@
     "/v1/reputation/score": {
       "post": {
         "summary": "Reputation Score",
-        "description": "Compute reputation score with trust decay for an entity.\n\nIf trust_score/cluster/last_verified_at are omitted, runs a full entity\ncheck internally to obtain them (requires country field).",
+        "description": "Compute reputation score with trust decay for an entity.\n\nIf trust_score/cluster are omitted, a SIMPLIFIED score is derived from country risk\nand the sanctions screen only (requires country): no registry, domain or financial\ncheck runs. The response says so in ``score_basis``.",
         "operationId": "reputation_score_v1_reputation_score_post",
         "requestBody": {
           "content": {
@@ -1866,7 +1866,7 @@
     "/v1/financial/health": {
       "get": {
         "summary": "Financial Health",
-        "description": "Get overall financial system health status.\n\nThe settlement fields are operator-wide and only disclosed to admin keys\n(#291); other callers do not receive them at all. So is\ntreasury_balance_usdc, the platform treasury rather than the caller's\n(#525). Revenue scope follows the same split (#427): an admin sees the\nplatform-wide total -- every key's prepaid revenue plus anonymous x402\nwallet revenue that belongs to no tenant; anyone else sees only revenue\nattributed to their own key.",
+        "description": "Get overall financial system health status.\n\nThe settlement fields are operator-wide and only disclosed to admin keys; other callers do not receive them at all. So is\ntreasury_balance_usdc, the platform treasury rather than the caller's. Revenue scope follows the same split: an admin sees the\nplatform-wide total -- every key's prepaid revenue plus anonymous x402\nwallet revenue that belongs to no tenant; anyone else sees only revenue\nattributed to their own key.",
         "operationId": "financial_health_v1_financial_health_get",
         "responses": {
           "200": {
@@ -1991,7 +1991,7 @@
     "/v1/wallet/balance": {
       "get": {
         "summary": "Wallet Balance",
-        "description": "WaaS endpoint: get USDC balance for an ERC-8004 registered agent.\n\n`agent_id` is either the agent's wallet address (EVM 0x..., Base mainnet)\nor a numeric ERC-8004 agentId. A wallet must be registered in the\nconfigured ERC-8004 Identity Registry (one balanceOf call); a numeric id\nmust have been minted (ownerOf does not revert). Either shape that is\nwell-formed but not found answers 404; a malformed value answers 422.\n\nFails closed rather than quoting a balance it could not read (#432):\n503 wallet_registry_unconfigured when no registry address is configured,\n503 wallet_rpc_unavailable when the Base read fails or the breaker is\nopen past its 24h stale-cache ceiling.",
+        "description": "WaaS endpoint: get USDC balance for an ERC-8004 registered agent.\n\n`agent_id` is either the agent's wallet address (EVM 0x..., Base mainnet)\nor a numeric ERC-8004 agentId. A wallet must be registered in the\nconfigured ERC-8004 Identity Registry (one balanceOf call); a numeric id\nmust have been minted (ownerOf does not revert). Either shape that is\nwell-formed but not found answers 404; a malformed value answers 422.\n\nFails closed rather than quoting a balance it could not read:\n503 wallet_registry_unconfigured when no registry address is configured,\n503 wallet_rpc_unavailable when the Base read fails or the breaker is\nopen past its 24h stale-cache ceiling.",
         "operationId": "wallet_balance_v1_wallet_balance_get",
         "security": [
           {
@@ -2036,7 +2036,7 @@
     "/v1/compliance/alerts": {
       "get": {
         "summary": "List Alerts",
-        "description": "List alerts, newest first: global list changes plus the caller's own hits.\n\nThe caller's subscriptions (if any) narrow the global alerts only, to\ntheir minimum severity and their jurisdictions; the caller's own hits are\nalways shown. ``subscription_filters`` in the response says what was\napplied (null without a subscription), so a narrowed list never reads as\n\"no alerts\". Jurisdiction codes are stored lower-case; \"NL\" matches \"nl\"\n(#519).",
+        "description": "List alerts, newest first: global list changes plus the caller's own hits.\n\nThe caller's subscriptions (if any) narrow the global alerts only, to\ntheir minimum severity and their jurisdictions; the caller's own hits are\nalways shown. ``subscription_filters`` in the response says what was\napplied (null without a subscription), so a narrowed list never reads as\n\"no alerts\". Jurisdiction codes are stored lower-case; \"NL\" matches \"nl\".",
         "operationId": "list_alerts_v1_compliance_alerts_get",
         "security": [
           {
@@ -2189,7 +2189,7 @@
     "/v1/compliance/subscribe": {
       "post": {
         "summary": "Create Subscription",
-        "description": "Create a compliance alert subscription.\n\nThe subscription narrows what GET /v1/compliance/alerts returns for this key\n(#528); there is still no push delivery, so the response carries a ``notice``\nsaying delivery is by polling that route, not by digest or webhook (#521).",
+        "description": "Create a compliance alert subscription.\n\nThe subscription narrows what GET /v1/compliance/alerts returns for this key; there is still no push delivery, so the response carries a ``notice``\nsaying delivery is by polling that route, not by digest or webhook.",
         "operationId": "create_subscription_v1_compliance_subscribe_post",
         "security": [
           {
@@ -2368,7 +2368,7 @@
     "/v1/compliance/report/{entity_id}": {
       "get": {
         "summary": "Compliance Report",
-        "description": "De-listed compliance report (#426): answers 410 Gone, charges nothing.\n\nUntil #426 this route sold a \"full compliance assessment for an entity\" at\n$0.50, and computed ``classify_ai_risk(\"trust_scoring\")`` and\n``calculate_readiness_score([])`` regardless of ``entity_id`` \u2014 every entity\nreceived byte-identical output, and only the alert summary was even\ntenant-scoped. There is no per-entity AI-Act data (system type, deployment\ncontext, data categories) stored anywhere to substitute in, so unlike the\n/v1/reputation/history fix in 8cef926 there is nothing real to serve.\nSame philosophy as that fix: stop selling data the product does not have.\n\nThe route is kept as a tombstone rather than deleted so an agent that still\nholds the old listing gets a clear, machine-readable answer instead of a\nbare 404. It is absent from ENDPOINT_PRICING_PREFIXES, so the payment gate\nnever quotes a 402 for it, and it takes no API key because the response\nreveals nothing. Sandbox callers get the same 410: there is no mock either.\n\n#537: once the per-entity report is live (enabled AND priced), the body also\npoints to POST /v1/reports/entity; while it is dark the body is unchanged.",
+        "description": "De-listed compliance report: answers 410 Gone, charges nothing.\n\nPreviously, this route sold a \"full compliance assessment for an entity\" at\n$0.50, and computed ``classify_ai_risk(\"trust_scoring\")`` and\n``calculate_readiness_score([])`` regardless of ``entity_id`` \u2014 every entity\nreceived byte-identical output, and only the alert summary was even\ntenant-scoped. There is no per-entity AI-Act data (system type, deployment\ncontext, data categories) stored anywhere to substitute in, so unlike the\n/v1/reputation/history fix in 8cef926 there is nothing real to serve.\nSame philosophy as that fix: stop selling data the product does not have.\n\nThe route is kept as a tombstone rather than deleted so an agent that still\nholds the old listing gets a clear, machine-readable answer instead of a\nbare 404. It is absent from ENDPOINT_PRICING_PREFIXES, so the payment gate\nnever quotes a 402 for it, and it takes no API key because the response\nreveals nothing. Sandbox callers get the same 410: there is no mock either.\n\nOnce the per-entity report is live (enabled AND priced), the body also\npoints to POST /v1/reports/entity; while it is dark the body is unchanged.",
         "operationId": "compliance_report_v1_compliance_report__entity_id__get",
         "parameters": [
           {
@@ -2401,6 +2401,100 @@
             }
           }
         }
+      }
+    },
+    "/v1/agent/check": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Agent Check",
+        "description": "Check a counterparty agent's wallet: sanctions, balance, ERC-8004 identity, wallet risk, open feedback.",
+        "operationId": "agent_check_v1_agent_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/v1/leads/verify": {
+      "post": {
+        "tags": [
+          "leads"
+        ],
+        "summary": "Lead Verify",
+        "description": "Verify one NL/BE sales lead: register, VAT, mail server, IBAN, sanctions, lead score.",
+        "operationId": "lead_verify_v1_leads_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadVerifyResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/v1/sales/pricing": {
@@ -2786,7 +2880,7 @@
           "mcp"
         ],
         "summary": "Mcp Trust Score",
-        "description": "Quick trust score lookup (MCP-compatible endpoint).",
+        "description": "The caller's own latest stored trust score for an entity (MCP-compatible endpoint, free).",
         "operationId": "mcp_trust_score_v1_mcp_trust_score_post",
         "requestBody": {
           "content": {
@@ -2831,7 +2925,7 @@
           "mcp"
         ],
         "summary": "Mcp Verify Wallet",
-        "description": "Screen a wallet: OFAC SDN match, on-chain signals, named rules (#527). Free ($0).",
+        "description": "Screen a wallet: OFAC SDN match, on-chain signals, named rules. Free ($0).",
         "operationId": "mcp_verify_wallet_v1_mcp_verify_wallet_post",
         "requestBody": {
           "content": {
@@ -3057,7 +3151,7 @@
           "category"
         ],
         "title": "AdverseMediaArticle",
-        "description": "One adverse-media article, projected to the fields we stand behind (#402).\n\nField names follow the dilisense `checkIndividual` article object (headline,\nsource_link, timestamp, language, body). `snippet` is the body with its ``<p>``\nmarkup stripped and bounded; `category` is the news-exposure bucket dilisense\nfiled the article under."
+        "description": "One adverse-media article, projected to the fields we stand behind.\n\nField names follow the dilisense `checkIndividual` article object (headline,\nsource_link, timestamp, language, body). `snippet` is the body with its ``<p>``\nmarkup stripped and bounded; `category` is the news-exposure bucket dilisense\nfiled the article under."
       },
       "AdverseMediaResult": {
         "properties": {
@@ -3112,7 +3206,184 @@
           "retrieved_at"
         ],
         "title": "AdverseMediaResult",
-        "description": "Result of the `adverse_media` source. `screened` is never False on a 200.\n\nMirrors PepScreenResult: app/services/adverse_media.py raises rather than\nfabricating a clean screen, and the router turns that into a 503 so the payment\nis never settled (#284, #402). A negative means no *indexed reporting* matched,\nnot that no wrongdoing exists; `screened` and `adverse_media_found` are separate\nfields so a caller can tell \"looked, found nothing\" from \"did not look\"."
+        "description": "Result of the `adverse_media` source. `screened` is never False on a 200.\n\nMirrors PepScreenResult: app/services/adverse_media.py raises rather than\nfabricating a clean screen, and the router turns that into a 503 so the payment\nis never settled. A negative means no *indexed reporting* matched,\nnot that no wrongdoing exists; `screened` and `adverse_media_found` are separate\nfields so a caller can tell \"looked, found nothing\" from \"did not look\"."
+      },
+      "AgentCheckRequest": {
+        "properties": {
+          "wallet": {
+            "type": "string",
+            "title": "Wallet",
+            "description": "EVM wallet address (0x + 40 hex characters). Read on Base.",
+            "examples": [
+              "0x4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b"
+            ]
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id",
+            "description": "Optional ERC-8004 agentId (decimal) the wallet claims. When given, the check reads that agent's owner and payment wallet and says whether this wallet is one of them.",
+            "examples": [
+              "1"
+            ]
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 253
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain",
+            "description": "Optional website domain the agent gives for itself (e.g. example.com). Reported with WHOIS age, mail records and TLS certificate; never read by the verdict.",
+            "examples": [
+              "example.com"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "wallet"
+        ],
+        "title": "AgentCheckRequest",
+        "description": "An EVM wallet, and optionally the ERC-8004 agent id it claims."
+      },
+      "AgentCheckResponse": {
+        "properties": {
+          "wallet": {
+            "type": "string",
+            "title": "Wallet"
+          },
+          "chain_id": {
+            "type": "string",
+            "title": "Chain Id"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "block",
+              "review",
+              "no_findings"
+            ],
+            "title": "Verdict"
+          },
+          "verdict_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Verdict Reasons"
+          },
+          "ran": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ran"
+          },
+          "did_not_run": {
+            "items": {
+              "$ref": "#/components/schemas/SkippedComponent"
+            },
+            "type": "array",
+            "title": "Did Not Run"
+          },
+          "sanctions": {
+            "$ref": "#/components/schemas/SanctionsComponent"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/BalanceComponent"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/IdentityComponent"
+          },
+          "reputation": {
+            "$ref": "#/components/schemas/ReputationComponent"
+          },
+          "wallet_risk": {
+            "$ref": "#/components/schemas/WalletRiskComponent"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/DomainComponent"
+          },
+          "schema_version": {
+            "type": "string",
+            "const": "agent-check-v1",
+            "title": "Schema Version",
+            "default": "agent-check-v1"
+          },
+          "checked_at": {
+            "type": "string",
+            "title": "Checked At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "wallet",
+          "chain_id",
+          "verdict",
+          "verdict_reasons",
+          "ran",
+          "did_not_run",
+          "sanctions",
+          "balance",
+          "identity",
+          "reputation",
+          "wallet_risk",
+          "domain",
+          "checked_at"
+        ],
+        "title": "AgentCheckResponse",
+        "description": "The bundle: one verdict, and each component with its own status."
+      },
+      "AgentReputation": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "feedback_count": {
+            "type": "integer",
+            "title": "Feedback Count"
+          },
+          "distinct_clients": {
+            "type": "integer",
+            "title": "Distinct Clients"
+          },
+          "clients_capped": {
+            "type": "boolean",
+            "title": "Clients Capped"
+          },
+          "top_tags": {
+            "items": {
+              "$ref": "#/components/schemas/ReputationTag"
+            },
+            "type": "array",
+            "title": "Top Tags",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "agent_id",
+          "feedback_count",
+          "distinct_clients",
+          "clients_capped"
+        ],
+        "title": "AgentReputation",
+        "description": "Open ERC-8004 feedback summary for one agent id. Descriptive, never scored."
       },
       "AgentRevenue": {
         "properties": {
@@ -3231,7 +3502,7 @@
           "notice"
         ],
         "title": "AlertSubscriptionCreated",
-        "description": "A new subscription plus the delivery status of its alert feed (#521)."
+        "description": "A new subscription plus the delivery status of its alert feed."
       },
       "BadgeData": {
         "properties": {
@@ -3300,6 +3571,94 @@
         ],
         "title": "BadgeVariant",
         "description": "Badge display variants."
+      },
+      "BalanceComponent": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error",
+              "not_requested"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "chain_id": {
+            "type": "string",
+            "title": "Chain Id"
+          },
+          "balance_usdc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Usdc"
+          },
+          "balance_native": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Native"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "chain_id"
+        ],
+        "title": "BalanceComponent",
+        "description": "USDC and native (ETH) balance of the wallet on the deployed Base chain."
+      },
+      "Branches": {
+        "properties": {
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "commercial": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commercial"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Branches"
       },
       "CertificateVerifyResponse": {
         "properties": {
@@ -3402,6 +3761,287 @@
           "mixed_signals"
         ],
         "title": "Cluster"
+      },
+      "CompanyBlock": {
+        "properties": {
+          "registered": {
+            "type": "boolean",
+            "title": "Registered"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "legal_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Form"
+          },
+          "registered_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered Name"
+          },
+          "name_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Match"
+          },
+          "registered_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered Since"
+          },
+          "age_years": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Years"
+          },
+          "sbi_main": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sbi Main"
+          },
+          "employees": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employees"
+          },
+          "registered_address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegisteredAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address_shielded": {
+            "type": "boolean",
+            "title": "Address Shielded",
+            "default": false
+          },
+          "address_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Match"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompanyProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "registered"
+        ],
+        "title": "CompanyBlock"
+      },
+      "CompanyProfile": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "stopped"
+            ],
+            "title": "Status"
+          },
+          "stopped_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stopped On",
+            "description": "ISO date the business stopped, when it has"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Industry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "other_activities": {
+            "items": {
+              "$ref": "#/components/schemas/Industry"
+            },
+            "type": "array",
+            "title": "Other Activities",
+            "default": []
+          },
+          "employees": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Employees"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "branches": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Branches"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Always null: branch counts are not in the KVK basisprofiel and need a second paid request."
+          },
+          "kvk_non_mailing": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kvk Non Mailing",
+            "description": "True when the company asked KVK not to receive unsolicited marketing mail"
+          },
+          "statutory_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statutory Name"
+          },
+          "trade_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Trade Names",
+            "default": []
+          },
+          "extended_legal_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extended Legal Form"
+          },
+          "websites": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Websites",
+            "default": []
+          },
+          "lines": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lines",
+            "default": []
+          },
+          "personal_data_withheld": {
+            "type": "boolean",
+            "title": "Personal Data Withheld",
+            "description": "True for a sole trader or other natural-person form: its personal register data is not returned",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "headline"
+        ],
+        "title": "CompanyProfile",
+        "description": "What the KVK register says about the company, in fields and in plain lines."
       },
       "ComplianceSourceStatus": {
         "properties": {
@@ -3571,7 +4211,7 @@
           "retrieved_at"
         ],
         "title": "CreditReportResult",
-        "description": "Result of the `credit_report` source, sold on the `credit` deep-check tier\n(#404 Stage 2). `screened` is never False while `applicable` is True.\n\nMirrors InsolvencyRecordsResult, not AdverseMediaResult: coverage is a single\ncountry (Italy), so \"we do not cover this country\" is a 200 with\n`applicable: false` from app/services/credit_report.py, the same pattern the\ninsolvency register uses for non-NL -- never a raise, because that would be a\npaid 503 for a caller who explicitly opted into this tier. A supported country\nwhose screen fails for any other reason (unset key, vendor outage, unparseable\nverdict) still raises CreditReportUnavailable, and the router turns that into a\n503 so the payment is never settled (#284).\n\nA green score is the provider's assessment of the company at query time, not a\nguarantee of solvency and not a recommendation to extend credit. `risk_score` is\na normalised value from a closed set (green / yellow / red / unknown), not the raw\nvendor string, and is None exactly when `applicable` is False; `risk_band_available`\nis False when the provider declined to assess (its documented grey/ND answer, e.g.\na closed company), which is a different fact from a low-risk verdict."
+        "description": "Result of the `credit_report` source, sold on the `credit` deep-check tier. `screened` is never False while `applicable` is True.\n\nMirrors InsolvencyRecordsResult, not AdverseMediaResult: coverage is a single\ncountry (Italy), so \"we do not cover this country\" is a 200 with\n`applicable: false` from app/services/credit_report.py, the same pattern the\ninsolvency register uses for non-NL -- never a raise, because that would be a\npaid 503 for a caller who explicitly opted into this tier. A supported country\nwhose screen fails for any other reason (unset key, vendor outage, unparseable\nverdict) still raises CreditReportUnavailable, and the router turns that into a\n503 so the payment is never settled.\n\nA green score is the provider's assessment of the company at query time, not a\nguarantee of solvency and not a recommendation to extend credit. `risk_score` is\na normalised value from a closed set (green / yellow / red / unknown), not the raw\nvendor string, and is None exactly when `applicable` is False; `risk_band_available`\nis False when the provider declined to assess (its documented grey/ND answer, e.g.\na closed company), which is a different fact from a low-risk verdict."
       },
       "CustomerUsageResponse": {
         "properties": {
@@ -3746,7 +4386,7 @@
           "country"
         ],
         "title": "DeepCheckRequest",
-        "description": "Request for POST /v1/entity/deep-check (#396, #403, #404).\n\nTakes entity fields rather than an ``entity_id`` from a prior check: the audit\ntrail is keyed by sha256(entity_name) and is one-way, so an id could not be\nresolved back to the name the screens have to query. ``kvk_number`` is optional\nand only consulted by the insolvency source (#403): the Centraal\nInsolventieregister keys ``searchUndertaking`` on the KvK number, which is an\nexact lookup where a trade-name search is a fuzzy one. ``credit_report_identifier``\nis only consulted by the `credit` tier's source (#404): Openapi.com's Italian\ncredit-score lookup keys on a VAT number, tax code or company ID rather than a\nname, and reports back in `identifier_type` which one it matched."
+        "description": "Request for POST /v1/entity/deep-check.\n\nTakes entity fields rather than an ``entity_id`` from a prior check: the audit\ntrail is keyed by sha256(entity_name) and is one-way, so an id could not be\nresolved back to the name the screens have to query. ``kvk_number`` is optional\nand only consulted by the insolvency source: the Centraal\nInsolventieregister keys ``searchUndertaking`` on the KvK number, which is an\nexact lookup where a trade-name search is a fuzzy one. ``credit_report_identifier``\nis only consulted by the `credit` tier's source: Openapi.com's Italian\ncredit-score lookup keys on a VAT number, tax code or company ID rather than a\nname, and reports back in `identifier_type` which one it matched."
       },
       "DeepCheckResponse": {
         "properties": {
@@ -3761,7 +4401,7 @@
           "quality": {
             "type": "string",
             "title": "Quality",
-            "description": "deep (fresh), extended (enhanced) or credit; see DEEP_CHECK_TIER_NAMES. `credit` only resolves while OPENAPI_CREDIT_API_KEY is configured (#404).",
+            "description": "deep (fresh), extended (enhanced) or credit; see DEEP_CHECK_TIER_NAMES. `credit` only resolves while OPENAPI_CREDIT_API_KEY is configured.",
             "default": "deep"
           },
           "sources_returned": {
@@ -3795,7 +4435,7 @@
                 "type": "null"
               }
             ],
-            "description": "Dutch Centraal Insolventieregister screen; on every tier since #403. `applicable: false` (never null) when `country` is not NL."
+            "description": "Dutch Centraal Insolventieregister screen; on every tier. `applicable: false` (never null) when `country` is not NL."
           },
           "credit_report": {
             "anyOf": [
@@ -3806,7 +4446,7 @@
                 "type": "null"
               }
             ],
-            "description": "Populated only on the `credit` tier (#404 Stage 2). None means the tier did not include it -- never that a screen ran and found no credit risk. `applicable: false` inside it (never omission) means the tier was requested but the country has no provider or no identifier was sent."
+            "description": "Populated only on the `credit` tier. None means the tier did not include it -- never that a screen ran and found no credit risk. `applicable: false` inside it (never omission) means the tier was requested but the country has no provider or no identifier was sent."
           },
           "processing_time_ms": {
             "type": "integer",
@@ -3840,7 +4480,7 @@
           "processing_time_ms"
         ],
         "title": "DeepCheckResponse",
-        "description": "Response from /v1/entity/deep-check (#396, #402, #403).\n\n``sources_returned`` is built from payment.DEEP_CHECK_TIER_ADDS[tier] -- the same\ntable enhanced_check_hint advertises -- so what was promised and what was delivered\nare one value. A name may only join that table together with the field that fills\nit on that tier."
+        "description": "Response from /v1/entity/deep-check.\n\n``sources_returned`` is built from payment.DEEP_CHECK_TIER_ADDS[tier] -- the same\ntable enhanced_check_hint advertises -- so what was promised and what was delivered\nare one value. A name may only join that table together with the field that fills\nit on that tier."
       },
       "DeepCheckTierOffer": {
         "properties": {
@@ -3878,6 +4518,260 @@
         ],
         "title": "DeepCheckTierOffer",
         "description": "One purchasable /v1/entity/deep-check tier, as the upsell hint advertises it."
+      },
+      "DomainComponent": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error",
+              "not_requested"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "probes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DomainProbes"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "domain_age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain Age Days"
+          },
+          "domain_expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain Expires At"
+          },
+          "has_mx": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Mx"
+          },
+          "has_spf": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Spf"
+          },
+          "has_dmarc": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Dmarc"
+          },
+          "ssl_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssl Valid"
+          },
+          "ssl_issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssl Issuer"
+          },
+          "web_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Web Score"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "DomainComponent",
+        "description": "WHOIS (RDAP) age, DNS mail records and TLS certificate of the domain the caller gave.\n\nReported only; never read by the verdict. A field whose probe got no answer is None,\nnever False."
+      },
+      "DomainProbes": {
+        "properties": {
+          "whois": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "title": "Whois"
+          },
+          "dns": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "title": "Dns"
+          },
+          "ssl": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "title": "Ssl"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "whois",
+          "dns",
+          "ssl"
+        ],
+        "title": "DomainProbes",
+        "description": "Each probe's own status: \"unavailable\" when it got no answer."
+      },
+      "EmailBlock": {
+        "properties": {
+          "checked": {
+            "type": "boolean",
+            "title": "Checked"
+          },
+          "has_mx": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Mx"
+          },
+          "disposable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disposable"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "checked"
+        ],
+        "title": "EmailBlock"
+      },
+      "Employees": {
+        "properties": {
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "full_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Time"
+          },
+          "part_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Time"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Employees"
       },
       "EnhancedCheckHint": {
         "properties": {
@@ -4062,7 +4956,7 @@
               }
             ],
             "title": "Wallet Address",
-            "description": "Also erase this wallet's verify_wallet screening records (#583)"
+            "description": "Also erase this wallet's verify_wallet screening records"
           },
           "reason": {
             "type": "string",
@@ -4243,6 +5137,32 @@
         "title": "FeedbackResponse",
         "description": "Confirmation that feedback was received."
       },
+      "Finding": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Action"
+          },
+          "why": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Why"
+          },
+          "expected_result": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Expected Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "why",
+          "expected_result"
+        ],
+        "title": "Finding"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -4296,6 +5216,231 @@
         ],
         "title": "HealthResponse",
         "description": "Health check response."
+      },
+      "IbanBlock": {
+        "properties": {
+          "checked": {
+            "type": "boolean",
+            "title": "Checked"
+          },
+          "valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "bank": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank"
+          },
+          "bic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bic"
+          },
+          "last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last4"
+          },
+          "country_agreement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Agreement"
+          },
+          "holder_checked": {
+            "type": "boolean",
+            "const": false,
+            "title": "Holder Checked",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "checked"
+        ],
+        "title": "IbanBlock"
+      },
+      "IdentityComponent": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error",
+              "not_requested"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "registry": {
+            "type": "string",
+            "const": "erc8004",
+            "title": "Registry",
+            "default": "erc8004"
+          },
+          "wallet_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Wallet Agent Ids",
+            "default": []
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_registered": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Registered"
+          },
+          "agent_owner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Owner"
+          },
+          "agent_wallet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Wallet"
+          },
+          "wallet_controls_agent": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wallet Controls Agent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "IdentityComponent",
+        "description": "ERC-8004 identity registration of the wallet, and of the given agent id."
+      },
+      "Industry": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "SBI code",
+            "examples": [
+              "01241"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "KVK's own (Dutch) SBI description",
+            "examples": [
+              "Teelt van appels en peren"
+            ]
+          },
+          "is_main": {
+            "type": "boolean",
+            "title": "Is Main"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "is_main"
+        ],
+        "title": "Industry"
       },
       "InsolvencyPublication": {
         "properties": {
@@ -4399,7 +5544,7 @@
           "publication_id"
         ],
         "title": "InsolvencyRecord",
-        "description": "One insolvency case from the Centraal Insolventieregister (#403).\n\nProjected from the getCase document to the fields we stand behind; the raw\ndocument is never echoed. Absent elements are None, not fabricated."
+        "description": "One insolvency case from the Centraal Insolventieregister.\n\nProjected from the getCase document to the fields we stand behind; the raw\ndocument is never echoed. Absent elements are None, not fabricated."
       },
       "InsolvencyRecordsResult": {
         "properties": {
@@ -4477,7 +5622,7 @@
           "retrieved_at"
         ],
         "title": "InsolvencyRecordsResult",
-        "description": "Result of the `insolvency_records` source (#403).\n\nUnlike PepScreenResult and AdverseMediaResult, `screened` CAN be False on a 200:\nthe register covers the Netherlands only, so for any other `country` the source\nis not consulted and the row says so with `applicable: false`. That is a\ndifferent fact from a clean negative and must never be read as one. When\n`applicable` is True, `screened` is always True: every other failure raises and\nthe router answers 503 (#284), so the caller is not charged.\n\nA negative result (`found: false`) means the register listed no insolvency\nproceeding for the KvK number or trade name at query time. Exception code 3\n(\"too many results\") is reported as `found: true, truncated: true,\nmatch_count: null` with no records: matches exist but the register will not\nlist them until the query is narrowed (send `kvk_number`).\n\nRegister conditions: no replica is kept and a successful screen is cached for at\nmost 24 hours (app/config.py::cache_insolvency_ttl), inside the six-month\ndestruction rule the subscription imposes."
+        "description": "Result of the `insolvency_records` source.\n\nUnlike PepScreenResult and AdverseMediaResult, `screened` CAN be False on a 200:\nthe register covers the Netherlands only, so for any other `country` the source\nis not consulted and the row says so with `applicable: false`. That is a\ndifferent fact from a clean negative and must never be read as one. When\n`applicable` is True, `screened` is always True: every other failure raises and\nthe router answers 503, so the caller is not charged.\n\nA negative result (`found: false`) means the register listed no insolvency\nproceeding for the KvK number or trade name at query time. Exception code 3\n(\"too many results\") is reported as `found: true, truncated: true,\nmatch_count: null` with no records: matches exist but the register will not\nlist them until the query is narrowed (send `kvk_number`).\n\nRegister conditions: no replica is kept and a successful screen is cached for at\nmost 24 hours (app/config.py::cache_insolvency_ttl), inside the six-month\ndestruction rule the subscription imposes."
       },
       "KYBCheckRequest": {
         "properties": {
@@ -4795,7 +5940,379 @@
           "usage_percent"
         ],
         "title": "KeyUsageResponse",
-        "description": "Response showing current API key usage, the tier's real enforced rate\nlimits, and prepaid balance.\n\n#434 moved pricing to a prepaid balance debited per call; the limits that\nactually throttle a caller day-to-day are the per-minute burst cap and the\nrolling 24h cap (app.middleware.rate_limit.TIER_RATE_LIMITS) -- not the\nmonthly_* fields below, which are a separate, much looser abuse ceiling\nthat a steady low-rate caller could in principle still cross once a month\neven while always under the per-minute/per-day caps."
+        "description": "Response showing current API key usage, the tier's real enforced rate\nlimits, and prepaid balance.\n\nA later change moved pricing to a prepaid balance debited per call; the limits that\nactually throttle a caller day-to-day are the per-minute burst cap and the\nrolling 24h cap (app.middleware.rate_limit.TIER_RATE_LIMITS) -- not the\nmonthly_* fields below, which are a separate, much looser abuse ceiling\nthat a steady low-rate caller could in principle still cross once a month\neven while always under the per-minute/per-day caps."
+      },
+      "LeadAddress": {
+        "properties": {
+          "street": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Street",
+            "examples": [
+              "Hizzaarderlaan"
+            ]
+          },
+          "house_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "House Number",
+            "examples": [
+              "3A"
+            ]
+          },
+          "postcode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postcode",
+            "examples": [
+              "8823 SJ"
+            ]
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City",
+            "examples": [
+              "Lollum"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "LeadAddress",
+        "description": "The address the lead gave. Compared with the register, never returned."
+      },
+      "LeadCorrelations": {
+        "properties": {
+          "kvk_website_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kvk Website Match"
+          },
+          "phone_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Match"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "LeadCorrelations",
+        "description": "Cross-checks that inform, never change the lead score."
+      },
+      "LeadVerifyRequest": {
+        "properties": {
+          "country": {
+            "type": "string",
+            "enum": [
+              "NL",
+              "BE"
+            ],
+            "title": "Country",
+            "description": "Country of the company register: NL (KVK) or BE (KBO).",
+            "examples": [
+              "NL"
+            ]
+          },
+          "company_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Number",
+            "description": "8-digit KVK number (NL) or 10-digit KBO/CBE enterprise number (BE).",
+            "examples": [
+              "68750110"
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Company name as the lead gave it. Required for NL without a company_number.",
+            "examples": [
+              "Test BV Donald"
+            ]
+          },
+          "vat_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vat Number",
+            "description": "EU VAT number, checked with VIES.",
+            "examples": [
+              "NL123456789B01"
+            ]
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 254
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Contact email; only its domain is checked (mail server, disposable).",
+            "examples": [
+              "sales@example.nl"
+            ]
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 253
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain",
+            "description": "Company website domain.",
+            "examples": [
+              "example.nl"
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LeadAddress"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Address the lead gave; compared with the registered address."
+          },
+          "iban": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 42
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iban",
+            "description": "IBAN the lead gave; validated locally, never echoed (last 4 only).",
+            "examples": [
+              "NL91ABNA0417164300"
+            ]
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone",
+            "description": "Phone number the lead gave; compared with the numbers the company publishes, never echoed. Not accepted yet: a phone is rejected with 422 until website phone lookup is switched on.",
+            "examples": [
+              "+31 20 123 4567"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "country"
+        ],
+        "title": "LeadVerifyRequest",
+        "description": "One NL or BE lead: a company number or a name, plus whatever else is known."
+      },
+      "LeadVerifyResult": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "lead-verify-v1",
+            "title": "Schema Version",
+            "default": "lead-verify-v1"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "real_active",
+              "real_inactive",
+              "not_found",
+              "ambiguous",
+              "unverifiable",
+              "sanctioned"
+            ],
+            "title": "Verdict"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "lead_score": {
+            "type": "integer",
+            "title": "Lead Score"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanyBlock"
+          },
+          "vat": {
+            "$ref": "#/components/schemas/VatBlock"
+          },
+          "iban": {
+            "$ref": "#/components/schemas/IbanBlock"
+          },
+          "sanctions": {
+            "$ref": "#/components/schemas/SanctionsBlock"
+          },
+          "email": {
+            "$ref": "#/components/schemas/EmailBlock"
+          },
+          "flags": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "name_mismatch",
+                "address_mismatch",
+                "iban_invalid",
+                "iban_foreign",
+                "vat_invalid",
+                "vat_owner_mismatch",
+                "no_mail_server",
+                "disposable_email",
+                "recently_registered",
+                "inactive",
+                "business_stopped",
+                "dormant_shell_signals"
+              ]
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "correlations": {
+            "$ref": "#/components/schemas/LeadCorrelations",
+            "default": {}
+          },
+          "website_phones": {
+            "items": {
+              "$ref": "#/components/schemas/WebsitePhone"
+            },
+            "type": "array",
+            "title": "Website Phones",
+            "default": []
+          },
+          "website_phones_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Phones Reason"
+          },
+          "sources_checked": {
+            "type": "integer",
+            "title": "Sources Checked"
+          },
+          "checked_at": {
+            "type": "string",
+            "title": "Checked At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "verdict",
+          "lead_score",
+          "company",
+          "vat",
+          "iban",
+          "sanctions",
+          "email",
+          "flags",
+          "findings",
+          "sources_checked",
+          "checked_at"
+        ],
+        "title": "LeadVerifyResult",
+        "description": "One verdict and a 0-100 lead score, with each check that went into it."
       },
       "LegalDocument": {
         "properties": {
@@ -4950,7 +6467,7 @@
           "retrieved_at"
         ],
         "title": "PepScreenResult",
-        "description": "Result of the `pep_extended` source. `screened` is never False on a 200.\n\nThere is no code path that returns this model without having queried\nOpenSanctions: app/services/pep.py raises rather than fabricating a clean screen,\nand the router turns that into a 503 so the payment is never settled (#284, #396)."
+        "description": "Result of the `pep_extended` source. `screened` is never False on a 200.\n\nThere is no code path that returns this model without having queried\nOpenSanctions: app/services/pep.py raises rather than fabricating a clean screen,\nand the router turns that into a 503 so the payment is never settled."
       },
       "ProviderRegistration": {
         "properties": {
@@ -5057,7 +6574,7 @@
           "starts_at"
         ],
         "title": "QueuedTerm",
-        "description": "#823: a lower-tier term bought during a higher active term, waiting its turn."
+        "description": "A lower-tier term bought during a higher active term, waiting its turn."
       },
       "ReadinessScore": {
         "properties": {
@@ -5148,6 +6665,114 @@
         ],
         "title": "Recommendation"
       },
+      "RegisteredAddress": {
+        "properties": {
+          "street": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Street"
+          },
+          "house_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "House Number"
+          },
+          "postcode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postcode"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RegisteredAddress",
+        "description": "The address in the register. City only when the register shields it."
+      },
+      "ReputationComponent": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error",
+              "not_requested"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/AgentReputation"
+            },
+            "type": "array",
+            "title": "Agents",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "note"
+        ],
+        "title": "ReputationComponent",
+        "description": "Open ERC-8004 feedback. Reported only; never read by the verdict."
+      },
       "ReputationScoreRequest": {
         "properties": {
           "entity_name": {
@@ -5227,6 +6852,30 @@
         ],
         "title": "ReputationScoreRequest"
       },
+      "ReputationTag": {
+        "properties": {
+          "tag": {
+            "type": "string",
+            "title": "Tag"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "avg": {
+            "type": "number",
+            "title": "Avg"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tag",
+          "count",
+          "avg"
+        ],
+        "title": "ReputationTag"
+      },
       "RetentionPolicy": {
         "properties": {
           "category": {
@@ -5297,7 +6946,7 @@
             },
             "type": "array",
             "title": "Disclaimers",
-            "description": "Notes about this response, e.g. a retired pricing tier (#405)"
+            "description": "Notes about this response, e.g. a retired pricing tier"
           }
         },
         "type": "object",
@@ -5310,6 +6959,138 @@
         ],
         "title": "RiskResponse",
         "description": "Lighter risk-only response from /v1/risk/score."
+      },
+      "SanctionsBlock": {
+        "properties": {
+          "screened": {
+            "type": "boolean",
+            "title": "Screened"
+          },
+          "hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit"
+          },
+          "lists_as_of": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Lists As Of",
+            "default": {}
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "screened"
+        ],
+        "title": "SanctionsBlock"
+      },
+      "SanctionsComponent": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error",
+              "not_requested"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit"
+          },
+          "lists": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lists",
+            "default": []
+          },
+          "programs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Programs",
+            "default": []
+          },
+          "list_as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List As Of"
+          },
+          "list_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "SanctionsComponent",
+        "description": "OFAC SDN digital-currency address list match for the wallet."
       },
       "ScoreHistoryEntry": {
         "properties": {
@@ -5501,6 +7282,25 @@
         ],
         "title": "SelfVerificationResult",
         "description": "Result of running Limitguard through its own trust engine."
+      },
+      "SkippedComponent": {
+        "properties": {
+          "component": {
+            "type": "string",
+            "title": "Component"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "component",
+          "reason"
+        ],
+        "title": "SkippedComponent"
       },
       "SourceStatus": {
         "properties": {
@@ -5709,6 +7509,25 @@
             "type": "object",
             "title": "Correlations",
             "description": "Key correlations between signals"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings",
+            "description": "One action per mismatch the correlations show (same rules as the report)"
+          },
+          "company_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompanyProfile"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NL: what the KVK register says about the company (industry, stopped date, size, non-mailing, names, websites)"
           },
           "sources_checked": {
             "type": "integer",
@@ -6059,6 +7878,53 @@
         ],
         "title": "ValidationError"
       },
+      "VatBlock": {
+        "properties": {
+          "checked": {
+            "type": "boolean",
+            "title": "Checked"
+          },
+          "valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid"
+          },
+          "name_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Match"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "checked"
+        ],
+        "title": "VatBlock"
+      },
       "VerificationResponse": {
         "properties": {
           "entity_id": {
@@ -6158,7 +8024,7 @@
             "type": "integer",
             "minimum": 0.0,
             "title": "Pending Settlements",
-            "description": "Pending rows still inside the sweep's retry budget (in-flight). Rows the sweep cannot rebuild into a payment are charged the same budget (#246), so they drain to exhausted_settlements rather than sitting here forever"
+            "description": "Pending rows still inside the sweep's retry budget (in-flight). Rows the sweep cannot rebuild into a payment are charged the same budget, so they drain to exhausted_settlements rather than sitting here forever"
           },
           "exhausted_settlements": {
             "type": "integer",
@@ -6171,14 +8037,14 @@
             "type": "integer",
             "minimum": 0.0,
             "title": "Failed Settlements",
-            "description": "Ledger rows the startup sweep resolved to FAILED (#196). These are no longer counted by pending_settlements, so without this they would disappear from the health view entirely.",
+            "description": "Ledger rows the startup sweep resolved to FAILED. These are no longer counted by pending_settlements, so without this they would disappear from the health view entirely.",
             "default": 0
           },
           "uncollected_usdc": {
             "type": "number",
             "minimum": 0.0,
             "title": "Uncollected Usdc",
-            "description": "USDC credited to the ledger that will never settle: exhausted PENDING plus FAILED rows (#359). Reconciliation work, expressed as money rather than as two row counts.",
+            "description": "USDC credited to the ledger that will never settle: exhausted PENDING plus FAILED rows. Reconciliation work, expressed as money rather than as two row counts.",
             "default": 0.0
           },
           "settlement_configured": {
@@ -6238,6 +8104,68 @@
         "title": "WalletHealth",
         "description": "Financial system health status."
       },
+      "WalletRiskComponent": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error",
+              "not_requested"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "risk_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Score"
+          },
+          "risk_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Level"
+          },
+          "rules_fired": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rules Fired",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "WalletRiskComponent",
+        "description": "The wallet screen's own risk score and the named rules that fired."
+      },
       "WatchlistAddRequest": {
         "properties": {
           "entity_id": {
@@ -6275,7 +8203,7 @@
               }
             ],
             "title": "Country",
-            "description": "ISO 3166-1 alpha-2 country code. #749: with a country and at least one typed identifier, the entry is under change monitoring on plans that include it (weekly re-check, changes sent as identifier.change.new webhooks)."
+            "description": "ISO 3166-1 alpha-2 country code. With a country and at least one typed identifier, the entry is under change monitoring on plans that include it (weekly re-check, changes sent as identifier.change.new webhooks)."
           },
           "kvk_number": {
             "anyOf": [
@@ -6494,6 +8422,59 @@
         ],
         "title": "WebhookListResponse",
         "description": "Response for GET /v1/webhooks -- secret excluded (DYN-405)."
+      },
+      "WebsitePhone": {
+        "properties": {
+          "number": {
+            "type": "string",
+            "title": "Number",
+            "description": "E.164",
+            "examples": [
+              "+31201234567"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "landline",
+              "mobile",
+              "freephone"
+            ],
+            "title": "Type"
+          },
+          "found_on_url": {
+            "type": "string",
+            "title": "Found On Url"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "title": "Retrieved At"
+          },
+          "source": {
+            "type": "string",
+            "const": "website",
+            "title": "Source",
+            "default": "website"
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label",
+            "examples": [
+              "published on https://example.nl/contact"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "number",
+          "type",
+          "found_on_url",
+          "retrieved_at",
+          "source_label"
+        ],
+        "title": "WebsitePhone",
+        "description": "A phone number the company publishes on its website."
       },
       "app__models__request__RiskScoreRequest": {
         "properties": {
