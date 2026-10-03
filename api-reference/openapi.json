@@ -248,7 +248,7 @@
     "/v1/keys/usage": {
       "get": {
         "summary": "Get Usage",
-        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from.\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.\nWith TIER_SUBSCRIPTION_ENABLED, `tier_expires_at`/`tier_queue` are the\nactive Growth/Pro term and the terms queued behind it (null otherwise).",
+        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from.\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.\nWith TIER_SUBSCRIPTION_ENABLED, `tier_expires_at`/`tier_queue` are the\nactive Growth/Pro term and the terms queued behind it (null otherwise).\n`watch_recheck_credits` is the scheduled re-checks the key's Growth/Pro\npurchases bought and it has not spent yet.",
         "operationId": "get_usage_v1_keys_usage_get",
         "responses": {
           "200": {
@@ -4287,7 +4287,8 @@
           "entity_reports",
           "sales_leads",
           "waitlist_signups",
-          "abandoned_signups"
+          "abandoned_signups",
+          "report_email_settings"
         ],
         "title": "DataCategory"
       },
@@ -4518,6 +4519,105 @@
         ],
         "title": "DeepCheckTierOffer",
         "description": "One purchasable /v1/entity/deep-check tier, as the upsell hint advertises it."
+      },
+      "DiscoveredIdentifier": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "kvk_number",
+              "kbo_number",
+              "vat_number"
+            ],
+            "title": "Kind"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "examples": [
+              "24330087",
+              "0809.309.701",
+              "NL810433941B01"
+            ]
+          },
+          "found_on_url": {
+            "type": "string",
+            "title": "Found On Url"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "other_company",
+              "unverified"
+            ],
+            "title": "Status"
+          },
+          "registered_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered Name"
+          },
+          "confirmed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "kvk",
+                  "kbo",
+                  "vies"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed By"
+          },
+          "name_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Match"
+          },
+          "used": {
+            "type": "boolean",
+            "title": "Used",
+            "default": false
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "value",
+          "found_on_url",
+          "status"
+        ],
+        "title": "DiscoveredIdentifier",
+        "description": "One number found on the website, and what its register says about it."
       },
       "DomainComponent": {
         "properties": {
@@ -5926,6 +6026,18 @@
             ],
             "title": "Tier Queue",
             "description": "Terms bought during a higher active term (Growth during Pro), oldest first, each with the time it starts (null when there are none)"
+          },
+          "watch_recheck_credits": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Watch Recheck Credits",
+            "description": "Scheduled change-monitoring re-checks left, bought one-time by Growth and Pro purchases (one per re-check of one watched entry); null when the key never bought any"
           }
         },
         "type": "object",
@@ -6033,6 +6145,17 @@
               }
             ],
             "title": "Phone Match"
+          },
+          "website_identifier_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Identifier Match"
           }
         },
         "additionalProperties": false,
@@ -6209,13 +6332,15 @@
           "reason": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "const": "be_requires_number"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Reason"
+            "title": "Reason",
+            "description": "Why the verdict is what it is, when the verdict alone does not say. be_requires_number: a Belgian lead needs a company_number; Belgian companies cannot be looked up by name."
           },
           "lead_score": {
             "type": "integer",
@@ -6279,13 +6404,42 @@
           "website_phones_reason": {
             "anyOf": [
               {
+                "type": "string",
+                "enum": [
+                  "website_phones_disabled",
+                  "sole_trader_data_disabled",
+                  "no_domain",
+                  "free_mail_domain",
+                  "refused",
+                  "timeout",
+                  "error"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Phones Reason",
+            "description": "Why no website phone numbers were read. None when the website was read. website_phones_disabled: website phone lookup is off. sole_trader_data_disabled: the company is a sole trader or partnership, so its contact details are personal data and are not read. no_domain: there is no company website to read. free_mail_domain: the only domain given is a free email provider. refused: the website does not allow it to be read. timeout: the website did not answer in time. error: the website could not be read."
+          },
+          "discovered_identifiers": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveredIdentifier"
+            },
+            "type": "array",
+            "title": "Discovered Identifiers",
+            "default": []
+          },
+          "identifier_discovery_reason": {
+            "anyOf": [
+              {
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Website Phones Reason"
+            "title": "Identifier Discovery Reason"
           },
           "sources_checked": {
             "type": "integer",
@@ -6995,13 +7149,21 @@
           "reason": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "company_not_resolved",
+                  "legal_form_unknown",
+                  "natural_person_legal_form",
+                  "name_too_short",
+                  "lists_unavailable"
+                ]
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Reason"
+            "title": "Reason",
+            "description": "Why the company name was not screened. company_not_resolved: the company was not found in the register. legal_form_unknown: the register did not give a legal form. natural_person_legal_form: the company is a sole trader or partnership, so its name is a person's name and is not screened. name_too_short: the registered name is too short to screen reliably. lists_unavailable: the sanctions lists could not be loaded."
           }
         },
         "additionalProperties": false,
@@ -7909,13 +8071,19 @@
           "reason": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "vies_unavailable",
+                  "invalid_format",
+                  "non_eu_country"
+                ]
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Reason"
+            "title": "Reason",
+            "description": "Why the VAT number was not checked or not valid. vies_unavailable: the EU VAT service did not answer, so it was not checked. invalid_format: the number is not in an EU VAT number format. non_eu_country: the number does not start with an EU country code."
           }
         },
         "additionalProperties": false,
