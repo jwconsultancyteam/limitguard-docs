@@ -248,7 +248,7 @@
     "/v1/keys/usage": {
       "get": {
         "summary": "Get Usage",
-        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from.\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.\nWith TIER_SUBSCRIPTION_ENABLED, `tier_expires_at`/`tier_queue` are the\nactive Growth/Pro term and the terms queued behind it (null otherwise).",
+        "description": "Check current API key usage, the tier's real rate limits and prepaid balance.\n\nSend X-API-Key header to identify the key. Free endpoint (no x402 cost).\n`balance_usd` is the prepaid balance each priced call is debited from.\n`rate_limit_per_minute`/`rate_limit_per_day` are the caps that actually\nthrottle calls (app.middleware.rate_limit.TIER_RATE_LIMITS); monthly_* is\na separate, looser abuse ceiling kept for backward compatibility.\nWith TIER_SUBSCRIPTION_ENABLED, `tier_expires_at`/`tier_queue` are the\nactive Growth/Pro term and the terms queued behind it (null otherwise).\n`watch_recheck_credits` is the scheduled re-checks the key's Growth/Pro\npurchases bought and it has not spent yet.",
         "operationId": "get_usage_v1_keys_usage_get",
         "responses": {
           "200": {
@@ -5926,6 +5926,18 @@
             ],
             "title": "Tier Queue",
             "description": "Terms bought during a higher active term (Growth during Pro), oldest first, each with the time it starts (null when there are none)"
+          },
+          "watch_recheck_credits": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Watch Recheck Credits",
+            "description": "Scheduled change-monitoring re-checks left, bought one-time by Growth and Pro purchases (one per re-check of one watched entry); null when the key never bought any"
           }
         },
         "type": "object",
