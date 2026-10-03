@@ -3849,6 +3849,17 @@
             ],
             "title": "Sbi Main"
           },
+          "nace_main": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nace Main"
+          },
           "employees": {
             "anyOf": [
               {
@@ -4798,6 +4809,53 @@
         "title": "DomainProbes",
         "description": "Each probe's own status: \"unavailable\" when it got no answer."
       },
+      "DormantShell": {
+        "properties": {
+          "score": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/ShellSignal"
+            },
+            "type": "array",
+            "title": "Signals",
+            "description": "The signals that fired, in plain words"
+          },
+          "unknown": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "no_staff",
+                "holding_activity",
+                "no_website",
+                "no_mail_server",
+                "recently_registered",
+                "no_annual_accounts"
+              ]
+            },
+            "type": "array",
+            "title": "Unknown",
+            "description": "Signals with no data to decide on; they add nothing"
+          },
+          "flag_at": {
+            "type": "integer",
+            "title": "Flag At",
+            "description": "The score at which the dormant-shell finding is raised (and Lead Verify's dormant_shell_signals flag)",
+            "default": 50
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "score"
+        ],
+        "title": "DormantShell",
+        "description": "A weighted 0-100 dormant-shell score. Unknown data never adds to it."
+      },
       "EmailBlock": {
         "properties": {
           "checked": {
@@ -4833,6 +4891,44 @@
           "checked"
         ],
         "title": "EmailBlock"
+      },
+      "EmployeeRange": {
+        "properties": {
+          "min": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min",
+            "examples": [
+              10
+            ]
+          },
+          "max": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max",
+            "examples": [
+              50
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EmployeeRange",
+        "description": "An inclusive employee range; at least one end."
       },
       "Employees": {
         "properties": {
@@ -5028,6 +5124,39 @@
             ],
             "title": "Wallet Chain",
             "description": "Blockchain the address is checked against (eth, base, polygon, arbitrum, btc, sol). Defaults to eth when omitted, so send btc or sol with a Bitcoin or Solana address"
+          },
+          "target_industries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Industries",
+            "description": "Ideal-customer industries: SBI/NACE code prefixes (\"62\", \"64.20\") or plain words matched as whole words against the register's activity descriptions. Information only: never changes the score.",
+            "examples": [
+              [
+                "62",
+                "software"
+              ]
+            ]
+          },
+          "target_size": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeRange"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ideal-customer employee range, both ends inclusive. Information only."
           }
         },
         "additionalProperties": false,
@@ -5403,6 +5532,64 @@
           "checked"
         ],
         "title": "IbanBlock"
+      },
+      "IcpFit": {
+        "properties": {
+          "industry": {
+            "type": "string",
+            "enum": [
+              "match",
+              "no_match",
+              "unknown"
+            ],
+            "title": "Industry"
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "match",
+              "no_match",
+              "unknown"
+            ],
+            "title": "Size"
+          },
+          "industry_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry Source"
+          },
+          "size_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Source"
+          },
+          "confirmed_elsewhere": {
+            "type": "boolean",
+            "title": "Confirmed Elsewhere",
+            "description": "Always false: the register is the only layer that holds industry and size",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "industry",
+          "size"
+        ],
+        "title": "IcpFit",
+        "description": "The company against the caller's ideal-customer profile. Information only."
       },
       "IdentityComponent": {
         "properties": {
@@ -6157,6 +6344,28 @@
               }
             ],
             "title": "Website Identifier Match"
+          },
+          "kbo_contact_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kbo Contact Match"
+          },
+          "kbo_vat_address_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kbo Vat Address Match"
           }
         },
         "additionalProperties": false,
@@ -6300,6 +6509,39 @@
             "examples": [
               "+31 20 123 4567"
             ]
+          },
+          "target_industries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Industries",
+            "description": "Ideal-customer industries: SBI/NACE code prefixes (\"62\", \"64.20\") or plain words matched as whole words against the register's activity descriptions. Information only: never changes the score.",
+            "examples": [
+              [
+                "62",
+                "software"
+              ]
+            ]
+          },
+          "target_size": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeRange"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ideal-customer employee range, both ends inclusive. Information only."
           }
         },
         "additionalProperties": false,
@@ -6393,6 +6635,26 @@
           "correlations": {
             "$ref": "#/components/schemas/LeadCorrelations",
             "default": {}
+          },
+          "dormant_shell": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DormantShell"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "icp_fit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IcpFit"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "website_phones": {
             "items": {
@@ -7446,6 +7708,45 @@
         "title": "SelfVerificationResult",
         "description": "Result of running Limitguard through its own trust engine."
       },
+      "ShellSignal": {
+        "properties": {
+          "signal": {
+            "type": "string",
+            "enum": [
+              "no_staff",
+              "holding_activity",
+              "no_website",
+              "no_mail_server",
+              "recently_registered",
+              "no_annual_accounts"
+            ],
+            "title": "Signal"
+          },
+          "words": {
+            "type": "string",
+            "title": "Words",
+            "examples": [
+              "no staff"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "Where the fact comes from",
+            "examples": [
+              "KVK register"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "signal",
+          "words",
+          "source"
+        ],
+        "title": "ShellSignal"
+      },
       "SkippedComponent": {
         "properties": {
           "component": {
@@ -7691,6 +7992,28 @@
               }
             ],
             "description": "NL: what the KVK register says about the company (industry, stopped date, size, non-mailing, names, websites)"
+          },
+          "dormant_shell": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DormantShell"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Weighted dormant-shell score with the signals that fired, for a company found in the register. Information only: never changes trust_score"
+          },
+          "icp_fit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IcpFit"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The company against target_industries / target_size; null when neither was sent. Information only: never changes trust_score"
           },
           "sources_checked": {
             "type": "integer",
@@ -8213,7 +8536,14 @@
             "type": "number",
             "minimum": 0.0,
             "title": "Uncollected Usdc",
-            "description": "USDC credited to the ledger that will never settle: exhausted PENDING plus FAILED rows. Reconciliation work, expressed as money rather than as two row counts.",
+            "description": "USDC credited to the ledger that will never settle: exhausted PENDING plus FAILED rows, excluding rows written off (, see written_off_usdc). Reconciliation work, expressed as money rather than as two row counts.",
+            "default": 0.0
+          },
+          "written_off_usdc": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Written Off Usdc",
+            "description": "USDC on ledger rows an operator wrote off as never settling: excluded from exhausted_settlements, failed_settlements and uncollected_usdc, summed here so the loss stays visible.",
             "default": 0.0
           },
           "settlement_configured": {
