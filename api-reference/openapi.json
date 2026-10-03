@@ -1652,7 +1652,7 @@
     "/v1/reputation/score": {
       "post": {
         "summary": "Reputation Score",
-        "description": "Compute reputation score with trust decay for an entity.\n\nIf trust_score/cluster/last_verified_at are omitted, runs a full entity\ncheck internally to obtain them (requires country field).",
+        "description": "Compute reputation score with trust decay for an entity.\n\nIf trust_score/cluster are omitted, a SIMPLIFIED score is derived from country risk\nand the sanctions screen only (requires country): no registry, domain or financial\ncheck runs. The response says so in ``score_basis``.",
         "operationId": "reputation_score_v1_reputation_score_post",
         "requestBody": {
           "content": {
@@ -2786,7 +2786,7 @@
           "mcp"
         ],
         "summary": "Mcp Trust Score",
-        "description": "Quick trust score lookup (MCP-compatible endpoint).",
+        "description": "The caller's own latest stored trust score for an entity (MCP-compatible endpoint, free).",
         "operationId": "mcp_trust_score_v1_mcp_trust_score_post",
         "requestBody": {
           "content": {
@@ -3301,6 +3301,35 @@
         "title": "BadgeVariant",
         "description": "Badge display variants."
       },
+      "Branches": {
+        "properties": {
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "commercial": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commercial"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Branches"
+      },
       "CertificateVerifyResponse": {
         "properties": {
           "certificate": {
@@ -3402,6 +3431,145 @@
           "mixed_signals"
         ],
         "title": "Cluster"
+      },
+      "CompanyProfile": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "stopped"
+            ],
+            "title": "Status"
+          },
+          "stopped_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stopped On",
+            "description": "ISO date the business stopped, when it has"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Industry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "other_activities": {
+            "items": {
+              "$ref": "#/components/schemas/Industry"
+            },
+            "type": "array",
+            "title": "Other Activities",
+            "default": []
+          },
+          "employees": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Employees"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "branches": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Branches"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Always null: branch counts are not in the KVK basisprofiel and need a second paid request."
+          },
+          "kvk_non_mailing": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kvk Non Mailing",
+            "description": "True when the company asked KVK not to receive unsolicited marketing mail"
+          },
+          "statutory_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statutory Name"
+          },
+          "trade_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Trade Names",
+            "default": []
+          },
+          "extended_legal_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extended Legal Form"
+          },
+          "websites": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Websites",
+            "default": []
+          },
+          "lines": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lines",
+            "default": []
+          },
+          "personal_data_withheld": {
+            "type": "boolean",
+            "title": "Personal Data Withheld",
+            "description": "True for a sole trader or other natural-person form: its personal register data is not returned",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "headline"
+        ],
+        "title": "CompanyProfile",
+        "description": "What the KVK register says about the company, in fields and in plain lines."
       },
       "ComplianceSourceStatus": {
         "properties": {
@@ -3879,6 +4047,46 @@
         "title": "DeepCheckTierOffer",
         "description": "One purchasable /v1/entity/deep-check tier, as the upsell hint advertises it."
       },
+      "Employees": {
+        "properties": {
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "full_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Time"
+          },
+          "part_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Time"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Employees"
+      },
       "EnhancedCheckHint": {
         "properties": {
           "endpoint": {
@@ -4243,6 +4451,32 @@
         "title": "FeedbackResponse",
         "description": "Confirmation that feedback was received."
       },
+      "Finding": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Action"
+          },
+          "why": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Why"
+          },
+          "expected_result": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Expected Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "why",
+          "expected_result"
+        ],
+        "title": "Finding"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -4296,6 +4530,44 @@
         ],
         "title": "HealthResponse",
         "description": "Health check response."
+      },
+      "Industry": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "SBI code",
+            "examples": [
+              "01241"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "KVK's own (Dutch) SBI description",
+            "examples": [
+              "Teelt van appels en peren"
+            ]
+          },
+          "is_main": {
+            "type": "boolean",
+            "title": "Is Main"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "is_main"
+        ],
+        "title": "Industry"
       },
       "InsolvencyPublication": {
         "properties": {
@@ -5709,6 +5981,25 @@
             "type": "object",
             "title": "Correlations",
             "description": "Key correlations between signals"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings",
+            "description": "One action per mismatch the correlations show (same rules as the report)"
+          },
+          "company_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompanyProfile"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NL: what the KVK register says about the company (industry, stopped date, size, non-mailing, names, websites)"
           },
           "sources_checked": {
             "type": "integer",
