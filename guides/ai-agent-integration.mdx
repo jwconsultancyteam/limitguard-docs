@@ -877,7 +877,7 @@ Control cost vs. freshness with the `X-Response-Quality` header. The payment amo
 | Tier | Header Value | /v1/entity/check | /v1/risk/score | /v1/kyb/check | Data Freshness |
 |------|-------------|-----------------|----------------|---------------|----------------|
 | Cached | `cached` | $0.10 (100,000) | $0.10 (100,000) | $0.25 (250,000) | Up to 24h cached |
-| Fresh | `fresh` | $0.85 (850,000) | $0.65 (650,000) | $1.50 (1,500,000) | Live fan-out (default) |
+| Fresh | `fresh` | $1.05 (1,050,000) | $0.90 (900,000) | $1.50 (1,500,000) | Live fan-out (default) |
 
 `enhanced` was retired on these endpoints on 2026-09-24: it ran the same sources as `fresh`, so it is now quoted, charged and served at the `fresh` price. For more sources, use `POST /v1/entity/deep-check`.
 
