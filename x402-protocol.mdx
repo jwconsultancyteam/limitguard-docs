@@ -52,8 +52,8 @@ Response (HTTP 402):
       "scheme": "exact",
       "network": "eip155:8453",
       "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "amount": "850000",
-      "maxAmountRequired": "850000",
+      "amount": "1050000",
+      "maxAmountRequired": "1050000",
       "resource": "https://api.limitguard.ai/v1/entity/check",
       "description": "Full entity trust check across multiple verification layers...",
       "mimeType": "application/json",
@@ -65,8 +65,8 @@ Response (HTTP 402):
       "scheme": "exact",
       "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
       "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "amount": "850000",
-      "maxAmountRequired": "850000",
+      "amount": "1050000",
+      "maxAmountRequired": "1050000",
       "resource": "https://api.limitguard.ai/v1/entity/check",
       "description": "Full entity trust check across multiple verification layers...",
       "mimeType": "application/json",
@@ -179,7 +179,7 @@ def build_x402_payment(
 ```python
 x_payment = build_x402_payment(
     chain_id="eip155:8453",
-    amount=850_000,          # $0.85 for /v1/entity/check (fresh)
+    amount=1_050_000,        # $1.05 for /v1/entity/check (fresh)
     sender_key="0xYOUR_PRIVATE_KEY",
     recipient="0xFacilitatorFromThe402Response",
     usdc_address="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -198,7 +198,7 @@ response = httpx.post(
 | Header | Value | Meaning |
 |---|---|---|
 | `X-Payment-Verified` | `true` | Payment accepted |
-| `X-Payment-Amount` | `850000` | Amount verified (6-decimal USDC) |
+| `X-Payment-Amount` | `1050000` | Amount verified (6-decimal USDC) |
 | `X-Payment-Fallback` | `true` | Circuit breaker triggered (rare) |
 | `PAYMENT-RESPONSE` | base64 JSON | `transaction` is the tx hash for settled transfers (see below), `payer` is the verified sender |
 
@@ -393,11 +393,11 @@ The amount in `X-PAYMENT` must match or exceed the price for the selected tier:
 | Tier | /v1/entity/check amount |
 |---|---|
 | `cached` | 100,000 ($0.10) |
-| `fresh` | 850,000 ($0.85) |
+| `fresh` | 1,050,000 ($1.05) |
 
 `enhanced` was retired on `/v1/entity/check` 2026-09-24 (#405): it took the identical
 fan-out as `fresh`, so `X-Response-Quality: enhanced` is now quoted, charged and
-served at the `fresh` amount above (850,000), not the old 1,500,000 — the 402 body's
+served at the `fresh` amount above (1,050,000), not the old 1,500,000 - the 402 body's
 `info.note` says so. The same retirement applies to `/v1/risk/score`,
 `/v1/reputation/score` and `/v1/kyb/check`.
 
@@ -453,7 +453,7 @@ accepted as-is — no adapter needed:
   "payload": {
     "signature": "0x...",
     "authorization": {
-      "from": "0x...", "to": "0x...", "value": "850000",
+      "from": "0x...", "to": "0x...", "value": "1050000",
       "validAfter": "...", "validBefore": "...", "nonce": "0x..."
     }
   }
