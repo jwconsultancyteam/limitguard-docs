@@ -5430,6 +5430,20 @@
             "type": "object",
             "title": "Sources"
           },
+          "degraded": {
+            "type": "boolean",
+            "title": "Degraded",
+            "description": "True when an advertised source is not configured or a background job is stale. Separate from status, which stays ok while the service is up.",
+            "default": false
+          },
+          "degraded_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Degraded Reasons",
+            "description": "Source names behind degraded (never job names, never values)"
+          },
           "cache_sizes": {
             "additionalProperties": {
               "type": "integer"

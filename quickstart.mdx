@@ -247,7 +247,7 @@ Control cost vs. freshness with the `X-Response-Quality` header:
 | Tier | Header Value | Cost (entity/check) | Description |
 |------|-------------|---------------------|-------------|
 | **Cached** | `cached` | $0.10 | Serve from Redis cache if available |
-| **Fresh** | `fresh` | $0.85 | Always run full fan-out (default) |
+| **Fresh** | `fresh` | $1.05 | Always run full fan-out (default) |
 
 ```bash
 curl -X POST https://api.limitguard.ai/v1/entity/check \
