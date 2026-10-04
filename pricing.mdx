@@ -7,7 +7,7 @@ All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol)
 
 **What it is:** Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, with website age in the company check, and returns proceed, review or block with the source on every line. Developers and AI agents can use its HTTP API, MCP server and A2A service, hosted in the EU.
 
-**Start here:** Free sandbox key, no wallet. The sandbox covers entity, risk and KYB checks; Lead Verify and the agent check need a live key or an x402 payment. Lead Verify $0.24 per lead and agent check $0.75 per wallet; $0.10-1.50 per call; entity and risk checks $0.65-0.85 fresh ($1.50 KYB), $0.10 cached ($0.25 KYB) when available.
+**Start here:** Free sandbox key, no wallet. The sandbox covers entity, risk and KYB checks; Lead Verify and the agent check need a live key or an x402 payment. Lead Verify $0.27 per lead and agent check $0.75 per wallet; $0.10-1.85 per call; entity and risk checks $0.75-1.05 fresh ($1.50 KYB), $0.10 cached ($0.25 KYB) when available.
 
 ## Tiered Pricing
 
@@ -15,9 +15,9 @@ Four core endpoints sell two quality tiers. Select with the `X-Response-Quality`
 
 | Endpoint | Cached | Fresh (default) |
 |----------|--------|-----------------|
-| `POST /v1/entity/check` | $0.10 | $0.85 |
-| `POST /v1/risk/score` | $0.10 | $0.65 |
-| `POST /v1/reputation/score` | $0.10 | $0.65 |
+| `POST /v1/entity/check` | $0.10 | $1.05 |
+| `POST /v1/risk/score` | $0.10 | $0.90 |
+| `POST /v1/reputation/score` | $0.10 | $0.90 |
 | `POST /v1/kyb/check` | $0.25 | $1.50 |
 
 `enhanced` was retired on these four endpoints on 2026-09-24: it ran the same sources as `fresh`, so `X-Response-Quality: enhanced` is now quoted, charged and served at the `fresh` price, and the 402 body's `info.note` says so. `POST /v1/entity/deep-check` keeps its own tiers (see [x402 Protocol](/x402-protocol)).
@@ -39,14 +39,14 @@ These endpoints have a single price regardless of quality tier:
 
 | Endpoint | Price |
 |----------|-------|
-| `POST /v1/leads/verify` | $0.24 |
+| `POST /v1/leads/verify` | $0.27 |
 | `POST /v1/agent/check` | $0.75 |
-| `POST /v1/sanctions/screen` | $0.10 |
+| `POST /v1/sanctions/screen` | $0.11 |
 | `GET /v1/reputation/history/{entity_hash}` | $0.10 |
 | `GET /v1/wallet/balance` | $0.10 |
 | `GET /v1/compliance/alerts` | $0.10 |
 | `GET /v1/compliance/readiness/{entity_id}` | $0.10 |
-| `POST /v1/reports/entity` | $1.50 |
+| `POST /v1/reports/entity` | $1.85 |
 
 `POST /v1/reports/entity` builds a per-entity report from one real check: registry identity, sanctions and PEP screening, domain signals, risk score, up to 3 findings, a per-source status table (a source that did not answer is shown unavailable, never clean) and an evidence hash. Send identifiers or the `check_id` of an earlier report's check. Reading a stored report back with `GET /v1/reports/{report_id}` is free (`?format=pdf` for a PDF). Sandbox keys cannot create reports: they are built only from real checks.
 
@@ -68,8 +68,8 @@ The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are pri
 
 | Endpoint | Tool | Price |
 |----------|------|-------|
-| `POST /v1/mcp/check-entity` | `check_entity` | $0.85 |
-| `POST /v1/mcp/risk-score` | `get_risk_score` | $0.65 |
+| `POST /v1/mcp/check-entity` | `check_entity` | $1.05 |
+| `POST /v1/mcp/risk-score` | `get_risk_score` | $0.90 |
 | `POST /v1/mcp/check-agent` | `check_agent` | $0.00 |
 | `POST /v1/mcp/trust-score` | `get_trust_score` | $0.00 |
 | `POST /v1/mcp/verify-wallet` | `verify_wallet` | $0.00 |
@@ -130,12 +130,14 @@ For x402 integration — amounts use 6 decimal places (`1_000_000 = $1.00`):
 | Price | USDC 6-decimal | x402 `amount` field |
 |-------|---------------|---------------------|
 | $0.10 | 100,000 | `"100000"` |
-| $0.24 | 240,000 | `"240000"` |
+| $0.11 | 110,000 | `"110000"` |
 | $0.25 | 250,000 | `"250000"` |
-| $0.65 | 650,000 | `"650000"` |
+| $0.27 | 270,000 | `"270000"` |
 | $0.75 | 750,000 | `"750000"` |
-| $0.85 | 850,000 | `"850000"` |
+| $0.90 | 900,000 | `"900000"` |
+| $1.05 | 1,050,000 | `"1050000"` |
 | $1.50 | 1,500,000 | `"1500000"` |
+| $1.85 | 1,850,000 | `"1850000"` |
 | $29 | 29,000,000 | `"29000000"` |
 | $99 | 99,000,000 | `"99000000"` |
 | $299 | 299,000,000 | `"299000000"` |
