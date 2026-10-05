@@ -91,7 +91,7 @@
     "/v1/entity/deep-check": {
       "post": {
         "summary": "Entity Deep Check",
-        "description": "Deep check: extended PEP/RCA exposure screening, the Dutch insolvency\nregister on every tier, adverse media on the extended tier, an\nItalian credit report on the credit tier.\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.75) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.50) adds `adverse_media` from dilisense;\n`credit` ($2.25, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
+        "description": "Deep check: extended PEP/RCA exposure screening, the Dutch insolvency\nregister on every tier, adverse media on the extended tier, an\nItalian credit report on the credit tier.\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.88) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.71) adds `adverse_media` from dilisense;\n`credit` ($2.45, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
         "operationId": "entity_deep_check_v1_entity_deep_check_post",
         "requestBody": {
           "content": {
@@ -272,7 +272,7 @@
     "/v1/keys/revoke": {
       "post": {
         "summary": "Revoke Key",
-        "description": "Revoke an API key permanently.\n\nThe key being revoked is identified by the X-API-Key header.\nThis action is irreversible \u2014 the key will stop working immediately.\nAny remaining prepaid balance is forfeited.",
+        "description": "Revoke an API key permanently.\n\nThe key being revoked is identified by the X-API-Key header.\nThis action is irreversible \u2014 the key will stop working immediately.\nAny remaining prepaid balance of a key that holds its own is forfeited; a key\nthat belongs to a workspace draws from the workspace balance, which revoking\nthe key never touches.",
         "operationId": "revoke_key_v1_keys_revoke_post",
         "responses": {
           "200": {
@@ -5429,6 +5429,20 @@
             },
             "type": "object",
             "title": "Sources"
+          },
+          "degraded": {
+            "type": "boolean",
+            "title": "Degraded",
+            "description": "True when an advertised source is not configured or a background job is stale. Separate from status, which stays ok while the service is up.",
+            "default": false
+          },
+          "degraded_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Degraded Reasons",
+            "description": "Source names behind degraded (never job names, never values)"
           },
           "cache_sizes": {
             "additionalProperties": {
