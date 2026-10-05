@@ -52,8 +52,8 @@ Response (HTTP 402):
       "scheme": "exact",
       "network": "eip155:8453",
       "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "amount": "850000",
-      "maxAmountRequired": "850000",
+      "amount": "1050000",
+      "maxAmountRequired": "1050000",
       "resource": "https://api.limitguard.ai/v1/entity/check",
       "description": "Full entity trust check across multiple verification layers...",
       "mimeType": "application/json",
@@ -65,8 +65,8 @@ Response (HTTP 402):
       "scheme": "exact",
       "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
       "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "amount": "850000",
-      "maxAmountRequired": "850000",
+      "amount": "1050000",
+      "maxAmountRequired": "1050000",
       "resource": "https://api.limitguard.ai/v1/entity/check",
       "description": "Full entity trust check across multiple verification layers...",
       "mimeType": "application/json",
@@ -179,7 +179,7 @@ def build_x402_payment(
 ```python
 x_payment = build_x402_payment(
     chain_id="eip155:8453",
-    amount=850_000,          # $0.85 for /v1/entity/check (fresh)
+    amount=1_050_000,        # $1.05 for /v1/entity/check (fresh)
     sender_key="0xYOUR_PRIVATE_KEY",
     recipient="0xFacilitatorFromThe402Response",
     usdc_address="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -198,7 +198,7 @@ response = httpx.post(
 | Header | Value | Meaning |
 |---|---|---|
 | `X-Payment-Verified` | `true` | Payment accepted |
-| `X-Payment-Amount` | `850000` | Amount verified (6-decimal USDC) |
+| `X-Payment-Amount` | `1050000` | Amount verified (6-decimal USDC) |
 | `X-Payment-Fallback` | `true` | Circuit breaker triggered (rare) |
 | `PAYMENT-RESPONSE` | base64 JSON | `transaction` is the tx hash for settled transfers (see below), `payer` is the verified sender |
 
@@ -380,7 +380,7 @@ Control cost via `X-Response-Quality` header:
 response = httpx.post(
     "https://api.limitguard.ai/v1/entity/check",
     headers={
-        "X-PAYMENT": x_payment_100000,  # $0.10 for cached
+        "X-PAYMENT": x_payment_110000,  # $0.11 for cached
         "X-Response-Quality": "cached",
         "Content-Type": "application/json",
     },
@@ -392,20 +392,20 @@ The amount in `X-PAYMENT` must match or exceed the price for the selected tier:
 
 | Tier | /v1/entity/check amount |
 |---|---|
-| `cached` | 100,000 ($0.10) |
-| `fresh` | 850,000 ($0.85) |
+| `cached` | 110,000 ($0.11) |
+| `fresh` | 1,050,000 ($1.05) |
 
 `enhanced` was retired on `/v1/entity/check` 2026-09-24 (#405): it took the identical
 fan-out as `fresh`, so `X-Response-Quality: enhanced` is now quoted, charged and
-served at the `fresh` amount above (850,000), not the old 1,500,000 — the 402 body's
+served at the `fresh` amount above (1,050,000), not the old 1,500,000 - the 402 body's
 `info.note` says so. The same retirement applies to `/v1/risk/score`,
 `/v1/reputation/score` and `/v1/kyb/check`.
 
 Not every tiered endpoint sells every tier. `POST /v1/entity/deep-check` sells `fresh`
-($0.75, 750,000: PEP/RCA + Dutch insolvency register) and `enhanced` ($1.50, 1,500,000,
+($0.88, 880,000: PEP/RCA + Dutch insolvency register) and `enhanced` ($1.71, 1,710,000,
 adds adverse media) always -- it is unaffected by the #405 retirement above, since its
 `enhanced` tier genuinely reaches a source `fresh` does not -- plus a third, separately
-opt-in `credit` tier ($2.25, 2,250,000, adds an Italian credit report) only while
+opt-in `credit` tier ($2.45, 2,450,000, adds an Italian credit report) only while
 `OPENAPI_CREDIT_API_KEY` is configured -- `X-Response-Quality: credit` is otherwise
 quoted, charged and served as `fresh`, and even once configured a non-Italian request on
 the `credit` tier is requoted down to the `fresh` amount before payment is ever required.
@@ -453,7 +453,7 @@ accepted as-is — no adapter needed:
   "payload": {
     "signature": "0x...",
     "authorization": {
-      "from": "0x...", "to": "0x...", "value": "850000",
+      "from": "0x...", "to": "0x...", "value": "1050000",
       "validAfter": "...", "validBefore": "...", "nonce": "0x..."
     }
   }
