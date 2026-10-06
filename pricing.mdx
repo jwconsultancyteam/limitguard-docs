@@ -6,7 +6,7 @@ description: "API prices: USDC per call, or from a prepaid API key balance"
 All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol), or hold a paid-tier [API key](/authentication) with a prepaid balance that each priced call is debited from.
 
 <Note>
-  The dashboard at [dashboard.limitguard.ai](https://dashboard.limitguard.ai) is priced separately, in euros: per lead, per company check with a PDF report, and optional monthly plans that include credit. See [limitguard.ai/pricing](https://limitguard.ai/pricing/).
+  The dashboard at [dashboard.limitguard.ai](https://dashboard.limitguard.ai) is priced separately, in euros: per lead, per company check with a PDF report, and optional monthly or yearly plans that include credit. See [limitguard.ai/pricing](https://limitguard.ai/pricing/).
 </Note>
 
 **What it is:** Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, with website age in the company check, and returns proceed, review or block with the source on every line. Developers and AI agents can use its HTTP API, MCP server and A2A service, hosted in the EU.
@@ -86,7 +86,7 @@ The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are pri
 
 Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key. See [Authentication](/authentication#api-key-authentication) for the full tier ladder. The balance does not expire or reset.
 
-API key top-ups (Indie, Starter, Growth, Pro in USD) are prepaid balances for the API; they are not the dashboard's monthly plans.
+API key top-ups (Indie, Starter, Growth, Pro in USD) are prepaid balances for the API; they are not the dashboard's monthly or yearly plans.
 
 | Endpoint | Price | Rate limits |
 |----------|-------|---------|
