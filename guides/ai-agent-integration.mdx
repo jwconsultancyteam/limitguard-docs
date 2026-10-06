@@ -466,7 +466,7 @@ curl https://api.limitguard.ai/.well-known/agent.json
 ```python Python (Google ADK)
 import httpx
 
-class LimitGuardA2AClient:
+class LimitguardA2AClient:
     """A2A client for Limitguard trust verification."""
 
     AGENT_CARD_URL = "https://api.limitguard.ai/.well-known/agent.json"
@@ -509,7 +509,7 @@ class LimitGuardA2AClient:
 
 
 # Usage in an orchestrator agent
-client = LimitGuardA2AClient(api_key="lg_live_xxxxxxxxxxxxxxxxxxxx")
+client = LimitguardA2AClient(api_key="lg_live_xxxxxxxxxxxxxxxxxxxx")
 
 # Discover what Limitguard can do
 card = client.discover()
@@ -525,7 +525,7 @@ print(f"Trust score: {result['trust_score']} — {result['recommendation']}")
 ```
 
 ```javascript JavaScript
-class LimitGuardA2AClient {
+class LimitguardA2AClient {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.baseUrl = "https://api.limitguard.ai";
@@ -565,7 +565,7 @@ class LimitGuardA2AClient {
 }
 
 // Usage
-const client = new LimitGuardA2AClient("lg_live_xxxxxxxxxxxxxxxxxxxx");
+const client = new LimitguardA2AClient("lg_live_xxxxxxxxxxxxxxxxxxxx");
 
 const card = await client.discover();
 console.log("Skills:", card.skills.map((s) => s.id));
@@ -1462,7 +1462,7 @@ Block all transactions where recommendation is 'block'.
 ```
 
 ```javascript JavaScript
-async function loadLimitGuardContext(full = false) {
+async function loadLimitguardContext(full = false) {
   const url = full
     ? "https://api.limitguard.ai/llms-full.txt"
     : "https://api.limitguard.ai/llms.txt";
@@ -1471,7 +1471,7 @@ async function loadLimitGuardContext(full = false) {
 }
 
 // Inject into a system prompt
-const context = await loadLimitGuardContext(true);
+const context = await loadLimitguardContext(true);
 
 const systemPrompt = `You are a payment automation assistant.
 You have access to the Limitguard Trust Intelligence API.
