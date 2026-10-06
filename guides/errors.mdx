@@ -709,16 +709,16 @@ def call_limitguard(endpoint: str, payload: dict, api_key: str) -> dict:
             raise PaymentRequiredError(error)
 
         # Non-retryable client error
-        raise LimitGuardError(
+        raise LimitguardError(
             status=response.status_code,
             title=error.get("title"),
             detail=error.get("detail"),
         )
 
-    raise LimitGuardError(status=429, title="Max retries exceeded", detail=None)
+    raise LimitguardError(status=429, title="Max retries exceeded", detail=None)
 
 
-class LimitGuardError(Exception):
+class LimitguardError(Exception):
     def __init__(self, status: int, title: str, detail):
         self.status = status
         self.title = title
@@ -736,7 +736,7 @@ class PaymentRequiredError(Exception):
 const RETRYABLE = new Set([500, 502, 503, 504]);
 const MAX_RETRIES = 3;
 
-async function callLimitGuard(endpoint, payload, apiKey) {
+async function callLimitguard(endpoint, payload, apiKey) {
   const headers = {
     "X-API-Key": apiKey,
     "Content-Type": "application/json",
