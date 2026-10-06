@@ -1,18 +1,18 @@
 ---
 title: "AI Agent Integration"
-description: "How AI agents discover and use Limitguard — MCP, A2A, and x402"
+description: "How AI agents discover and use Limitguard: MCP, A2A, and x402"
 ---
 
-AI agents are now the dominant counterparty in digital commerce. They invoice, pay, onboard vendors, and execute contracts — all without human review. Yet most agents have no mechanism to verify whether the entity on the other side of a transaction is legitimate.
+AI agents now qualify leads, onboard suppliers and pay invoices with little or no human review. Most have no way to check whether the company on the other side is real, active and not sanctioned.
 
-Limitguard is built for this gap. It exposes trust intelligence through three agent-native protocols — MCP, A2A, and x402 — so any capable agent can discover, pay for, and act on trust scores without human configuration.
+Limitguard gives them the checks a person would run: the company behind a lead or invoice is looked up in the official business register (KVK in the Netherlands, KBO in Belgium), its VAT number in VIES and its name on the OFAC, EU and UN sanctions lists, with the source on every line. It exposes those checks through three agent-native protocols, MCP, A2A and x402, so any capable agent can discover, pay for, and act on them without human configuration.
 
 <CardGroup cols={3}>
   <Card title="MCP" icon="plug" href="#mcp-model-context-protocol">
     Native tools for Claude, GPT-4, and any LLM that supports the Model Context Protocol
   </Card>
   <Card title="A2A" icon="arrows-left-right" href="#a2a-agent-to-agent">
-    Google's Agent-to-Agent protocol — structured capability discovery and invocation
+    Google's Agent-to-Agent protocol: structured capability discovery and invocation
   </Card>
   <Card title="x402" href="#x402-micropayments">
     Pay per call with USDC. No subscription, no API key, no human in the loop
@@ -25,11 +25,11 @@ All discovery endpoints (`/.well-known/*`, `/llms.txt`, `/llms-full.txt`) are **
 
 ---
 
-## Why Trust Intelligence Matters for Agents
+## Why Lead and Company Checks Matter for Agents
 
-An autonomous agent executing a payment workflow faces a fundamental asymmetry: it can verify its own instructions perfectly, but it has no ground truth about the entity receiving the payment.
+An autonomous agent qualifying a lead or executing a payment faces a fundamental asymmetry: it can verify its own instructions perfectly, but it has no ground truth about the company on the other side.
 
-A supplier claiming to be "Acme Corp BV" in Amsterdam could be:
+A lead or supplier claiming to be "Acme Corp BV" in Amsterdam could be:
 - A legitimate, 12-year-old company with verified KVK registration
 - A recently-incorporated shell with no trading history
 - An entity on an OFAC or EU sanctions list
@@ -37,7 +37,7 @@ A supplier claiming to be "Acme Corp BV" in Amsterdam could be:
 
 Without trust verification, agents must either halt for human review (defeating the purpose of automation) or proceed blind (accepting counterparty risk they cannot quantify).
 
-Limitguard resolves this in a single API call — returning a 0-100 trust score, a recommendation (`proceed` / `review` / `enhanced_due_diligence` / `block`), and the evidence behind it.
+Limitguard resolves this in a single API call. Lead Verify returns a verdict, a 0-100 lead score and flags; the company check returns a 0-100 trust score, a recommendation (`proceed` / `review` / `enhanced_due_diligence` / `block`), and the evidence behind it.
 
 ### Agent Decision Framework
 
@@ -63,7 +63,7 @@ Limitguard resolves this in a single API call — returning a 0-100 trust score,
 
 ## MCP (Model Context Protocol)
 
-MCP is Anthropic's standard for exposing APIs as native tools to LLM agents. When an LLM is configured with Limitguard's MCP manifest, it can call trust verification endpoints the same way it calls any built-in tool — no prompt engineering required.
+MCP is Anthropic's standard for exposing APIs as native tools to LLM agents. When an LLM is configured with Limitguard's MCP manifest, it can call Limitguard's checks the same way it calls any built-in tool, with no prompt engineering required.
 
 ### Discovery
 
@@ -75,134 +75,50 @@ curl https://api.limitguard.ai/.well-known/mcp.json
 {
   "name": "limitguard",
   "version": "1.0",
-  "description": "Limitguard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU. Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached ($0.25 KYB) when available. Entity verification and risk scoring tools for AI agents.",
+  "description": "Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, with website age in the company check, and returns proceed, review or block with the source on every line. Developers and AI agents can use its HTTP API, MCP server and A2A service, hosted in the EU. ...",
   "tools": [
     {
+      "name": "verify_lead",
+      "description": "Lead verify for one NL or BE sales lead: is it a real, active company? Checks the KVK or KBO register (status, legal form, start date, main activity, staff, registered address) and cross-checks whatever else the lead holds: VAT number with VIES, mail server and disposable domain, IBAN country and bank (the account holder is not checked), and the company name against the OFAC, EU and UN sanctions lists. Returns a verdict, a 0-100 lead score, flags and one action per flag. An input not given is not checked and never counts against the lead. $0.27."
+    },
+    {
+      "name": "check_agent_wallet",
+      "description": "Agent wallet check in one call: screens an EVM wallet against the OFAC SDN digital-currency address list, reads its Base USDC and ETH balance, looks up its ERC-8004 identity registration (and, given an agent id, that agent's owner and payment wallet) and lists open ERC-8004 feedback, which is not scored. Returns one verdict and each part's status; a part that could not be read says so. $0.75."
+    },
+    {
       "name": "check_entity",
-      "description": "MCP tool: entity trust check for LLM agents. Runs the /v1/entity/check engine on entity_name, country, kvk_number and domain only, so up to 5 sources (no IBAN, VAT or wallet).",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "entity_name": {
-            "type": "string",
-            "description": "Full legal name of the entity"
-          },
-          "country": {
-            "type": "string",
-            "description": "ISO country code (NL, BE, etc.)"
-          },
-          "kvk_number": {
-            "type": "string",
-            "description": "Dutch KVK number"
-          },
-          "domain": {
-            "type": "string",
-            "description": "Entity website domain"
-          }
-        },
-        "required": [
-          "entity_name",
-          "country"
-        ]
-      }
+      "description": "MCP tool: entity trust check for LLM agents. Runs the /v1/entity/check engine on entity_name, country, kvk_number and domain only, so up to 5 sources (no IBAN, VAT or wallet)."
+    },
+    {
+      "name": "get_trust_score",
+      "description": "MCP tool: Look up your own most recent trust score for an entity you checked before, from your stored checks: score, level, when, which product, trend and how many checks are on record. Runs no new check and calls no data source. Free ($0)."
     },
     {
       "name": "verify_wallet",
-      "description": "MCP tool: Screen a wallet: OFAC SDN address match, on-chain signals (contract check, native and USDC balance, transaction count, first seen on Base) and named risk rules with up to 3 advice items. On Base, also reports any ERC-8004 agent the wallet owns and its open on-chain reputation as descriptive signals, never scored. Free ($0). Accepts EVM (0x...) and Solana (base58) addresses.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "wallet_address": {
-            "type": "string",
-            "description": "Blockchain wallet address"
-          },
-          "chain_id": {
-            "type": "string",
-            "description": "CAIP-2 chain ID (default: eip155:8453); base, eth, solana, btc also accepted"
-          }
-        },
-        "required": [
-          "wallet_address"
-        ]
-      }
+      "description": "MCP tool: Screen a wallet: OFAC SDN address match, on-chain signals (contract check, native and USDC balance, transaction count, first seen on Base) and named risk rules with up to 3 advice items. On Base, also reports any ERC-8004 agent the wallet owns and its open on-chain reputation as descriptive signals, never scored. Free ($0). Accepts EVM (0x...) and Solana (base58) addresses."
     },
     {
       "name": "get_risk_score",
-      "description": "MCP tool: quick risk score for entity name + country pair.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "entity_name": {
-            "type": "string",
-            "description": "Full legal name"
-          },
-          "country": {
-            "type": "string",
-            "description": "ISO country code"
-          }
-        },
-        "required": [
-          "entity_name",
-          "country"
-        ]
-      }
+      "description": "MCP tool: quick risk score for entity name + country pair."
     },
     {
       "name": "get_compliance_report",
-      "description": "Per-entity report built from one real check's signals: identity, sanctions and PEP screening, domain signals, risk score, correlations with the caller's earlier reports, sources and an evidence hash. A source that did not answer is shown unavailable, never clean.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "check_id": {
-            "type": "string",
-            "description": "Id of a check stored by an earlier /v1/reports/entity call"
-          },
-          "entity_name": {
-            "type": "string",
-            "description": "Legal entity name"
-          },
-          "country": {
-            "type": "string",
-            "description": "ISO 3166-1 alpha-2 country code"
-          },
-          "kvk_number": {
-            "type": "string",
-            "description": "Dutch KVK number (8 digits)"
-          },
-          "cbe_number": {
-            "type": "string",
-            "description": "Belgian CBE number (0XXX.XXX.XXX)"
-          },
-          "vat_number": {
-            "type": "string",
-            "description": "EU VAT number"
-          },
-          "domain": {
-            "type": "string",
-            "description": "Entity website domain"
-          },
-          "iban": {
-            "type": "string",
-            "description": "IBAN for financial validation"
-          },
-          "wallet_address": {
-            "type": "string",
-            "description": "Crypto wallet address (format check only; no on-chain lookup)"
-          },
-          "wallet_chain": {
-            "type": "string",
-            "description": "Blockchain the address is checked against"
-          }
-        },
-        "required": []
-      }
+      "description": "Per-entity report built from one real check's signals: identity, sanctions and PEP screening, domain signals, risk score, correlations with the caller's earlier reports, sources and an evidence hash. A source that did not answer is shown unavailable, never clean."
+    },
+    {
+      "name": "sanctions_preview",
+      "description": "Free yes/no preview of the sanctions screen against the OFAC SDN, EU and UN sanctions lists: possible_match only, no entries. 10 per caller per UTC day, 50 per client IP across API keys; the matched entries are POST /v1/sanctions/screen."
+    },
+    {
+      "name": "sanctions_screen",
+      "description": "Sanctions screen of a company or person name against the OFAC SDN, EU and UN sanctions lists, held locally and refreshed daily. Returns each matched entry: list, entry id, matched name, programmes, countries, listing date and match score. Exact normalised or word-order-insensitive name match only; a name match is not a determination."
     }
   ],
   "a2a_endpoint": "https://api.limitguard.ai/a2a"
 }
 ```
 
-Each tool in the manifest above also carries `annotations` (title and read-only hints), trimmed here. `check_entity` ($0.85) and `get_risk_score` ($0.65) cost the same as the `fresh` tier of their REST endpoints, `get_compliance_report` costs $1.50 like `POST /v1/reports/entity`, and `verify_wallet` is free. See [Pricing](/pricing#mcp-tool-endpoints).
+Trimmed here: the top-level `description` goes on to the sandbox and prices, and each tool in the live manifest also carries an `inputSchema` and `annotations` (title and read-only hints). `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `verify_wallet`, `get_trust_score` and `sanctions_preview` are free; `get_compliance_report`, `sanctions_screen`, `check_agent_wallet` and `verify_lead` are billed at the price of the REST endpoint they call. See [Pricing](/pricing#mcp-tool-endpoints) for the amounts.
 
 ### Configuring an LLM Agent
 
@@ -347,8 +263,8 @@ curl https://api.limitguard.ai/.well-known/agent.json
 
 ```json Response
 {
-  "name": "Limitguard Trust Intelligence",
-  "description": "Limitguard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU. Free sandbox key, no wallet. $0.65-0.85 fresh for entity and risk checks ($1.50 KYB); $0.10 cached ($0.25 KYB) when available. Enables AI agents to verify counterparty trust before transacting.",
+  "name": "Limitguard Lead Verification",
+  "description": "Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, with website age in the company check, and returns proceed, review or block with the source on every line. Developers and AI agents can use its HTTP API, MCP server and A2A service, hosted in the EU. ...",
   "protocolVersion": "0.3.0",
   "version": "1.0",
   "url": "https://api.limitguard.ai/a2a",
@@ -357,7 +273,8 @@ curl https://api.limitguard.ai/.well-known/agent.json
     "organization": "Limitguard",
     "url": "https://limitguard.ai"
   },
-  "documentationUrl": "https://docs.limitguard.ai/x402-protocol",
+  "iconUrl": "https://limitguard.ai/icon-512.png",
+  "documentationUrl": "https://docs.limitguard.ai/api-reference/leads/lead-verify",
   "capabilities": {
     "streaming": false,
     "pushNotifications": false,
@@ -392,6 +309,32 @@ curl https://api.limitguard.ai/.well-known/agent.json
   ],
   "skills": [
     {
+      "id": "lead_verify",
+      "name": "lead_verify",
+      "tags": [
+        "lead_verification",
+        "company_registry",
+        "sales"
+      ],
+      "description": "Lead verify for one NL or BE sales lead: is it a real, active company? Checks the KVK or KBO register (status, legal form, start date, main activity, staff, registered address) and cross-checks whatever else the lead holds: VAT number with VIES, mail server and disposable domain, IBAN country and bank (the account holder is not checked), and the company name against the OFAC, EU and UN sanctions lists. Returns a verdict, a 0-100 lead score, flags and one action per flag. An input not given is not checked and never counts against the lead.",
+      "endpoint": "/v1/leads/verify",
+      "method": "POST",
+      "price_usdc": 0.27
+    },
+    {
+      "id": "agent_check",
+      "name": "agent_check",
+      "tags": [
+        "wallet_screening",
+        "sanctions",
+        "agent_identity"
+      ],
+      "description": "Agent wallet check in one call: screens an EVM wallet against the OFAC SDN digital-currency address list, reads its Base USDC and ETH balance, looks up its ERC-8004 identity registration (and, given an agent id, that agent's owner and payment wallet) and lists open ERC-8004 feedback, which is not scored. Returns one verdict and each part's status; a part that could not be read says so.",
+      "endpoint": "/v1/agent/check",
+      "method": "POST",
+      "price_usdc": 0.75
+    },
+    {
       "id": "entity_check",
       "name": "entity_check",
       "tags": [
@@ -402,10 +345,10 @@ curl https://api.limitguard.ai/.well-known/agent.json
         "sanctions",
         "kyb"
       ],
-      "description": "Full entity trust check across up to 8 data sources, depending on the identifiers supplied. Returns trust score 0-100, cluster, and recommendation.",
+      "description": "Full entity trust check ... Returns trust score 0-100, cluster, and recommendation.",
       "endpoint": "/v1/entity/check",
       "method": "POST",
-      "price_usdc": 0.85
+      "price_usdc": 1.05
     },
     {
       "id": "risk_score",
@@ -416,7 +359,7 @@ curl https://api.limitguard.ai/.well-known/agent.json
       "description": "Quick risk score assessment. Faster than full entity check.",
       "endpoint": "/v1/risk/score",
       "method": "POST",
-      "price_usdc": 0.65
+      "price_usdc": 0.9
     },
     {
       "id": "kyb_check",
@@ -454,10 +397,12 @@ curl https://api.limitguard.ai/.well-known/agent.json
   "sandbox": {
     "url": "https://api.limitguard.ai/v1/keys/create",
     "curl": "curl -s -X POST https://api.limitguard.ai/v1/keys/create -H 'Content-Type: application/json' -d '{\"email\": \"you@example.com\", \"tier\": \"sandbox\"}'",
-    "note": "Free sandbox key, no wallet. POST here with tier=sandbox to get an lg_sandbox_ key; send it as X-API-Key for mock data at no charge (10 req/min)."
+    "note": "Free sandbox key, no wallet. POST here with tier=sandbox to get an lg_sandbox_ key; send it as X-API-Key for mock data at no charge (10 req/min). The sandbox covers entity, risk and KYB checks; Lead Verify and the agent check need a live key or an x402 payment. Or screen a name against the OFAC, EU and UN sanctions lists free first: POST https://api.limitguard.ai/v1/sanctions/preview."
   }
 }
 ```
+
+Trimmed here: the live card's `description` goes on to the sandbox and prices, and the `entity_check` skill's description is shortened. Each skill names the REST `endpoint` and `method` to call and its `price_usdc`.
 
 ### How an Agent Uses A2A
 
@@ -514,14 +459,14 @@ client = LimitguardA2AClient(api_key="lg_live_xxxxxxxxxxxxxxxxxxxx")
 # Discover what Limitguard can do
 card = client.discover()
 print(f"Available skills: {[s['id'] for s in card['skills']]}")
-# Available skills: ['entity_check', 'risk_score', 'kyb_check']
+# Available skills: ['lead_verify', 'agent_check', 'entity_check', 'risk_score', 'kyb_check']
 
 # Invoke entity trust check
 result = client.invoke(
     "entity_check",
     {"entity_name": "Acme Corp BV", "country": "NL", "kvk_number": "12345678"},
 )
-print(f"Trust score: {result['trust_score']} — {result['recommendation']}")
+print(f"Trust score: {result['trust_score']}, {result['recommendation']}")
 ```
 
 ```javascript JavaScript
@@ -575,7 +520,7 @@ const result = await client.invoke("entity_check", {
   country: "NL",
   kvk_number: "12345678",
 });
-console.log(`Trust score: ${result.trust_score} — ${result.recommendation}`);
+console.log(`Trust score: ${result.trust_score}, ${result.recommendation}`);
 ```
 
 </CodeGroup>
@@ -584,7 +529,7 @@ console.log(`Trust score: ${result.trust_score} — ${result.recommendation}`);
 
 ## x402 Micropayments
 
-x402 is the HTTP native payment protocol for AI agents. An agent with a funded USDC wallet can call Limitguard endpoints **without a subscription or API key** — it discovers pricing, builds a cryptographic payment signature, and includes it in the request header.
+x402 is the HTTP native payment protocol for AI agents. An agent with a funded USDC wallet can call Limitguard endpoints **without a subscription or API key**: it discovers pricing, builds a cryptographic payment signature, and includes it in the request header.
 
 This is the fully autonomous path: no human creates an account, no API key is provisioned, no billing is configured.
 
@@ -601,21 +546,21 @@ curl https://api.limitguard.ai/.well-known/x402.json
   "protocol": "x402-v2",
   "x402Version": 2,
   "discoverable": true,
-  "description": "Trust Intelligence API with 18 priced endpoints. Entity verification, risk scoring, KYB, compliance, wallet screening, and MCP tools. Base + Solana.",
-  "capabilities": ["entity_verification", "risk_scoring", "reputation_tracking", "compliance_monitoring", "wallet_verification"],
+  "description": "Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, with website age in the company check, and returns proceed, review or block with the source on every line. Developers and AI agents can use its HTTP API, MCP server and A2A service, hosted in the EU. ...",
+  "capabilities": ["lead_verification", "entity_verification", "risk_scoring", "reputation_tracking", "compliance_monitoring", "wallet_verification"],
   "endpoints": [
     {
       "path": "/v1/entity/check",
       "method": "POST",
-      "price_usdc": 0.85,
-      "price_raw": 850000,
+      "price_usdc": 1.05,
+      "price_raw": 1050000,
       "category": "trust_intelligence"
     },
     {
       "path": "/v1/risk/score",
       "method": "POST",
-      "price_usdc": 0.65,
-      "price_raw": 650000,
+      "price_usdc": 0.9,
+      "price_raw": 900000,
       "category": "trust_intelligence"
     },
     {
@@ -623,13 +568,13 @@ curl https://api.limitguard.ai/.well-known/x402.json
       "method": "POST",
       "price_usdc": 1.5,
       "price_raw": 1500000,
-      "category": "trust_intelligence"
+      "category": "regulatory_compliance"
     }
   ]
 }
 ```
 
-Truncated to three entries; the live response lists every priced endpoint. `price_raw` is the default (`fresh`) price in USDC 6-decimal units. The listing does **not** break out per-quality-tier prices — for `cached` amounts, see [Pricing](/pricing#tiered-pricing) or read the `amount` from the 402 response for the quality you requested.
+Truncated to three entries; the live response lists every priced endpoint. `price_raw` is the default (`fresh`) price in USDC 6-decimal units. The listing does **not** break out per-quality-tier prices: for `cached` amounts, see [Pricing](/pricing#tiered-pricing) or read the `amount` from the 402 response for the quality you requested.
 
 ### How x402 Works
 
@@ -668,9 +613,9 @@ USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 CHAIN_ID = "eip155:8453"
 
 def build_x402_payment(
-    amount_usdc: int,    # in 6-decimal units (850000 = $0.85)
+    amount_usdc: int,    # in 6-decimal units (1_000_000 = $1.00), from the 402
     sender_key: str,     # agent wallet private key
-    recipient: str,      # facilitator address from 402 response
+    recipient: str,      # payTo address from the 402 response
 ) -> str:
     sender = Account.from_key(sender_key).address
     chain_num = int(CHAIN_ID.split(":")[1])  # 8453
@@ -730,20 +675,23 @@ def verify_entity_x402(
     sender_key: str,
     quality: str = "fresh",  # cached | fresh
 ) -> dict:
-    tier_prices = {"cached": 100_000, "fresh": 850_000}
-    amount = tier_prices[quality]
-
-    # Step 1: Probe to get facilitator address
+    # Step 1: Probe for the quote. The 402 carries the exact amount for this
+    # endpoint and quality tier, so no price is hard-coded here.
     probe = httpx.post(
         "https://api.limitguard.ai/v1/entity/check",
         headers={"X-Response-Quality": quality, "Content-Type": "application/json"},
         json={"entity_name": entity_name, "country": country},
     )
     assert probe.status_code == 402, f"Expected 402, got {probe.status_code}"
-    facilitator = probe.json()["accepts"][0]["recipient"]
+    accepted = next(
+        a
+        for a in probe.json()["accepts"]
+        if a["network"] == CHAIN_ID and a["scheme"] == "exact"
+    )
+    amount = int(accepted["amount"])
 
     # Step 2: Build payment and call
-    x_payment = build_x402_payment(amount, sender_key, facilitator)
+    x_payment = build_x402_payment(amount, sender_key, accepted["payTo"])
 
     response = httpx.post(
         "https://api.limitguard.ai/v1/entity/check",
@@ -766,7 +714,7 @@ result = verify_entity_x402(
     sender_key="0xYOUR_AGENT_WALLET_PRIVATE_KEY",
     quality="fresh",
 )
-print(f"Trust score: {result['trust_score']} — {result['recommendation']}")
+print(f"Trust score: {result['trust_score']}, {result['recommendation']}")
 ```
 
 ```javascript JavaScript
@@ -826,10 +774,8 @@ async function buildX402Payment(amountUsdc, signer, recipient) {
 }
 
 async function verifyEntityX402(entityName, country, signer, quality = "fresh") {
-  const tierPrices = { cached: 100_000, fresh: 850_000 };
-  const amount = tierPrices[quality];
-
-  // Step 1: Probe to get facilitator address
+  // Step 1: Probe for the quote. The 402 carries the exact amount for this
+  // endpoint and quality tier, so no price is hard-coded here.
   const probe = await fetch("https://api.limitguard.ai/v1/entity/check", {
     method: "POST",
     headers: {
@@ -841,10 +787,11 @@ async function verifyEntityX402(entityName, country, signer, quality = "fresh") 
 
   if (probe.status !== 402) throw new Error(`Expected 402, got ${probe.status}`);
   const { accepts } = await probe.json();
-  const facilitator = accepts[0].recipient;
+  const accepted = accepts.find((a) => a.network === CHAIN_ID && a.scheme === "exact");
+  const amount = parseInt(accepted.amount, 10);
 
   // Step 2: Build payment and call
-  const xPayment = await buildX402Payment(amount, signer, facilitator);
+  const xPayment = await buildX402Payment(amount, signer, accepted.payTo);
 
   const response = await fetch("https://api.limitguard.ai/v1/entity/check", {
     method: "POST",
@@ -865,7 +812,7 @@ const provider = new ethers.JsonRpcProvider("https://mainnet.base.org");
 const signer = new ethers.Wallet(process.env.AGENT_PRIVATE_KEY, provider);
 
 const result = await verifyEntityX402("Acme Corp BV", "NL", signer, "fresh");
-console.log(`Trust score: ${result.trust_score} — ${result.recommendation}`);
+console.log(`Trust score: ${result.trust_score}, ${result.recommendation}`);
 ```
 
 </CodeGroup>
@@ -876,20 +823,20 @@ Control cost vs. freshness with the `X-Response-Quality` header. The payment amo
 
 | Tier | Header Value | /v1/entity/check | /v1/risk/score | /v1/kyb/check | Data Freshness |
 |------|-------------|-----------------|----------------|---------------|----------------|
-| Cached | `cached` | $0.11 (110,000) | $0.11 (110,000) | $0.25 (250,000) | Up to 24h cached |
+| Cached | `cached` | $0.11 (110,000) | $0.11 (110,000) | $0.25 (250,000) | From cache: 1 h for entity and KYB, 7 days for risk |
 | Fresh | `fresh` | $1.05 (1,050,000) | $0.90 (900,000) | $1.50 (1,500,000) | Live fan-out (default) |
 
 `enhanced` was retired on these endpoints on 2026-09-24: it ran the same sources as `fresh`, so it is now quoted, charged and served at the `fresh` price. For more sources, use `POST /v1/entity/deep-check`.
 
 <Tip>
-For high-frequency screening (e.g., checking every inbound invoice), start with `cached` for pre-screening and only upgrade to `fresh` when the cached score is below 70. This reduces cost by 8.5x on clean counterparties.
+For high-frequency screening (e.g., checking every inbound invoice), start with `cached` for pre-screening and only upgrade to `fresh` when the cached score is below 70. A cached entity check costs about 9.5x less than a fresh one (see [Pricing](/pricing#tiered-pricing)), which is what this saves on clean counterparties.
 </Tip>
 
 ---
 
 ## End-to-End Agent Example
 
-This example shows a complete autonomous payment agent — from cold start to decision — using discovery, x402 payment, and trust-gated execution.
+This example shows a complete autonomous payment agent, from cold start to decision, using discovery, x402 payment, and trust-gated execution.
 
 ```mermaid
 sequenceDiagram
@@ -902,23 +849,23 @@ sequenceDiagram
 
     Note over Agent: Invoice received: Acme Corp BV, €500
 
-    Agent->>Limitguard: POST /v1/risk/score (probe, no payment)
-    Limitguard-->>Agent: HTTP 402 — amount: 100000, recipient: 0xFaci...
+    Agent->>Limitguard: POST /v1/risk/score (cached, probe, no payment)
+    Limitguard-->>Agent: HTTP 402, amount 110000, payTo 0xFaci...
 
     Agent->>Blockchain: EIP-3009 TransferWithAuthorization signature
-    Note over Agent: Signs locally — no on-chain tx yet
+    Note over Agent: Signs locally, no on-chain tx yet
 
     Agent->>Limitguard: POST /v1/risk/score (X-PAYMENT header)
     Limitguard->>Blockchain: Verify + settle signature
     Blockchain-->>Limitguard: Confirmed
     Limitguard-->>Agent: risk_score: 22, recommendation: review
 
-    Note over Agent: Risk score low — upgrade to full check
+    Note over Agent: Risk score low, upgrade to full check
 
-    Agent->>Limitguard: POST /v1/entity/check (fresh, $0.85)
+    Agent->>Limitguard: POST /v1/entity/check (fresh, amount from its own 402)
     Limitguard-->>Agent: trust_score: 87, recommendation: proceed
 
-    Note over Agent: Score ≥ 80 — proceed autonomously
+    Note over Agent: Score ≥ 80, proceed autonomously
     Agent->>Agent: Execute payment, log trust_score in audit trail
 ```
 
@@ -969,14 +916,8 @@ class TrustGatedAgent:
     USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     CHAIN_ID = "eip155:8453"
 
-    # Per-quality prices are not carried in the x402 listing — see /pricing.
-    # Amounts are USDC 6-decimal units (1_000_000 = $1.00).
-    TIER_PRICES = {
-        "/v1/entity/check": {"cached": 100_000, "fresh": 850_000},
-        "/v1/risk/score": {"cached": 100_000, "fresh": 650_000},
-        "/v1/reputation/score": {"cached": 100_000, "fresh": 650_000},
-        "/v1/kyb/check": {"cached": 250_000, "fresh": 1_500_000},
-    }
+    # Prices are read from each 402 quote, never hard-coded: the quote carries the
+    # exact amount (USDC 6-decimal units) for the endpoint and quality tier asked for.
 
     def __init__(self, wallet_private_key: str):
         self.wallet = Account.from_key(wallet_private_key)
@@ -994,40 +935,30 @@ class TrustGatedAgent:
             self._discovery_cache = response.json()
         return self._discovery_cache
 
-    def get_price(self, endpoint: str, quality: str = "fresh") -> int:
-        """Return price in USDC 6-decimal units for an endpoint + quality tier."""
-        listing = self.discover()
-        entry = next(
-            (e for e in listing["endpoints"] if e["path"] == endpoint), None
-        )
-        if entry is None:
-            raise ValueError(f"Endpoint {endpoint} not in discovery listing")
-        tiers = self.TIER_PRICES.get(endpoint)
-        if tiers and quality in tiers:
-            return tiers[quality]
-        # Flat-priced endpoint, or a quality tier it does not offer.
-        return int(entry["price_raw"])
+    def is_listed(self, endpoint: str) -> bool:
+        """True if the x402 listing sells this endpoint."""
+        return any(e["path"] == endpoint for e in self.discover()["endpoints"])
 
     # ------------------------------------------------------------------ #
     # Payment                                                              #
     # ------------------------------------------------------------------ #
 
-    def _get_facilitator(self, endpoint: str, payload: dict) -> str:
-        """Probe an endpoint to get the current facilitator address."""
+    def _quote(self, endpoint: str, payload: dict, quality: str) -> dict:
+        """Probe an endpoint without payment and return its Base "exact" quote."""
+        if not self.is_listed(endpoint):
+            raise ValueError(f"Endpoint {endpoint} not in discovery listing")
         probe = httpx.post(
             f"{self.BASE_URL}{endpoint}",
-            headers={"Content-Type": "application/json"},
+            headers={"X-Response-Quality": quality, "Content-Type": "application/json"},
             json=payload,
             timeout=10.0,
         )
         if probe.status_code != 402:
             raise RuntimeError(f"Expected 402 probe, got {probe.status_code}")
-        accepts = probe.json()["accepts"]
-        # Prefer Base chain
-        for option in accepts:
-            if option["chainId"] == self.CHAIN_ID:
-                return option["recipient"]
-        return accepts[0]["recipient"]
+        for option in probe.json()["accepts"]:
+            if option["network"] == self.CHAIN_ID and option["scheme"] == "exact":
+                return option
+        raise RuntimeError(f"No {self.CHAIN_ID} option in the 402 quote")
 
     def _build_payment(self, amount: int, recipient: str) -> str:
         """Build an EIP-3009 x402 payment header."""
@@ -1083,11 +1014,11 @@ class TrustGatedAgent:
         }
         return base64.b64encode(json.dumps(payload).encode()).decode()
 
-    def _call(self, endpoint: str, payload: dict, quality: str) -> dict:
-        """Make a paid API call."""
-        amount = self.get_price(endpoint, quality)
-        facilitator = self._get_facilitator(endpoint, payload)
-        x_payment = self._build_payment(amount, facilitator)
+    def _call(self, endpoint: str, payload: dict, quality: str) -> tuple[dict, int]:
+        """Make a paid API call. Returns the response and the amount paid."""
+        quote = self._quote(endpoint, payload, quality)
+        amount = int(quote["amount"])  # exactly what the 402 asked for
+        x_payment = self._build_payment(amount, quote["payTo"])
 
         response = httpx.post(
             f"{self.BASE_URL}{endpoint}",
@@ -1100,7 +1031,7 @@ class TrustGatedAgent:
             timeout=15.0,
         )
         response.raise_for_status()
-        return response.json()
+        return response.json(), amount
 
     # ------------------------------------------------------------------ #
     # Trust verification logic                                             #
@@ -1125,9 +1056,9 @@ class TrustGatedAgent:
         payload = {"entity_name": entity_name, "country": country, **kwargs}
         total_paid = 0.0
 
-        # Pass 1: Fast pre-screen ($0.10 cached)
-        risk_data = self._call("/v1/risk/score", payload, quality="cached")
-        total_paid += 0.10
+        # Pass 1: Fast pre-screen (cached tier)
+        risk_data, paid = self._call("/v1/risk/score", payload, quality="cached")
+        total_paid += paid / 1_000_000
         pre_score = risk_data.get("risk_score", 50)
 
         if pre_score > 80:
@@ -1142,9 +1073,9 @@ class TrustGatedAgent:
                 paid_usdc=total_paid,
             )
 
-        # Pass 2: Full entity check ($0.85 fresh)
-        trust_data = self._call("/v1/entity/check", payload, quality="fresh")
-        total_paid += 0.85
+        # Pass 2: Full entity check (fresh tier)
+        trust_data, paid = self._call("/v1/entity/check", payload, quality="fresh")
+        total_paid += paid / 1_000_000
 
         trust_score = trust_data["trust_score"]
         decision = self._score_to_decision(trust_score)
@@ -1222,14 +1153,8 @@ const TrustDecision = {
   BLOCK: "block",
 };
 
-// Per-quality prices are not carried in the x402 listing — see /pricing.
-// Amounts are USDC 6-decimal units (1_000_000 = $1.00).
-const TIER_PRICES = {
-  "/v1/entity/check": { cached: 100_000, fresh: 850_000 },
-  "/v1/risk/score": { cached: 100_000, fresh: 650_000 },
-  "/v1/reputation/score": { cached: 100_000, fresh: 650_000 },
-  "/v1/kyb/check": { cached: 250_000, fresh: 1_500_000 },
-};
+// Prices are read from each 402 quote, never hard-coded: the quote carries the
+// exact amount (USDC 6-decimal units) for the endpoint and quality tier asked for.
 
 class TrustGatedAgent {
   constructor(privateKey) {
@@ -1246,25 +1171,21 @@ class TrustGatedAgent {
     return this._discoveryCache;
   }
 
-  async getPrice(endpoint, quality = "fresh") {
+  async quote(endpoint, payload, quality) {
     const listing = await this.discover();
-    const entry = listing.endpoints.find((e) => e.path === endpoint);
-    if (!entry) throw new Error(`Endpoint ${endpoint} not in discovery listing`);
-    const tiered = TIER_PRICES[endpoint]?.[quality];
-    // Flat-priced endpoint, or a quality tier it does not offer.
-    return tiered ?? entry.price_raw;
-  }
-
-  async getFacilitator(endpoint, payload) {
+    if (!listing.endpoints.some((e) => e.path === endpoint)) {
+      throw new Error(`Endpoint ${endpoint} not in discovery listing`);
+    }
     const probe = await fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "X-Response-Quality": quality, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     if (probe.status !== 402) throw new Error(`Expected 402, got ${probe.status}`);
     const { accepts } = await probe.json();
-    const base = accepts.find((a) => a.chainId === CHAIN_ID);
-    return (base ?? accepts[0]).recipient;
+    const base = accepts.find((a) => a.network === CHAIN_ID && a.scheme === "exact");
+    if (!base) throw new Error(`No ${CHAIN_ID} option in the 402 quote`);
+    return base;
   }
 
   async buildPayment(amount, recipient) {
@@ -1318,9 +1239,9 @@ class TrustGatedAgent {
   }
 
   async call(endpoint, payload, quality) {
-    const amount = await this.getPrice(endpoint, quality);
-    const facilitator = await this.getFacilitator(endpoint, payload);
-    const xPayment = await this.buildPayment(amount, facilitator);
+    const quote = await this.quote(endpoint, payload, quality);
+    const amount = parseInt(quote.amount, 10); // exactly what the 402 asked for
+    const xPayment = await this.buildPayment(amount, quote.payTo);
 
     const res = await fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",
@@ -1332,7 +1253,7 @@ class TrustGatedAgent {
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error(`Limitguard error: ${res.status}`);
-    return res.json();
+    return { data: await res.json(), amount };
   }
 
   scoreToDecision(score) {
@@ -1346,9 +1267,9 @@ class TrustGatedAgent {
     const payload = { entity_name: entityName, country, ...extras };
     let totalPaid = 0;
 
-    // Pass 1: Fast pre-screen
-    const riskData = await this.call("/v1/risk/score", payload, "cached");
-    totalPaid += 0.10;
+    // Pass 1: Fast pre-screen (cached tier)
+    const { data: riskData, amount: riskPaid } = await this.call("/v1/risk/score", payload, "cached");
+    totalPaid += riskPaid / 1_000_000;
     const preScore = riskData.risk_score ?? 50;
 
     if (preScore > 80) {
@@ -1361,9 +1282,9 @@ class TrustGatedAgent {
       };
     }
 
-    // Pass 2: Full entity check
-    const trustData = await this.call("/v1/entity/check", payload, "fresh");
-    totalPaid += 0.85;
+    // Pass 2: Full entity check (fresh tier)
+    const { data: trustData, amount: trustPaid } = await this.call("/v1/entity/check", payload, "fresh");
+    totalPaid += trustPaid / 1_000_000;
 
     return {
       score: trustData.trust_score,
@@ -1414,16 +1335,16 @@ if (approved) {
 
 ---
 
-## llms.txt — LLM Context Loading
+## llms.txt: LLM Context Loading
 
-Limitguard implements the [llms.txt standard](https://llmstxt.org/) — machine-readable files that let any LLM load a structured API summary into its context window.
+Limitguard implements the [llms.txt standard](https://llmstxt.org/): machine-readable files that let any LLM load a structured API summary into its context window.
 
 ### Endpoints
 
 | File | Size | Use |
 |------|------|-----|
-| `/llms.txt` | ~2KB | Quick context loading — overview + key endpoints |
-| `/llms-full.txt` | ~20KB | Complete reference — all endpoints, pricing, examples |
+| `/llms.txt` | ~16 KB | Quick context loading: overview + key endpoints |
+| `/llms-full.txt` | ~24 KB | Complete reference: all endpoints, pricing, examples |
 
 ```bash
 # Load into a Claude session
@@ -1452,7 +1373,7 @@ def load_limitguard_context(full: bool = False) -> str:
 context = load_limitguard_context(full=True)
 
 system_prompt = f"""You are a payment automation assistant.
-You have access to the Limitguard Trust Intelligence API.
+You have access to the Limitguard lead and company check API.
 
 {context}
 
@@ -1474,7 +1395,7 @@ async function loadLimitguardContext(full = false) {
 const context = await loadLimitguardContext(true);
 
 const systemPrompt = `You are a payment automation assistant.
-You have access to the Limitguard Trust Intelligence API.
+You have access to the Limitguard lead and company check API.
 
 ${context}
 
@@ -1485,7 +1406,7 @@ Block all transactions where recommendation is 'block'.`;
 </CodeGroup>
 
 <Tip>
-Use `/llms.txt` (concise) for general-purpose agents where token budget matters. Use `/llms-full.txt` when the agent needs to generate code that calls Limitguard — the full reference includes request/response schemas and error codes.
+Use `/llms.txt` (concise) for general-purpose agents where token budget matters. Use `/llms-full.txt` when the agent needs to generate code that calls Limitguard: the full reference includes request/response schemas and error codes.
 </Tip>
 
 ---
@@ -1506,7 +1427,7 @@ curl "https://api.limitguard.ai/v1/sales/recommendations?current_endpoint=/v1/ri
     {
       "endpoint": "/v1/entity/check",
       "reason": "Full entity check for deeper intelligence",
-      "price_usdc": 0.85
+      "price_usdc": 1.05
     }
   ]
 }
@@ -1575,7 +1496,7 @@ async function verifyEntity(entityName, country) {
 
 | Property | Sandbox | Production |
 |----------|---------|------------|
-| Data sources | Mock only — no real KVK, sanctions, VIES | Up to 7 sources, live (which ones run depends on the identifiers you send) |
+| Data sources | Mock only: no real KVK, sanctions, VIES | Live sources (which ones run depends on the identifiers you send) |
 | Responses | Deterministic (same input = same output), `sandbox: true` | Live results |
 | x402 payment | Skipped entirely | Required (or API key) |
 | Balance | Not debited | Debited per call (or paid per call with x402) |
@@ -1647,7 +1568,7 @@ def get_discovery() -> dict:
 ```
 
 <Note>
-Discovery endpoints have a `Cache-Control: max-age=3600` header. Respect it — refreshing more frequently adds latency with no benefit.
+The discovery files carry no `Cache-Control` header, so choose your own refresh interval: an hour is plenty, and refreshing more often adds latency with no benefit.
 </Note>
 
 ### 2. Handle HTTP 402 Gracefully
@@ -1728,11 +1649,11 @@ def execute_payment_with_audit(
 
 ### 5. Set Nonce Expiry Windows Conservatively
 
-x402 nonces expire 5 minutes after `validBefore`. Set a 5-minute window (`validBefore = now + 300`) — tight enough to prevent replay attacks, wide enough to survive network retries.
+The server remembers each x402 nonce for ten minutes, the quote's `maxTimeoutSeconds` (600). Keep `validBefore` inside that window: `now + 300` (five minutes) is tight enough to prevent replay attacks and wide enough to survive network retries.
 
 ### 6. Never Hardcode Facilitator Addresses
 
-The facilitator address is returned dynamically in each 402 response. Always read it from the response — never hardcode it. The address can change during upgrades.
+The facilitator address is returned dynamically in each 402 response, as `payTo`. Always read it from the response: never hardcode it. The address can change during upgrades.
 
 ---
 

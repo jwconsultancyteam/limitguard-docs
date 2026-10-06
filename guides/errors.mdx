@@ -3,7 +3,7 @@ title: "Error Handling"
 description: "Complete error catalog with causes and fixes"
 ---
 
-All Limitguard API errors follow [RFC 7807 Problem Details](https://www.rfc-editor.org/rfc/rfc7807) for consistent, machine-readable responses. Every error has a `type`, `title`, `status`, and `detail` field — making automated error handling straightforward for both human developers and AI agents.
+All Limitguard API errors follow [RFC 7807 Problem Details](https://www.rfc-editor.org/rfc/rfc7807) for consistent, machine-readable responses. Every error has a `type`, `title`, `status`, and `detail` field, which makes automated error handling straightforward for both human developers and AI agents.
 
 <Note>
 The `type` field is always `"about:blank"` in the current API version. Future versions may introduce specific problem type URIs.
@@ -15,15 +15,15 @@ The `type` field is always `"about:blank"` in the current API version. Future ve
 |------|------|--------------|
 | `200` | OK | Successful GET or POST with result |
 | `201` | Created | Resource successfully created (e.g., API key, webhook) |
-| `204` | No Content | Successful DELETE — no body returned |
+| `204` | No Content | Successful DELETE, no body returned |
 | `400` | Bad Request | Missing required field or malformed JSON |
 | `401` | Unauthorized | Missing or invalid `X-API-Key` |
-| `402` | Payment Required | x402 — no payment header sent, or insufficient amount |
+| `402` | Payment Required | x402: no payment header sent, or insufficient amount |
 | `403` | Forbidden | Key exists but lacks permission for this endpoint or tier |
 | `404` | Not Found | Entity, webhook, or resource ID does not exist |
 | `422` | Unprocessable Entity | Request parsed but field values are invalid |
 | `429` | Too Many Requests | Per-minute or rolling 24-hour rate limit exceeded |
-| `500` | Internal Server Error | Unexpected server error — safe to retry |
+| `500` | Internal Server Error | Unexpected server error, safe to retry |
 | `503` | Service Unavailable | Planned maintenance or cascading dependency failure |
 
 ---
@@ -45,7 +45,7 @@ All non-2xx responses return RFC 7807 problem details:
 
 ### Validation Error (422)
 
-Field-level validation errors return a `detail` array instead of a string. Field names are sanitized — internal paths are not exposed:
+Field-level validation errors return a `detail` array instead of a string. Field names are sanitized, so internal paths are not exposed:
 
 ```json
 {
@@ -84,7 +84,7 @@ When `detail` is an array, iterate over it to surface all field errors at once. 
   </Accordion>
 
   <Accordion title="Malformed JSON body">
-    **Cause:** The request body cannot be parsed as JSON — often a trailing comma, unclosed brace, or non-UTF-8 encoding.
+    **Cause:** The request body cannot be parsed as JSON, often because of a trailing comma, an unclosed brace, or non-UTF-8 encoding.
 
     ```json
     {
@@ -111,7 +111,7 @@ When `detail` is an array, iterate over it to surface all field errors at once. 
 
 <AccordionGroup>
   <Accordion title="Missing X-API-Key header">
-    **Cause:** The request reached an authenticated endpoint without an `X-API-Key` header, and no `X-PAYMENT` header was provided either.
+    **Cause:** The request reached an authenticated endpoint without an `X-API-Key` header, and no payment header (`PAYMENT-SIGNATURE` or `X-PAYMENT`) was provided either.
 
     ```json
     {
@@ -128,7 +128,7 @@ When `detail` is an array, iterate over it to surface all field errors at once. 
   <Accordion title="Revoked or expired key">
     **Cause:** The key was valid but has since been revoked or expired.
 
-    **Fix:** Create a new key via `POST /v1/keys/create`. Keys are returned once — if lost, create a new one.
+    **Fix:** Create a new key via `POST /v1/keys/create`. Keys are returned once: if lost, create a new one.
   </Accordion>
 
   <Accordion title="Test key in production">
@@ -142,55 +142,66 @@ When `detail` is an array, iterate over it to surface all field errors at once. 
 
 ## 402 Payment Required
 
-HTTP 402 is a **protocol response**, not just an error. Limitguard implements the x402 V2 micropayment protocol. When you receive a 402, the response body is not an RFC 7807 error — it is a payment requirements object.
+HTTP 402 is a **protocol response**, not just an error. Limitguard implements the x402 V2 micropayment protocol. When you receive a 402, the response body is not an RFC 7807 error: it is a payment requirements object.
 
 <Note>
-For AI agents, 402 is the expected first response when no payment or API key is provided. The correct flow is: receive 402 → build payment → retry with `X-PAYMENT` header.
+For AI agents, 402 is the expected first response when no payment or API key is provided. The correct flow is: receive 402 → build payment → retry with the `PAYMENT-SIGNATURE` header (or the V1 `X-PAYMENT` header).
 </Note>
 
 ### Payment Requirements Response
 
 ```json
 {
-  "x402Version": "2",
+  "x402Version": 2,
   "error": "Payment Required",
+  "errorCode": "payment_required",
+  "resource": {
+    "url": "https://api.limitguard.ai/v1/entity/check",
+    "description": "Full entity trust check across multiple verification layers...",
+    "mimeType": "application/json"
+  },
   "accepts": [
     {
-      "chainId": "eip155:8453",
-      "currency": "USDC",
-      "contractAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "amount": "850000",
-      "decimals": 6,
-      "recipient": "0xFacilitatorAddress",
-      "description": "Limitguard API call (0.85 USDC)"
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "amount": "1050000",
+      "maxAmountRequired": "1050000",
+      "payTo": "0xFacilitatorAddress",
+      "maxTimeoutSeconds": 600,
+      "extra": {"name": "USD Coin", "version": "2", "decimals": 6}
     },
     {
-      "chainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-      "currency": "USDC",
-      "contractAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "amount": "850000",
-      "decimals": 6,
-      "recipient": "SolanaFacilitatorAddress",
-      "description": "Limitguard API call (0.85 USDC)"
+      "scheme": "exact",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "amount": "1050000",
+      "maxAmountRequired": "1050000",
+      "payTo": "SolanaFacilitatorAddress",
+      "maxTimeoutSeconds": 600,
+      "extra": {"name": "USDC", "version": "2", "decimals": 6, "feePayer": "SolanaFeePayerAddress"}
     }
-  ]
+  ],
+  "extensions": {"bazaar": {"info": {"...": "sandbox, recovery and documentation hints"}}}
 }
 ```
+
+Trimmed: each `accepts` entry also repeats `resource`, `description` and `mimeType`, and a third entry offers the `settled-transfer` scheme. The field reference is on the [x402 Protocol](/x402-protocol) page.
 
 ### x402 Payment Flow
 
 <Steps>
   <Step title="Receive 402">
-    Parse the `accepts` array. Choose a network (`chainId`) your agent can pay on.
+    Parse the `accepts` array. Choose an entry whose `network` (a CAIP-2 chain ID) your agent can pay on.
   </Step>
   <Step title="Check the amount">
-    The `amount` field uses 6 decimal places. `850000` = $0.85 USDC. Verify your wallet has sufficient balance before signing.
+    The `amount` field uses 6 decimal places: `1050000` is $1.05 USDC, the `fresh` price of `POST /v1/entity/check`. Pay the `amount` the 402 quotes, and verify your wallet has sufficient balance before signing.
   </Step>
   <Step title="Build EIP-3009 signature (EVM) or SPL transfer (Solana)">
-    Sign a `TransferWithAuthorization` with a unique nonce and a `validBefore` 5 minutes in the future. See the [x402 Protocol](/x402-protocol) guide for full code examples.
+    Sign a `TransferWithAuthorization` to the entry's `payTo`, with a unique nonce and a `validBefore` no more than ten minutes ahead (the quote's `maxTimeoutSeconds` is 600). See the [x402 Protocol](/x402-protocol) guide for full code examples.
   </Step>
-  <Step title="Retry with X-PAYMENT header">
-    Base64-encode your payment payload and attach it as `X-PAYMENT`. Retry the exact same endpoint and body.
+  <Step title="Retry with the payment header">
+    Base64-encode your payment payload and send it as `PAYMENT-SIGNATURE` (x402 V2) or `X-PAYMENT` (V1). Retry the exact same endpoint and body.
   </Step>
 </Steps>
 
@@ -202,27 +213,31 @@ For AI agents, 402 is the expected first response when no payment or API key is 
 
     ```json
     {
-      "x402Version": "2",
-      "error": "Payment amount insufficient. Required: 850000, provided: 10000",
+      "x402Version": 2,
+      "error": "Insufficient payment: 10000 < 1050000",
+      "errorCode": "insufficient_funds",
       "accepts": [...]
     }
     ```
 
-    **Fix:** Use the `amount` value from the 402 response exactly. If using a non-default `X-Response-Quality` tier, the required amount changes — `cached` requires less. See the [pricing table](/pricing) for per-endpoint amounts.
+    **Fix:** Use the `amount` value from the 402 response exactly. If using a non-default `X-Response-Quality` tier, the required amount changes: `cached` requires less. See the [pricing table](/pricing) for per-endpoint amounts.
   </Accordion>
 
   <Accordion title="Expired payment signature (validBefore exceeded)">
-    **Cause:** The `validBefore` timestamp in the EIP-3009 signature has passed. Signatures are valid for 5 minutes.
+    **Cause:** The `validBefore` timestamp in the EIP-3009 signature has passed (`errorCode: expired_payment`). The quote's `maxTimeoutSeconds` is 600, so sign a `validBefore` no more than ten minutes ahead.
 
-    **Fix:** Rebuild the payment with a fresh timestamp. Do not cache signatures for reuse — build a new one per request.
+    **Fix:** Rebuild the payment with a fresh timestamp. Do not cache signatures for reuse: build a new one per request.
   </Accordion>
 
   <Accordion title="Nonce replay detected">
-    **Cause:** The same nonce was used in a previous request within the last 5 minutes.
+    **Cause:** The same nonce was used in a previous request within the last ten minutes.
 
     ```json
     {
-      "error": "Nonce already used (replay detected)"
+      "x402Version": 2,
+      "error": "Nonce already used (replay detected)",
+      "errorCode": "duplicate_settlement",
+      "accepts": [...]
     }
     ```
 
@@ -236,14 +251,14 @@ For AI agents, 402 is the expected first response when no payment or API key is 
   </Accordion>
 
   <Accordion title="Unsupported chain">
-    **Cause:** The `chainId` in your payment is not in the accepted list.
+    **Cause:** The `network` (or `chainId`) in your payment is not one the quote listed in `accepts` (`errorCode: unsupported_network`).
 
-    **Fix:** Use one of the four supported chain IDs: `eip155:8453` (Base Mainnet), `eip155:84532` (Base Sepolia), `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` (Solana Mainnet), or `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1` (Solana Devnet).
+    **Fix:** Pay one of the networks in the 402's `accepts` array. The production API quotes `eip155:8453` (Base Mainnet) and `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` (Solana Mainnet).
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-For testing x402 without spending real USDC, use Base Sepolia or Solana Devnet. Both are listed in the `accepts` array from sandbox and test environments.
+For testing x402 without spending real USDC, use Base Sepolia or Solana Devnet against a test environment that lists them in its `accepts` array. The production API does not accept testnet payments (`testnet_supported: false` in `/.well-known/x402.json`).
 </Tip>
 
 {/* x402-error-codes:start */}
@@ -347,7 +362,7 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
   </Accordion>
 
   <Accordion title="Unknown endpoint path">
-    **Cause:** The URL path does not exist — often a typo (e.g., `/v1/entity/checks` instead of `/v1/entity/check`) or a missing version prefix.
+    **Cause:** The URL path does not exist, often because of a typo (e.g., `/v1/entity/checks` instead of `/v1/entity/check`) or a missing version prefix.
 
     **Fix:** All API endpoints are under `/v1/`. Refer to the [API Reference](/api-reference/introduction) for the exact path of each endpoint.
   </Accordion>
@@ -372,7 +387,7 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
 ```
 
 <Warning>
-422 responses are sanitized — internal field paths and database details are never exposed. The `field` name matches the key in your request body.
+422 responses are sanitized: internal field paths and database details are never exposed. The `field` name matches the key in your request body.
 </Warning>
 
 ### Common Validation Errors
@@ -405,7 +420,7 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
   <Accordion title="Invalid VAT number format">
     **Cause:** `vat_number` does not match the expected format for the given country prefix.
 
-    **Fix:** Include the country prefix: `"NL123456789B01"`, `"BE0123456789"`. Format rules vary by country — see the [European Commission VIES guidelines](https://ec.europa.eu/taxation_customs/vies/) for country-specific formats.
+    **Fix:** Include the country prefix: `"NL123456789B01"`, `"BE0123456789"`. Format rules vary by country: see the [European Commission VIES guidelines](https://ec.europa.eu/taxation_customs/vies/) for country-specific formats.
   </Accordion>
 
   <Accordion title="Invalid wallet address">
@@ -417,7 +432,7 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
   <Accordion title="Invalid domain format">
     **Cause:** `domain` contains a protocol prefix, path, or query string instead of a bare hostname.
 
-    **Fix:** Send the bare domain only: `"acmecorp.nl"` — not `"https://acmecorp.nl/about?lang=en"`.
+    **Fix:** Send the bare domain only: `"acmecorp.nl"`, not `"https://acmecorp.nl/about?lang=en"`.
   </Accordion>
 
   <Accordion title="Invalid webhook event type">
@@ -504,7 +519,7 @@ When a key hits its rolling 24-hour limit, the `detail` names it:
 }
 ```
 
-**Fix:** Wait for `Retry-After`, top up to a higher tier for a higher limit, or pay per call with x402, which has no daily cap. The monthly request caps on keys are abuse limits, not a usage allowance you buy.
+**Fix:** Wait for `Retry-After`, top up to a higher tier for a higher limit, or pay per call with x402, which has no daily cap. The daily caps on keys are abuse limits, not a usage allowance you buy.
 
 <Tip>
 Use the `X-Response-Quality: cached` header where acceptable: a cached answer costs less when the entity was already scored within the cache TTL.
@@ -527,12 +542,12 @@ Use the `X-Response-Quality: cached` header where acceptable: a cached answer co
 
 **Fix:**
 1. Note the `Request ID` from the `detail` field.
-2. Retry with exponential backoff — most 500s are transient.
+2. Retry with exponential backoff: most 500s are transient.
 3. If the error persists for more than 5 minutes, check [api.limitguard.ai/health](https://api.limitguard.ai/health) for service status.
 4. Report persistent 500s to [support@limitguard.ai](mailto:support@limitguard.ai) with the Request ID.
 
 <Warning>
-500 errors on write operations (webhook creation, compliance subscription) should not be retried blindly — the operation may have partially succeeded. Check the resource state first with a GET before retrying.
+500 errors on write operations (webhook creation, compliance subscription) should not be retried blindly: the operation may have partially succeeded. Check the resource state first with a GET before retrying.
 </Warning>
 
 ---
@@ -723,7 +738,7 @@ class LimitguardError(Exception):
         self.status = status
         self.title = title
         self.detail = detail
-        super().__init__(f"HTTP {status}: {title} — {detail}")
+        super().__init__(f"HTTP {status}: {title}: {detail}")
 
 
 class PaymentRequiredError(Exception):
@@ -804,13 +819,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 ```bash curl
 # Check status code and handle errors in shell scripts
 
-response=$(curl -s -w "\n%{http_code}" -X POST https://api.limitguard.ai/v1/entity/check \
+headers_file=$(mktemp)
+# -D keeps this response's own headers, so a 429's Retry-After can be read below
+response=$(curl -s -D "$headers_file" -w "\n%{http_code}" -X POST https://api.limitguard.ai/v1/entity/check \
   -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx" \
   -H "Content-Type: application/json" \
   -d '{"entity_name": "Acme Corp BV", "country": "NL"}')
 
 http_code=$(echo "$response" | tail -1)
-body=$(echo "$response" | head -1)
+body=$(echo "$response" | sed '$d')
 
 case $http_code in
   200|201)
@@ -823,16 +840,17 @@ case $http_code in
     echo "Validation error: $(echo $body | jq '.detail')"
     ;;
   429)
-    retry_after=$(curl -s -I https://api.limitguard.ai/v1/entity/check | grep -i retry-after | awk '{print $2}')
+    retry_after=$(grep -i "^retry-after:" "$headers_file" | awk '{print $2}' | tr -d '\r')
     echo "Rate limited. Retry after ${retry_after}s"
     ;;
   5*)
-    echo "Server error $http_code — retry with backoff"
+    echo "Server error $http_code: retry with backoff"
     ;;
   *)
     echo "Unexpected status $http_code: $body"
     ;;
 esac
+rm -f "$headers_file"
 ```
 
 </CodeGroup>
@@ -869,22 +887,26 @@ def call_with_x402(
         response.raise_for_status()
         return response.json()
 
-    # Parse payment requirements
+    # Parse payment requirements: pay the "exact" entry for our chain
     requirements = response.json()
     accepted = next(
-        (a for a in requirements["accepts"] if a["chainId"] == chain_id),
+        (
+            a
+            for a in requirements["accepts"]
+            if a["network"] == chain_id and a["scheme"] == "exact"
+        ),
         None,
     )
     if not accepted:
         raise ValueError(f"No accepted payment option for chain {chain_id}")
 
-    # Build payment
+    # Build payment for exactly the quoted amount
     x_payment = build_evm_payment(
         chain_id=chain_id,
         amount=int(accepted["amount"]),
         sender_key=sender_key,
-        recipient=accepted["recipient"],
-        usdc_address=accepted["contractAddress"],
+        recipient=accepted["payTo"],
+        usdc_address=accepted["asset"],
     )
 
     # Retry with payment
@@ -935,16 +957,18 @@ async function callWithX402(endpoint, payload, signer, chainId = "eip155:8453") 
 
   // Parse payment requirements
   const requirements = await response.json();
-  const accepted = requirements.accepts.find((a) => a.chainId === chainId);
+  const accepted = requirements.accepts.find(
+    (a) => a.network === chainId && a.scheme === "exact",
+  );
   if (!accepted) throw new Error(`No accepted payment option for chain ${chainId}`);
 
-  // Build payment
+  // Build payment for exactly the quoted amount
   const xPayment = await buildEvmPayment(
     chainId,
     parseInt(accepted.amount, 10),
     signer,
-    accepted.recipient,
-    accepted.contractAddress,
+    accepted.payTo,
+    accepted.asset,
   );
 
   // Retry with payment
@@ -984,7 +1008,7 @@ async function buildEvmPayment(chainId, amount, signer, recipient, usdcAddress) 
     - Confirm the header name is exactly `X-API-Key` (capital X, capital A, capital K)
     - Confirm the key value starts with `lg_live_` or `lg_sandbox_` (`lg_test_` keys are refused in production)
     - Check for leading/trailing whitespace in the header value
-    - Verify the key has not been revoked — create a new one at `POST /v1/keys/create`
+    - Verify the key has not been revoked: create a new one at `POST /v1/keys/create`
   </Accordion>
 
   <Accordion title="Getting 422 but my JSON looks correct?">
@@ -992,22 +1016,21 @@ async function buildEvmPayment(chainId, amount, signer, recipient, usdcAddress) 
     - Check that `entity_name` is at least 2 characters
     - For `kvk_number`: digits only, exactly 8 characters, as a string: `"12345678"` not `12345678`
     - For `iban`: strip all spaces before sending
-    - The `detail` array in the response will list every failing field — read all of them before retrying
+    - The `detail` array in the response will list every failing field: read all of them before retrying
   </Accordion>
 
   <Accordion title="Getting 403 but my key is valid?">
     - Run `GET /v1/usage/summary` with your key to see your current tier
-    - Check the [pricing page](/pricing) for which endpoints are available on your tier
-    - `/v1/kyb/check` and `/v1/compliance/*` require `pro` or higher
+    - Check the [403 causes above](#403-forbidden): sandbox keys get no entity reports, operator routes are not part of the customer API, and the watchlist needs a key-bound tenant
   </Accordion>
 
   <Accordion title="x402 payment keeps returning 402?">
-    - Confirm `validBefore` is at least 60 seconds in the future (use `now + 300`)
-    - Confirm `chainId` in the payment payload exactly matches the one from the 402 response
-    - Confirm `recipient` matches — do not substitute your own address
-    - Confirm `amount` matches or exceeds the required amount
-    - Generate a new random nonce for every attempt — do not reuse
-    - Confirm the USDC contract address matches the network (Base Mainnet vs Sepolia differ)
+    - Confirm `validBefore` is at least 60 seconds in the future and within the quote's `maxTimeoutSeconds` (600, ten minutes)
+    - Confirm `chainId` in the payment payload exactly matches the `network` of the `accepts` entry you pay
+    - Confirm `recipient` is that entry's `payTo`: do not substitute your own address
+    - Confirm `amount` matches or exceeds the `amount` the 402 quoted
+    - Generate a new random nonce for every attempt: do not reuse
+    - Confirm the USDC contract address is that entry's `asset` (each network has its own)
   </Accordion>
 
   <Accordion title="Intermittent 500 errors on entity checks?">

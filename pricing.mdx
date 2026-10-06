@@ -1,6 +1,6 @@
 ---
 title: "Pricing"
-description: "Pay only for what you use — USDC per API call"
+description: "Pay only for what you use: USDC per API call"
 ---
 
 All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol), or hold a paid-tier [API key](/authentication) with a prepaid balance that each priced call is debited from.
@@ -25,10 +25,10 @@ Four core endpoints sell two quality tiers. Select with the `X-Response-Quality`
 ### Quality Tier Definitions
 
 <AccordionGroup>
-  <Accordion title="Cached — Cheapest" icon="bolt">
+  <Accordion title="Cached (cheapest)" icon="bolt">
     Return Redis-cached result if available. Use when freshness isn't critical and you want the lowest cost. Set `X-Response-Quality: cached`.
   </Accordion>
-  <Accordion title="Fresh — Default" icon="rotate">
+  <Accordion title="Fresh (default)" icon="rotate">
     Always run full data source fan-out. This is the default behavior when no header is sent. Set `X-Response-Quality: fresh`.
   </Accordion>
 </AccordionGroup>
@@ -80,14 +80,14 @@ The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are pri
 
 ## API Key Tier Upgrades
 
-Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key — see [Authentication](/authentication#api-key-authentication) for the full tier ladder. The balance does not expire or reset.
+Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key. See [Authentication](/authentication#api-key-authentication) for the full tier ladder. The balance does not expire or reset.
 
-| Endpoint | Price | Unlocks |
+| Endpoint | Price | Rate limits |
 |----------|-------|---------|
-| `POST /v1/keys/upgrade/indie` | $29 | 1,000 calls/mo |
-| `POST /v1/keys/upgrade/starter` | $99 | 10,000 calls/mo |
-| `POST /v1/keys/upgrade/growth` | $299 | 50,000 calls/mo |
-| `POST /v1/keys/upgrade/pro` | $999 | 250,000 calls/mo |
+| `POST /v1/keys/upgrade/indie` | $29 | 30 / min, 1,000 / 24 h |
+| `POST /v1/keys/upgrade/starter` | $99 | 60 / min, 10,000 / 24 h |
+| `POST /v1/keys/upgrade/growth` | $299 | 120 / min, 50,000 / 24 h |
+| `POST /v1/keys/upgrade/pro` | $999 | 300 / min, 250,000 / 24 h |
 
 ## Free Endpoints
 
@@ -110,14 +110,14 @@ No payment or API key required:
   <Card title="x402 USDC Micropayments" icon="credit-card">
     AI agents and anonymous callers pay per request via x402 V2 protocol. No subscription required.
 
-    **Networks:** Base Mainnet, Base Sepolia, Solana Mainnet, Solana Devnet.
+    **Networks:** Base Mainnet and Solana Mainnet. Base Sepolia and Solana Devnet only in test environments.
 
     [Learn more →](/x402-protocol)
   </Card>
   <Card title="Prepaid API Key" icon="key">
     Paid-tier API keys skip x402 on each call; the call is debited from the key's prepaid balance instead. Top-ups are paid via x402. Free and sandbox keys hold no balance and pay per call.
 
-    **Tiers:** Free (500/mo), Indie ($29), Starter ($99), Growth ($299), Pro ($999).
+    **Tiers:** Free (500 calls / 24 h), Indie ($29), Starter ($99), Growth ($299), Pro ($999).
 
     [Learn more →](/authentication)
   </Card>
@@ -125,7 +125,7 @@ No payment or API key required:
 
 ## USDC Amount Reference
 
-For x402 integration — amounts use 6 decimal places (`1_000_000 = $1.00`):
+For x402 integration, amounts use 6 decimal places (`1_000_000 = $1.00`):
 
 | Price | USDC 6-decimal | x402 `amount` field |
 |-------|---------------|---------------------|
