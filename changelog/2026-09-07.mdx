@@ -14,7 +14,7 @@ affected cells already updated. Until then these pages stay hand-maintained.
 <Note>
   The [September 5](/changelog/2026-09-05) corrections were found by reading the docs
   against the live API by hand. The generator is meant to make that sweep unnecessary for
-  the values it covers — the prices and the MCP tool names in the tables listed below.
+  the values it covers: the prices and the MCP tool names in the tables listed below.
 </Note>
 
 ### MCP tool names corrected
@@ -31,7 +31,7 @@ The sample `/.well-known/mcp.json` response in
 [AI agent integration](/guides/ai-agent-integration#mcp-model-context-protocol) named the
 same two tools the same wrong way. It now matches what that endpoint returns.
 
-The names only matter over the MCP transport — `tools/call` with the old name returns
+The names only matter over the MCP transport: `tools/call` with the old name returns
 `Unknown tool`. The REST paths themselves are unchanged, so nothing calling
 `/v1/mcp/trust-score` over plain HTTP was affected.
 
@@ -48,8 +48,8 @@ these pages are now generated with that directory excluded for exactly that reas
 | [Authentication](/authentication) | the four API key tier upgrade prices |
 | [AI agent integration](/guides/ai-agent-integration) | the quality-tier price matrix |
 
-Prose is not generated, and neither are the JSON samples — the `/.well-known/mcp.json`
+Prose is not generated, and neither are the JSON samples. The `/.well-known/mcp.json`
 sample corrected above is a hand fix, and tool names quoted outside a table stay
 hand-maintained. Only the table cells that quote a number or a tool name are generated,
-so an endpoint that gains a price but no row here is reported rather than invented — the
+so an endpoint that gains a price but no row here is reported rather than invented: the
 sync says so instead of writing a description nobody wrote.

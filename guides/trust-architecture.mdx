@@ -5,7 +5,7 @@ description: "Zero-access model, data flow, and security architecture"
 
 **Don't trust us. Verify us.**
 
-That is the operating philosophy behind every architectural decision at Limitguard. We are a trust infrastructure provider — and trust infrastructure must be independently verifiable. This document explains exactly how the system is built, what data it touches, where it lives, and how you can confirm every claim we make.
+That is the operating philosophy behind every architectural decision at Limitguard. We check leads and companies against official registers, so every claim we make about ourselves should be checkable too. This document explains exactly how the system is built, what data it touches, where it lives, and how you can confirm every claim we make.
 
 <Note>
 Limitguard publishes its own trust signals at `GET /v1/self-verify`: public, free, no key needed. Every signal links to evidence you can check yourself, starting with the Dutch business register (KVK) entry of the company that operates Limitguard.
@@ -45,7 +45,7 @@ Limitguard is built on a zero-access principle: we minimize what we store, we ma
 
 ## Data Flow
 
-A single `POST /v1/entity/check` request moves through the following stages. All 7 data sources are queried in **parallel**, not sequentially, which is why median response time is under 500ms.
+A single `POST /v1/entity/check` request moves through the following stages. Every data source the request's identifiers allow is queried in **parallel**, not sequentially, which is why median response time is under 500ms.
 
 ```mermaid
 flowchart TD
@@ -59,9 +59,9 @@ flowchart TD
     G -- No --> I[x402 Payment Verification]
     I --> J[Router]
 
-    J --> K[Fan-out: 7 Parallel Checks]
+    J --> K[Fan-out: Parallel Checks]
 
-    K --> L1[KVK / CBE Registry]
+    K --> L1[KVK / KBO Registry]
     K --> L2[OpenSanctions]
     K --> L3[Country Risk]
     K --> L4[Domain Intelligence]
@@ -78,7 +78,7 @@ flowchart TD
 ```
 
 <Note>
-The middleware chain runs top-to-bottom on every request. Sandbox detection fires **before** payment verification — if you are in sandbox mode, x402 is never reached. See [Sandbox Mode](/sandbox) for details.
+The middleware chain runs top-to-bottom on every request. Sandbox detection fires **before** payment verification: if you are in sandbox mode, x402 is never reached. See [Sandbox Mode](/sandbox) for details.
 </Note>
 
 ---
@@ -104,30 +104,30 @@ Request → Logging → Security Headers → Request Size Limit → Rate Limit
 ```
 
 <Tip>
-Security headers are set at the middleware layer, not the application layer. This ensures they are present on every response — including errors, health checks, and 402 responses — regardless of which handler processes the request.
+Security headers are set at the middleware layer, not the application layer. This ensures they are present on every response, including errors, health checks, and 402 responses, regardless of which handler processes the request.
 </Tip>
 
 ---
 
-## The 7 Data Sources
+## The Data Sources
 
-Limitguard queries 7 independent data sources in parallel. No single source determines the outcome: the trust score is a weighted composite across all available signals.
+Limitguard queries these independent data sources in parallel, as far as the identifiers in the request allow. No single source determines the outcome: the trust score is a weighted composite across all available signals.
 
 <CardGroup cols={2}>
-  <Card title="1. KVK / CBE Registry" icon="building">
-    **Dutch Chamber of Commerce (KVK) and Belgian CBE business registry.**
+  <Card title="1. KVK / KBO Registry" icon="building">
+    **Dutch Chamber of Commerce (KVK) and the Belgian KBO/CBE (Crossroads Bank for Enterprises) business registers.**
 
     Verifies legal registration status, company age, registered address, SBI/NACE activity codes, and filing history. An active registration with multi-year history is a strong positive signal. Shell companies and recently dissolved entities are flagged.
   </Card>
   <Card title="2. OpenSanctions" icon="shield">
     **80+ global sanctions and watchlist sources.**
 
-    Checks against OFAC (US), EU consolidated list, UN Security Council, UK OFSI, and dozens of national and regional lists. OpenSanctions is the industry-standard open-source sanctions dataset — updated daily.
+    Checks against OFAC (US), EU consolidated list, UN Security Council, UK OFSI, and dozens of national and regional lists. OpenSanctions is the industry-standard open-source sanctions dataset, updated daily.
   </Card>
   <Card title="3. Country Risk" icon="globe">
     **CPI (Corruption Perceptions Index) + FATF grey and blacklist.**
 
-    Jurisdiction risk is evaluated using Transparency International's CPI score and the FATF (Financial Action Task Force) list status. High-risk jurisdictions — particularly FATF blacklisted or greylisted countries — reduce the trust score regardless of other signals.
+    Jurisdiction risk is evaluated using Transparency International's CPI score and the FATF (Financial Action Task Force) list status. High-risk jurisdictions, particularly FATF blacklisted or greylisted countries, reduce the trust score regardless of other signals.
   </Card>
   <Card title="4. Domain Intelligence" icon="link">
     **WHOIS registration age, DNS configuration, and SSL certificate analysis.**
@@ -142,7 +142,7 @@ Limitguard queries 7 independent data sources in parallel. No single source dete
   <Card title="6. VAT / VIES" icon="file-invoice">
     **EU VAT number validation via the European Commission VIES system.**
 
-    Confirms that the provided VAT number is active and registered to the declared entity name. VIES is the authoritative EU source for cross-border VAT verification — used by tax authorities across all 27 member states.
+    Confirms that the provided VAT number is active and registered to the declared entity name. VIES is the authoritative EU source for cross-border VAT verification, used by tax authorities across all 27 member states.
   </Card>
   <Card title="7. Wallet Format Check" icon="wallet">
     **Address-format validation for ETH/EVM, BTC, and SOL addresses.**
@@ -157,8 +157,8 @@ Not every source is queried on every request. Source selection depends on which 
 
 | Source | Required Field | Always Queried? |
 |--------|---------------|-----------------|
-| KVK Registry | `kvk_number` or NL `country` | No — NL/BE only |
-| CBE Registry | `cbe_number` or BE `country` | No — NL/BE only |
+| KVK Registry | `kvk_number` or NL `country` | No: NL only |
+| KBO Registry | `cbe_number` | No: BE only |
 | OpenSanctions | `entity_name` | Yes |
 | Country Risk | `country` | Yes |
 | Domain Intelligence | `domain` | When provided |
@@ -218,27 +218,27 @@ The trust score is not a black box. Every score comes with `top_factors` that ex
 
 | Score Range | `trust_level` | `recommendation` | Typical Action |
 |-------------|---------------|------------------|----------------|
-| 80 – 100 | `high` | `proceed` | Automated approval |
-| 60 – 79 | `medium` | `review` | Human review recommended |
-| 40 – 59 | `low` | `enhanced_due_diligence` | Enhanced KYB before proceeding |
-| 0 – 39 | `critical` | `block` | Do not transact |
+| 80 to 100 | `high` | `proceed` | Automated approval |
+| 60 to 79 | `medium` | `review` | Human review recommended |
+| 40 to 59 | `low` | `enhanced_due_diligence` | Enhanced KYB before proceeding |
+| 0 to 39 | `critical` | `block` | Do not transact |
 
 ### Entity Clusters
 
-The `cluster` field classifies entities into behavioural archetypes based on signal patterns across all sources. Cluster assignment improves interpretability — a `trust_score` of 72 means different things for an `established_eu_sme` versus a `newly_registered_offshore`.
+The `cluster` field classifies entities into behavioural archetypes based on signal patterns across all sources. Cluster assignment improves interpretability: a `trust_score` of 72 means different things for an `established_eu_sme` versus a `newly_registered_offshore`.
 
 | Cluster | Description |
 |---------|-------------|
 | `established_eu_sme` | Active EU registration 3+ years, VAT verified, clean sanctions |
 | `large_enterprise` | Registry-verified, high domain age, multiple positive signals |
-| `newly_registered` | Registration under 12 months — not inherently suspicious, but reduced confidence |
+| `newly_registered` | Registration under 12 months: not inherently suspicious, but reduced confidence |
 | `unverified_jurisdiction` | Country risk flag or no registry match |
 | `high_risk_indicators` | One or more active risk flags (sanctions proximity, FATF jurisdiction, mixer wallet) |
-| `sanctioned_entity` | Direct sanctions match — automatic `block` recommendation |
+| `sanctioned_entity` | Direct sanctions match: automatic `block` recommendation |
 
 ### Confidence Score
 
-The `confidence` field (0–1) reflects how much data was available to produce the score. An entity verified across 6 of 7 sources scores `0.96+`. An entity verified with name and country only may score `0.55`.
+The `confidence` field (0 to 1) reflects how much data was available to produce the score. An entity verified by nearly every source scores `0.96+`. An entity verified with name and country only may score `0.55`.
 
 <Tip>
 Build confidence thresholds into your integration policy. For example: require `confidence >= 0.80` before automated approval, regardless of the trust score itself.
@@ -262,9 +262,9 @@ Build confidence thresholds into your integration policy. For example: require `
 Application data (API requests, check records, audit logs and dashboard accounts) is stored in the EU. Cloudflare, a US company, routes and filters traffic to Limitguard under the EU-US Data Privacy Framework; the [privacy policy](https://limitguard.ai/privacy) describes its role.
 </Note>
 
-### GDPR Compliance
+### How We Handle Personal Data
 
-Limitguard is GDPR-compliant by default — not through configuration.
+Limitguard is hosted in the EU: API and dashboard in the EU, database in Ireland. The [data processing agreement](https://limitguard.ai/dpa) and its sub-processor list (section 6) are published. These are the measures behind it:
 
 <Steps>
   <Step title="Data minimization">
@@ -288,7 +288,7 @@ Limitguard is GDPR-compliant by default — not through configuration.
 
 ## Audit Trail and Hash Chain Integrity
 
-Every verification event is recorded in a tamper-evident append-only log. Each entry includes a SHA-256 hash of the previous entry — forming a hash chain that makes retroactive modification detectable.
+Every verification event is recorded in a tamper-evident append-only log. Each entry includes a SHA-256 hash of the previous entry, forming a hash chain that makes retroactive modification detectable.
 
 ### How the Chain Works
 
@@ -299,7 +299,7 @@ flowchart LR
     C --> D[Entry N+2\nprev_hash: ghi789\nhash: jkl012]
 ```
 
-If any historical entry is modified, its hash changes — which breaks every subsequent entry in the chain. The break is immediately detectable by any verifier replaying the chain from the genesis entry.
+If any historical entry is modified, its hash changes, which breaks every subsequent entry in the chain. The break is immediately detectable by any verifier replaying the chain from the genesis entry.
 
 ### Audit Entry Structure
 
@@ -322,7 +322,7 @@ If any historical entry is modified, its hash changes — which breaks every sub
 ```
 
 <Note>
-Audit entries contain **hashes of entity identifiers**, not the identifiers themselves. The entity name, KVK number, and other submitted fields are never stored in the audit log — only a one-way hash that allows correlation without reconstruction.
+Audit entries contain **hashes of entity identifiers**, not the identifiers themselves. The entity name, KVK number, and other submitted fields are never stored in the audit log: only a one-way hash that allows correlation without reconstruction.
 </Note>
 
 ### Querying the Audit Trail
@@ -352,7 +352,7 @@ curl https://api.limitguard.ai/v1/audit/verify \
 
 ## Self-Verification
 
-Limitguard verifies itself using its own API. This endpoint is public, free, and unauthenticated. It returns six published signals about the operator, each with an evidence link, and the score they add up to.
+Limitguard verifies itself using its own API. This endpoint is public, free, and unauthenticated. It returns six published signals about the operator, each with an evidence link, and the score they add up to. The sample below is abridged to five.
 
 ```bash
 curl https://api.limitguard.ai/v1/self-verify
@@ -371,13 +371,6 @@ curl https://api.limitguard.ai/v1/self-verify
       "verifiable": true,
       "evidence_url": "https://www.kvk.nl/zoeken/",
       "description": "Registered Dutch entity (KVK 77272471, Ambulatio Consulting BV)"
-    },
-    {
-      "signal_name": "GDPR Compliance",
-      "status": "verified",
-      "verifiable": true,
-      "evidence_url": "https://limitguard.ai/privacy",
-      "description": "EU-based hosting, data minimization, right to erasure"
     },
     {
       "signal_name": "Open Methodology",
@@ -412,6 +405,8 @@ curl https://api.limitguard.ai/v1/self-verify
 }
 ```
 
+The sixth signal is an EU data-protection signal: it points to the [privacy policy](https://limitguard.ai/privacy) and describes EU hosting, data minimisation and erasure. It describes those measures; it is not a certification.
+
 <Tip>
 We recommend integrating `/v1/self-verify` into your vendor due diligence workflow. The response is computed on every request, not cached.
 </Tip>
@@ -445,7 +440,7 @@ Trust certificates are records Limitguard issues, stores, and verifies over its 
 |-------|------|-------------|
 | `certificate_id` | `string` | Unique certificate UUID |
 | `entity_name` | `string` | Name of the certified entity |
-| `trust_score` | `int` | Score recorded at issuance (0–100), as supplied in the issue request |
+| `trust_score` | `int` | Score recorded at issuance (0 to 100), as supplied in the issue request |
 | `issued_at` / `expires_at` | `datetime` | Issuance timestamp and expiry (`valid_days` after issuance, default 365) |
 | `certificate_hash` | `string` | SHA-256 hash of the certificate's content fields |
 | `status` | `string` | `active` or `revoked` |
@@ -510,11 +505,11 @@ We operate a responsible disclosure programme. Security researchers who identify
 | GDPR Art. 17 erasure | `DELETE /v1/data/purge`: functional endpoint, not just a policy |
 | Hash chain integrity | `GET /v1/audit/verify` and `GET /v1/audit/query`: check the chain and your own entries |
 | Trust certificates | `GET /v1/certificate/{certificate_hash}`: public verification endpoint; the record lives in Limitguard's API, not on a blockchain |
-| Self-verifying | `GET /v1/self-verify` — our score, produced by our own API, public |
-| Security contact | `GET /.well-known/security.txt` — RFC 9116 compliant |
+| Self-verifying | `GET /v1/self-verify`: our score, produced by our own API, public |
+| Security contact | `GET /.well-known/security.txt`: RFC 9116 compliant |
 
 <Note>
-Every claim in this document is backed by a verifiable endpoint or public record. We built it this way intentionally — because a trust infrastructure provider that asks you to "just trust us" has missed the point entirely.
+Every claim in this document is backed by a verifiable endpoint or public record. We built it this way on purpose: we check leads against official registers, so asking you to "just trust us" would miss the point.
 </Note>
 
 ---

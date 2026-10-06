@@ -1,6 +1,6 @@
 ---
 title: "Introduction"
-description: "Trust Intelligence API for the Agent Economy"
+description: "Every lead checked against the official register."
 ---
 
 <img
@@ -18,31 +18,42 @@ description: "Trust Intelligence API for the Agent Economy"
 
 # Limitguard
 
-**Real-time trust scoring for AI agents, businesses, and transactions.**
-Up to 7 data sources. One API call. Paid per call in USDC or with an API key.
+**Lead validation for lead generation agencies, sales agents and their clients.**
+Check the company behind each lead against the KVK and KBO registers, EU VAT and sanctions lists. Proceed, review or block, with the source on every line.
 
-Limitguard is a Trust Intelligence API that lets AI agents and developers verify the trustworthiness of any business entity before transacting. We aggregate up to 7 independent data sources (business registries, sanctions lists, jurisdiction risk, domain intelligence, IBAN validation, VAT verification, and wallet address format validation) into a single trust score.
+Limitguard is a lead validation service for lead generation agencies, sales agents and their clients. It checks the company behind each lead against the official business registers (KVK in the Netherlands, KBO in Belgium), EU VAT (VIES), the OFAC, EU and UN sanctions lists and the email domain, and returns proceed, review or block with the source on every line. Developers and AI agents use the same checks over the HTTP API, the MCP server and the A2A service, hosted in the EU, paid per call in USDC or from an API key's prepaid balance.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Get your first trust score in under 3 minutes
+    Run your first lead check in under 3 minutes
   </Card>
   <Card title="API Reference" icon="code" href="/api-reference/introduction">
     Explore every endpoint in the interactive playground
   </Card>
   <Card title="Sandbox" icon="flask" href="/sandbox">
-    Test for free — no wallet or API key required
+    Test for free with a sandbox key, no wallet
   </Card>
   <Card title="x402 Protocol" icon="credit-card" href="/x402-protocol">
-    Pay per call with USDC — no subscription needed
+    Pay per call with USDC, no subscription needed
   </Card>
 </CardGroup>
 
 ## Why Limitguard?
 
-AI agents transact billions daily without trust verification. There's no standard way for an agent to know if a counterparty is legitimate, sanctioned, or fraudulent before sending funds.
+A lead is only worth passing on if the company behind it is real and active. Limitguard checks each lead against the official register for its country before you deliver it, and names the source for every check, so you and your client can see why a lead was passed, flagged or blocked.
 
-Limitguard solves this with a single API call:
+Check one Dutch or Belgian lead with a single API call:
+
+```bash
+curl -X POST https://api.limitguard.ai/v1/leads/verify \
+  -H "X-API-Key: lg_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{"country": "NL", "company_number": "12345678", "name": "Acme Corp BV", "email": "sales@acme-corp.nl"}'
+```
+
+The answer carries a `verdict` (for example `real_active` or `not_found`), a 0-100 `lead_score`, `flags` such as `vat_owner_mismatch` or `disposable_email`, and the `findings` behind them. See the [Lead Verify reference](/api-reference/leads/lead-verify) for every field.
+
+For a company check outside a lead flow, `POST /v1/entity/check` returns a trust score and a recommendation:
 
 ```bash
 curl -X POST https://api.limitguard.ai/v1/entity/check \
@@ -62,26 +73,26 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
 }
 ```
 
-## 7 Verification Layers
+## What Gets Checked
 
-<CardGroup cols={4}>
-  <Card title="KVK / CBE" icon="building">
-    Dutch & Belgian business registry
+<CardGroup cols={3}>
+  <Card title="KVK and KBO registers" icon="building">
+    Dutch and Belgian business registers: is the company real and active, and do its name and address match
   </Card>
-  <Card title="Sanctions" icon="shield">
-    OpenSanctions — 80+ global lists
+  <Card title="EU VAT (VIES)" icon="file-invoice">
+    Is the VAT number valid, and is it registered to this company
   </Card>
-  <Card title="Jurisdiction" icon="globe">
-    CPI + FATF grey/blacklist
+  <Card title="Sanctions lists" icon="shield">
+    OFAC, EU and UN lists; the company check also screens OpenSanctions (80+ global lists)
   </Card>
-  <Card title="Domain" icon="link">
-    WHOIS, DNS, SSL analysis
+  <Card title="Email and website domain" icon="link">
+    Mail server and disposable domains for a lead; WHOIS age, DNS and SSL for a company
   </Card>
   <Card title="IBAN" icon="credit-card">
-    Bank account validation
+    Bank account country and structure
   </Card>
-  <Card title="VAT / VIES" icon="file-invoice">
-    EU VAT registration check
+  <Card title="Jurisdiction" icon="globe">
+    CPI and the FATF grey and black lists, in the company check
   </Card>
   <Card title="Wallet Format Check" icon="wallet">
     ETH, BTC, SOL address format validation. Full wallet screening (OFAC match, on-chain signals) is a separate, free tool: see [Trust Architecture](/guides/trust-architecture).
@@ -91,14 +102,14 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
 ## How It Works
 
 <Steps>
-  <Step title="Send entity data">
-    POST the entity name, country, and any identifiers you have — KVK number, domain, IBAN, VAT, or wallet address.
+  <Step title="Send the lead">
+    POST the company number or name and the country, plus whatever else the lead holds: VAT number, email, website domain, address or IBAN.
   </Step>
   <Step title="Parallel checks">
-    Limitguard queries every data source your identifiers allow, in parallel: business registry, sanctions and PEP, jurisdiction risk, domain and financial checks.
+    Limitguard queries every source the details allow, in parallel: the business register, VIES, sanctions lists, the email domain and the IBAN.
   </Step>
-  <Step title="Get trust score">
-    Receive a trust score (0-100), risk level, entity cluster, and recommendation: **proceed**, **review**, **enhanced due diligence**, or **block**.
+  <Step title="Get a verdict">
+    Lead Verify returns a verdict, a 0-100 lead score and flags. The company check returns a trust score (0-100), a risk level, an entity cluster and a recommendation: **proceed**, **review**, **enhanced due diligence** or **block**. Every check names its source.
   </Step>
 </Steps>
 
@@ -107,19 +118,19 @@ curl -X POST https://api.limitguard.ai/v1/entity/check \
 | Feature | Description |
 |---------|-------------|
 | **Pay-per-use** | No subscription required. Pay with USDC via x402 protocol. |
-| **Sandbox mode** | Test free with realistic mock data. No wallet needed. |
-| **Two quality tiers** | Choose cached or fresh: $0.10 / $0.85 on `/v1/entity/check`. |
+| **Sandbox mode** | Test free with realistic mock data. No wallet needed. The sandbox covers entity, risk and KYB checks; Lead Verify needs a live key. |
+| **Two quality tiers** | Choose cached or fresh on `/v1/entity/check`: see [Pricing](/pricing#tiered-pricing). |
 | **AI agent native** | MCP, A2A, and x402 discovery. Agents find and use Limitguard autonomously. |
-| **GDPR compliant** | Operated by Ambulatio Consulting B.V. (trading as Limitguard) in the Netherlands. Application data stored in the EU, with published retention periods. |
+| **Hosted in the EU** | API and dashboard in the EU, database in Ireland. The [data processing agreement](https://limitguard.ai/dpa) and its sub-processor list (section 6) are published, with retention periods. Operated by Ambulatio Consulting B.V. (trading as Limitguard) in the Netherlands. |
 | **Self-verifying** | Limitguard verifies itself with its own API. Our score is public. |
 
 ## Who Uses Limitguard
 
-- **AI agent developers** — Verify counterparties before autonomous transactions
-- **Fintech platforms** — KYB and compliance checks via API
-- **Crypto protocols** — Wallet screening and entity trust scoring
-- **B2B marketplaces** — Supplier and buyer trust verification
+- **Lead generation agencies**: check every lead before you deliver it to a client
+- **Sales agents and their clients**: confirm that the company behind a lead is real and active
+- **B2B marketing and sales teams**: check a lead list in the [dashboard](https://dashboard.limitguard.ai/sign-up) (5 free lead checks after sign-up, no card) or over the API
+- **Developers and AI agents**: the same checks over the HTTP API, MCP and A2A
 
 <Card title="Ready to start?" icon="arrow-right" href="/quickstart">
-  Get your first trust score in under 3 minutes
+  Run your first lead check in under 3 minutes
 </Card>

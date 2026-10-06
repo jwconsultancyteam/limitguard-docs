@@ -1,17 +1,24 @@
 ---
 title: "September 5, 2026"
-description: "Documentation corrections — pricing, tier ladder, and MCP tool names"
+description: "Documentation corrections: pricing, tier ladder, and MCP tool names"
 ---
 
 ## Documentation Corrections
 
-A sweep of the documentation site against the live API. No API behavior changed — these entries correct places where the docs had drifted.
+A sweep of the documentation site against the live API. No API behavior changed: these entries correct places where the docs had drifted.
 
 <Warning>
   If you copied code samples from these docs before this date, check your hard-coded x402 amounts. The previously documented `50000` ($0.05) amount for `/v1/entity/check` was wrong and will now be rejected as insufficient payment.
 </Warning>
 
 ### Pricing corrected
+
+<Note>
+  Superseded: these were the prices on 5 September 2026. The current prices are on
+  [Pricing](/pricing), and the `enhanced` tier on these endpoints was retired on
+  2026-09-24. The section is left as it was published, because a changelog entry
+  records what was said on a date.
+</Note>
 
 Per-call prices across all pages now match [Pricing](/pricing). The most visible change is `/v1/entity/check`, previously documented at $0.01 / $0.05 / $0.15 across the cached, fresh, and enhanced quality tiers:
 
@@ -25,7 +32,13 @@ Every x402 `amount` field, `X-Payment-Amount` header sample, and executable tier
 
 ### `enterprise` tier removed
 
-The API key tier ladder is `free` / `sandbox`, `indie`, `starter`, `growth`, `pro`. There is no `enterprise` tier — it has been removed from the rate-limit and error-handling tables. Pro's monthly quota is 250,000 calls, not 50,000.
+<Note>
+  Superseded: a key's tier sets per-minute and rolling 24-hour rate limits, not a
+  number of calls you buy (see [Rate Limits](/guides/rate-limits)), and
+  `/v1/keys/upgrade/{tier}` is a `POST`. The section is left as it was published.
+</Note>
+
+The API key tier ladder is `free` / `sandbox`, `indie`, `starter`, `growth`, `pro`. There is no `enterprise` tier: it has been removed from the rate-limit and error-handling tables. Pro's monthly quota is 250,000 calls, not 50,000.
 
 Only `free` and `sandbox` keys can be provisioned directly through `POST /v1/keys/create`. All other tiers are reached by paying via x402 against `GET /v1/keys/upgrade/{tier}`. See [Authentication](/authentication#api-key-authentication).
 
@@ -42,4 +55,4 @@ The manifest at `/.well-known/mcp.json` declares `check_entity`. Documentation e
 
 ### Discovery response shape
 
-The `/.well-known/x402.json` examples now match the live response. Endpoint entries carry `price_usdc`, `price_raw`, and `category`. The listing does not include a `quality_tiers` object — per-tier prices come from [Pricing](/pricing#tiered-pricing) or from the `amount` in the 402 response.
+The `/.well-known/x402.json` examples now match the live response. Endpoint entries carry `price_usdc`, `price_raw`, and `category`. The listing does not include a `quality_tiers` object: per-tier prices come from [Pricing](/pricing#tiered-pricing) or from the `amount` in the 402 response.

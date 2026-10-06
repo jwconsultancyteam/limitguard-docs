@@ -1,6 +1,6 @@
 ---
 title: "Discovery"
-description: "Machine-readable discovery for AI agents — MCP, A2A, x402, and llms.txt"
+description: "Machine-readable discovery for AI agents: MCP, A2A, x402, and llms.txt"
 ---
 
 Limitguard publishes machine-readable discovery files for three AI agent protocols. All discovery endpoints are **free and require no authentication**.
@@ -17,7 +17,7 @@ Limitguard publishes machine-readable discovery files for three AI agent protoco
 | `GET /llms-full.txt` | llms.txt | Full LLM-readable API reference |
 
 <Note>
-All `/.well-known/*` requests bypass x402 payment middleware completely — no payment or API key needed.
+All `/.well-known/*` requests bypass x402 payment middleware completely: no payment or API key needed.
 </Note>
 
 ## x402 Bazaar Listing
@@ -35,21 +35,30 @@ curl https://api.limitguard.ai/.well-known/x402.json
   "protocol": "x402-v2",
   "x402Version": 2,
   "discoverable": true,
-  "description": "Trust Intelligence API with 18 priced endpoints. Entity verification, risk scoring, KYB, compliance, wallet screening, and MCP tools. Base + Solana.",
-  "capabilities": ["entity_verification", "risk_scoring", "reputation_tracking", "compliance_monitoring", "wallet_verification"],
+  "description": "Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, ...",
+  "capabilities": ["lead_verification", "entity_verification", "risk_scoring", "reputation_tracking", "compliance_monitoring", "wallet_verification"],
   "endpoints": [
     {
       "path": "/v1/entity/check",
       "method": "POST",
-      "price_usdc": 0.85,
-      "price_raw": 850000,
+      "price_usdc": 1.05,
+      "price_raw": 1050000,
+      "description": "Full entity trust check across multiple verification layers: ...",
       "category": "trust_intelligence"
+    },
+    {
+      "path": "/v1/leads/verify",
+      "method": "POST",
+      "price_usdc": 0.27,
+      "price_raw": 270000,
+      "description": "Lead verify for one NL or BE sales lead: is it a real, active company? ...",
+      "category": "other"
     }
   ]
 }
 ```
 
-The full response lists all 18 priced endpoints — including the 5 MCP tool endpoints and the 4 API-key tier-upgrade endpoints ($29–$999). See [Pricing](/pricing) for the complete, current table.
+Trimmed here: the live response lists every priced endpoint, each with its `inputSchema`, plus `payment` (networks and assets), `extensions`, `a2a` and `sla` blocks. `price_raw` is the default (`fresh`) price in USDC 6-decimal units. See [Pricing](/pricing) for the complete, current table.
 
 Also available at `/v1/sales/listing` for the same data.
 
@@ -109,12 +118,12 @@ import httpx
 listing = httpx.get("https://api.limitguard.ai/.well-known/x402.json").json()
 entity_check = next(e for e in listing["endpoints"] if e["path"] == "/v1/entity/check")
 
-# Step 2: Check price
-price_usdc = float(entity_check["price_usdc"])  # 0.85
+# Step 2: Check price (the default fresh price, in USDC 6-decimal units)
+amount = int(entity_check["price_raw"])
 
 # Step 3: Build x402 payment and call
 from my_wallet import build_x402_payment
-x_payment = build_x402_payment(amount=int(price_usdc * 1_000_000))
+x_payment = build_x402_payment(amount=amount)
 
 response = httpx.post(
     "https://api.limitguard.ai/v1/entity/check",
@@ -130,11 +139,11 @@ const listing = await fetch("https://api.limitguard.ai/.well-known/x402.json")
   .then((r) => r.json());
 const entityCheck = listing.endpoints.find((e) => e.path === "/v1/entity/check");
 
-// Step 2: Check price
-const priceUsdc = parseFloat(entityCheck.price_usdc); // 0.85
+// Step 2: Check price (the default fresh price, in USDC 6-decimal units)
+const amount = Number(entityCheck.price_raw);
 
 // Step 3: Build x402 payment and call
-const xPayment = await buildX402Payment(priceUsdc * 1_000_000);
+const xPayment = await buildX402Payment(amount);
 
 const response = await fetch("https://api.limitguard.ai/v1/entity/check", {
   method: "POST",

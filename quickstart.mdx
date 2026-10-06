@@ -1,13 +1,13 @@
 ---
 title: "Quickstart"
-description: "Get your first trust score in under 3 minutes"
+description: "Run your first lead check in under 3 minutes"
 ---
 
 <Steps>
 
 <Step title="Get an API Key">
 
-Create a free API key with a single request — no account or credit card needed.
+Create a free API key with a single request: no account or credit card needed.
 
 <CodeGroup>
 
@@ -50,7 +50,7 @@ console.log(api_key); // lg_live_xxxxxxxxxxxxxxxxxxxx
 ```
 
 <Warning>
-Save the `api_key` immediately — it is shown **once only**. The plaintext key is never stored server-side.
+Save the `api_key` immediately: it is shown **once only**. The plaintext key is never stored server-side.
 </Warning>
 
 </Step>
@@ -123,13 +123,75 @@ console.log(result);
 
 </CodeGroup>
 
-Sandbox returns deterministic mock data — same input always gives the same output. No real data sources are called and nothing is charged.
+Sandbox returns deterministic mock data: the same input always gives the same output. No real data sources are called and nothing is charged.
+
+</Step>
+
+<Step title="Check a Lead">
+
+Lead Verify checks one Dutch or Belgian lead against the live KVK or KBO register, VIES, the OFAC, EU and UN sanctions lists and its email domain. It runs on the live registers only, so it needs an `lg_live_` key with a prepaid balance or an x402 payment (a free key pays per call over x402, and a sandbox key gets `403`). To try it without paying, [sign up in the dashboard](https://dashboard.limitguard.ai/sign-up) for 5 free lead checks, no card.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.limitguard.ai/v1/leads/verify \
+  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "country": "NL",
+    "company_number": "12345678",
+    "name": "Acme Corp BV",
+    "vat_number": "NL123456789B01",
+    "email": "sales@acme-corp.nl"
+  }'
+```
+
+```python Python
+import httpx
+
+response = httpx.post(
+    "https://api.limitguard.ai/v1/leads/verify",
+    headers={"X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx"},
+    json={
+        "country": "NL",
+        "company_number": "12345678",
+        "name": "Acme Corp BV",
+        "vat_number": "NL123456789B01",
+        "email": "sales@acme-corp.nl",
+    },
+)
+result = response.json()
+print(result["verdict"], result["lead_score"], result["flags"])
+```
+
+```javascript JavaScript
+const response = await fetch("https://api.limitguard.ai/v1/leads/verify", {
+  method: "POST",
+  headers: {
+    "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    country: "NL",
+    company_number: "12345678",
+    name: "Acme Corp BV",
+    vat_number: "NL123456789B01",
+    email: "sales@acme-corp.nl",
+  }),
+});
+const result = await response.json();
+console.log(result.verdict, result.lead_score, result.flags);
+```
+
+</CodeGroup>
+
+A Belgian lead needs its 10-digit KBO number in `company_number`: Belgian companies cannot be looked up by name. The answer carries a `verdict` (for example `real_active` or `not_found`), a 0-100 `lead_score`, `flags` such as `vat_owner_mismatch` or `disposable_email`, and the `findings` behind them. An input you leave out is not checked and never counts against the lead. See the [Lead Verify reference](/api-reference/leads/lead-verify) for every field and [Pricing](/pricing#flat-priced-endpoints) for the price.
 
 </Step>
 
 <Step title="Make a Live Entity Check">
 
-Use your `lg_live_` key (or pay per call with x402) for real results from up to 7 data sources (the ones your request gives identifiers for):
+Use your `lg_live_` key (or pay per call with x402) for real results from every source your identifiers allow: the business register, sanctions, country risk, domain, IBAN and VAT.
 
 <CodeGroup>
 

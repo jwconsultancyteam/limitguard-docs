@@ -11,7 +11,7 @@ Limitguard enforces rate limits to ensure fair access and API stability. They ar
 |------|:-----------------:|:---------------:|-------------|
 | **Unauthenticated** | 10 / min per IP | No daily cap | No key, no payment |
 | **Unpaid 402 quote** | 120 / min per IP | No daily cap | A request x402 answers with the price only |
-| **x402 payer** | 60 / min per payer | No daily cap | `X-PAYMENT` header (pay per call) |
+| **x402 payer** | 60 / min per payer | No daily cap | `PAYMENT-SIGNATURE` or `X-PAYMENT` header (pay per call) |
 | **Free** | 10 / min | 500 | `lg_live_` API key, free tier (pays per call) |
 | **Indie** | 30 / min | 1,000 | `lg_live_` API key, $29 prepaid top-up |
 | **Starter** | 60 / min | 10,000 | `lg_live_` API key, $99 prepaid top-up |
@@ -24,7 +24,7 @@ Both windows are rolling: the per-minute limit over the last 60 seconds, the dai
 
 ## Middleware Execution Order
 
-Rate limiting runs early in the stack — before sandbox bypass and x402 payment verification:
+Rate limiting runs early in the stack, before sandbox bypass and x402 payment verification:
 
 ```
 Request → Logging → Security → Size Limit → Rate Limit → Tenant → Sandbox → x402 → Router
@@ -32,7 +32,7 @@ Request → Logging → Security → Size Limit → Rate Limit → Tenant → Sa
 
 This means a sandbox request that exceeds 10 req/min is rejected at the **Rate Limit** step, before the sandbox middleware ever runs.
 
-## HTTP 429 — Rate Limit Exceeded
+## HTTP 429: Rate Limit Exceeded
 
 When a rate limit is hit, the API returns **HTTP 429 Too Many Requests** with a `Retry-After` header and a JSON error body.
 
@@ -111,7 +111,7 @@ Never retry before `Retry-After` seconds have elapsed. Retrying too early counts
 
 ### 2. Implement Exponential Backoff
 
-For transient errors (5xx) use exponential backoff. For 429 specifically, always use the exact `Retry-After` value — do not apply additional multipliers on top of it.
+For transient errors (5xx) use exponential backoff. For 429 specifically, always use the exact `Retry-After` value. Do not apply additional multipliers on top of it.
 
 ### 3. Monitor `X-RateLimit-Remaining`
 
@@ -129,30 +129,29 @@ Use a sandbox key (`lg_sandbox_...`) for load testing. The 10 req/min sandbox li
 
 ```bash curl
 #!/usr/bin/env bash
-# Retry with Retry-After backoff — handles both rate limit types
+# Retry with Retry-After backoff: handles both rate limit types
 
 API_KEY="lg_live_xxxxxxxxxxxxxxxxxxxx"
 MAX_ATTEMPTS=5
 
+headers_file=$(mktemp)
+trap 'rm -f "$headers_file"' EXIT
 attempt=1
 while [ $attempt -le $MAX_ATTEMPTS ]; do
-  response=$(curl -s -w "\n%{http_code}" -X POST https://api.limitguard.ai/v1/entity/check \
+  # -D keeps this response's own headers, so Retry-After comes from the 429 itself
+  response=$(curl -s -D "$headers_file" -w "\n%{http_code}" -X POST https://api.limitguard.ai/v1/entity/check \
     -H "X-API-Key: $API_KEY" \
     -H "Content-Type: application/json" \
     -d '{"entity_name": "Acme Corp BV", "country": "NL"}')
 
   http_code=$(echo "$response" | tail -n1)
-  body=$(echo "$response" | head -n-1)
+  body=$(echo "$response" | sed '$d')
 
   if [ "$http_code" -eq 200 ]; then
     echo "$body"
     exit 0
   elif [ "$http_code" -eq 429 ]; then
-    retry_after=$(curl -s -I -X POST https://api.limitguard.ai/v1/entity/check \
-      -H "X-API-Key: $API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{"entity_name": "Acme Corp BV", "country": "NL"}' \
-      | grep -i "retry-after" | awk '{print $2}' | tr -d '\r')
+    retry_after=$(grep -i "^retry-after:" "$headers_file" | awk '{print $2}' | tr -d '\r')
     retry_after=${retry_after:-60}
     echo "Rate limited. Waiting ${retry_after}s before retry ${attempt}/${MAX_ATTEMPTS}..." >&2
     sleep "$retry_after"
@@ -311,7 +310,7 @@ console.log(result);
 
 ## Upgrading Your Tier
 
-If you are consistently hitting rate limits on a subscription key, you have two options:
+If you are consistently hitting rate limits on an API key, you have two options:
 
 <CardGroup cols={2}>
   <Card title="Upgrade Your Plan" icon="arrow-up" href="/authentication">
@@ -330,8 +329,8 @@ curl -X POST https://api.limitguard.ai/v1/keys/create \
   -H "Content-Type: application/json" \
   -d '{"email": "you@example.com", "tier": "free"}'
 
-# 2. Upgrade by paying via x402 (returns 402 first — sign and retry with X-PAYMENT)
-curl https://api.limitguard.ai/v1/keys/upgrade/pro \
+# 2. Upgrade by paying via x402 (POST; returns 402 first: sign and retry with X-PAYMENT)
+curl -X POST https://api.limitguard.ai/v1/keys/upgrade/pro \
   -H "X-API-Key: lg_live_..." \
   -H "X-PAYMENT: <base64 payment>"
 ```

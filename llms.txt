@@ -1,19 +1,19 @@
 # Limitguard
 
-> Limitguard is a KYB, sanctions/PEP and entity-trust API for AI agents and developers: it checks a company against business registers (KVK, KBO/CBE), VIES VAT, OpenSanctions, its domain and country risk, is paid per call with x402 (USDC) or an API key, is also served as an MCP server, and is hosted in the EU.
+> Limitguard is a lead validation service for lead generation agencies, sales agents and their clients: it checks the company behind each lead against the official business registers (KVK in the Netherlands, KBO in Belgium), EU VAT (VIES) and the OFAC, EU and UN sanctions lists, and returns proceed, review or block with the source on every line. Developers and AI agents can use the same checks over its HTTP API, MCP server and A2A service, hosted in the EU, paid per call with x402 (USDC) or from an API key's prepaid balance.
 
 ## Get Started
 
-- [Introduction](https://docs.limitguard.ai/introduction.md): Trust Intelligence API for the Agent Economy
-- [Quickstart](https://docs.limitguard.ai/quickstart.md): Get your first trust score in under 3 minutes
+- [Introduction](https://docs.limitguard.ai/introduction.md): Every lead checked against the official register.
+- [Quickstart](https://docs.limitguard.ai/quickstart.md): Run your first lead check in under 3 minutes
 - [Authentication](https://docs.limitguard.ai/authentication.md): API keys, x402 USDC micropayments, and sandbox mode
-- [Sandbox Mode](https://docs.limitguard.ai/sandbox.md): Test the API for free - no wallet or API key required
+- [Sandbox Mode](https://docs.limitguard.ai/sandbox.md): Test the API for free with a sandbox key: no wallet, no payment, mock data
 
 ## Core Concepts
 
-- [Pricing](https://docs.limitguard.ai/pricing.md): Pay only for what you use - USDC per API call
-- [x402 Protocol](https://docs.limitguard.ai/x402-protocol.md): Pay-per-use USDC micropayments for AI agents - no subscription required
-- [Discovery](https://docs.limitguard.ai/discovery.md): Machine-readable discovery for AI agents - MCP, A2A, x402, and llms.txt
+- [Pricing](https://docs.limitguard.ai/pricing.md): Pay only for what you use: USDC per API call
+- [x402 Protocol](https://docs.limitguard.ai/x402-protocol.md): Pay-per-use USDC micropayments for AI agents, no subscription required
+- [Discovery](https://docs.limitguard.ai/discovery.md): Machine-readable discovery for AI agents: MCP, A2A, x402, and llms.txt
 
 ## Guides
 
@@ -21,9 +21,9 @@
 - [Rate Limits](https://docs.limitguard.ai/guides/rate-limits.md): Rate limit behavior, tiers, and Retry-After headers
 - [Webhooks](https://docs.limitguard.ai/guides/webhooks.md): Get sanctions-list changes that affect you pushed to your server
 - [Trust Architecture](https://docs.limitguard.ai/guides/trust-architecture.md): Zero-access model, data flow, and security architecture
-- [AI Agent Integration](https://docs.limitguard.ai/guides/ai-agent-integration.md): How AI agents discover and use Limitguard - MCP, A2A, and x402
+- [AI Agent Integration](https://docs.limitguard.ai/guides/ai-agent-integration.md): How AI agents discover and use Limitguard: MCP, A2A, and x402
 - [Framework Integrations](https://docs.limitguard.ai/guides/frameworks.md): Connect LangChain, CrewAI, or the OpenAI Agents SDK to Limitguard's remote MCP server
-- [Pay Per Call](https://docs.limitguard.ai/guides/pay-per-call.md): Call Limitguard with a USDC wallet and a client library - no API key, no subscription
+- [Pay Per Call](https://docs.limitguard.ai/guides/pay-per-call.md): Call Limitguard with a USDC wallet and a client library: no API key, no subscription
 
 ## Post-mortems
 
@@ -32,7 +32,7 @@
 
 ## API Reference
 
-- [API Reference](https://docs.limitguard.ai/api-reference/introduction.md): Complete reference for all 64 Limitguard API endpoints
+- [API Reference](https://docs.limitguard.ai/api-reference/introduction.md): Complete reference for every Limitguard API endpoint
 
 ## OpenAPI Specs
 
