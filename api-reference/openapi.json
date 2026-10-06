@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Limitguard.ai",
-    "description": "KYB and Sanctions Screening API - Entity verification and risk scoring",
+    "description": "Lead validation API: the company behind each lead checked against the NL and BE business registers, EU VAT and sanctions lists, plus company, KYB and agent wallet checks for developers and AI agents",
     "version": "0.1.0"
   },
   "paths": {
@@ -51,7 +51,7 @@
             }
           },
           "404": {
-            "description": "Not cached (X-Response-Quality: cached) \u2014 no data source was called",
+            "description": "Not cached (X-Response-Quality: cached); no data source was called",
             "content": {
               "application/json": {
                 "schema": {
@@ -125,7 +125,7 @@
             }
           },
           "503": {
-            "description": "A source of the requested tier is unavailable \u2014 payment is not settled",
+            "description": "A source of the requested tier is unavailable; payment is not settled",
             "content": {
               "application/json": {
                 "schema": {
@@ -169,7 +169,7 @@
             }
           },
           "404": {
-            "description": "Not cached (X-Response-Quality: cached) \u2014 no data source was called",
+            "description": "Not cached (X-Response-Quality: cached); no data source was called",
             "content": {
               "application/json": {
                 "schema": {
@@ -272,7 +272,7 @@
     "/v1/keys/revoke": {
       "post": {
         "summary": "Revoke Key",
-        "description": "Revoke an API key permanently.\n\nThe key being revoked is identified by the X-API-Key header.\nThis action is irreversible \u2014 the key will stop working immediately.\nAny remaining prepaid balance of a key that holds its own is forfeited; a key\nthat belongs to a workspace draws from the workspace balance, which revoking\nthe key never touches.",
+        "description": "Revoke an API key permanently.\n\nThe key being revoked is identified by the X-API-Key header.\nThis action is irreversible: the key stops working immediately.\nAny remaining prepaid balance of a key that holds its own is forfeited; a key\nthat belongs to a workspace draws from the workspace balance, which revoking\nthe key never touches.",
         "operationId": "revoke_key_v1_keys_revoke_post",
         "responses": {
           "200": {
@@ -838,7 +838,7 @@
     "/v1/webhooks": {
       "get": {
         "summary": "List Webhooks",
-        "description": "List active webhook registrations belonging to the caller.\n\nSecrets are NOT included \u2014 only shown at creation time (DYN-405).",
+        "description": "List active webhook registrations belonging to the caller.\n\nSecrets are NOT included; they are only shown at creation time.",
         "operationId": "list_webhooks_v1_webhooks_get",
         "responses": {
           "200": {
@@ -864,7 +864,7 @@
       },
       "post": {
         "summary": "Register Webhook",
-        "description": "Register a new webhook endpoint. URL must use HTTPS.\n\nReturns the signing secret ONE TIME \u2014 store it securely (DYN-405).",
+        "description": "Register a new webhook endpoint. URL must use HTTPS.\n\nReturns the signing secret ONE TIME: store it securely.",
         "operationId": "register_webhook_v1_webhooks_post",
         "requestBody": {
           "content": {
@@ -1118,7 +1118,7 @@
     },
     "/v1/badge/{entity_id}.json": {
       "get": {
-        "summary": "Get Badge Json",
+        "summary": "Get Badge JSON",
         "description": "Return JSON badge data for entity.\n\nPublic endpoint (no auth) with CORS headers.\n\nArgs:\n    entity_id: Entity identifier\n\nReturns:\n    BadgeData with trust score and metadata",
         "operationId": "get_badge_json_v1_badge__entity_id__json_get",
         "parameters": [
@@ -1158,7 +1158,7 @@
     },
     "/v1/badge/{entity_id}": {
       "get": {
-        "summary": "Get Badge Svg",
+        "summary": "Get Badge SVG",
         "description": "Return SVG badge for entity.\n\nPublic endpoint (no auth) for cross-origin embedding.\nIncludes CORS headers and cache control.\n\nArgs:\n    entity_id: Entity identifier (email, domain, wallet)\n    variant: Badge display variant (score, level, shield)\n    theme: Visual theme (light, dark)\n\nReturns:\n    SVG image with trust score/level",
         "operationId": "get_badge_svg_v1_badge__entity_id__get",
         "parameters": [
@@ -1510,7 +1510,7 @@
     },
     "/v1/legal/dpa": {
       "get": {
-        "summary": "Get Dpa",
+        "summary": "Get DPA",
         "description": "Get Data Processing Agreement (public, no auth required).",
         "operationId": "get_dpa_v1_legal_dpa_get",
         "responses": {
@@ -1678,7 +1678,7 @@
             }
           },
           "404": {
-            "description": "Not cached (X-Response-Quality: cached) \u2014 no data source was called",
+            "description": "Not cached (X-Response-Quality: cached); no data source was called",
             "content": {
               "application/json": {
                 "schema": {
@@ -2295,8 +2295,8 @@
     },
     "/v1/compliance/readiness/{entity_id}": {
       "get": {
-        "summary": "Ai Act Readiness",
-        "description": "EU AI Act readiness self-assessment for one AI system.\n\nThe result depends only on system_type and the completed_items the caller\nsends; entity_id is echoed as a label and nothing is looked up about it, so\nthe response says so in `basis` and `note` (2026-09-24: a paid call for a\ncompany name returned the same generic 0/7 as any other).",
+        "summary": "AI Act Readiness",
+        "description": "EU AI Act readiness self-assessment for one AI system.\n\nThe result depends only on system_type and the completed_items the caller\nsends; entity_id is echoed as a label and nothing is looked up about it, so\nthe response says so in `basis` and `note`.",
         "operationId": "ai_act_readiness_v1_compliance_readiness__entity_id__get",
         "security": [
           {
@@ -2368,7 +2368,7 @@
     "/v1/compliance/report/{entity_id}": {
       "get": {
         "summary": "Compliance Report",
-        "description": "De-listed compliance report: answers 410 Gone, charges nothing.\n\nPreviously, this route sold a \"full compliance assessment for an entity\" at\n$0.50, and computed ``classify_ai_risk(\"trust_scoring\")`` and\n``calculate_readiness_score([])`` regardless of ``entity_id`` \u2014 every entity\nreceived byte-identical output, and only the alert summary was even\ntenant-scoped. There is no per-entity AI-Act data (system type, deployment\ncontext, data categories) stored anywhere to substitute in, so unlike the\n/v1/reputation/history fix in 8cef926 there is nothing real to serve.\nSame philosophy as that fix: stop selling data the product does not have.\n\nThe route is kept as a tombstone rather than deleted so an agent that still\nholds the old listing gets a clear, machine-readable answer instead of a\nbare 404. It is absent from ENDPOINT_PRICING_PREFIXES, so the payment gate\nnever quotes a 402 for it, and it takes no API key because the response\nreveals nothing. Sandbox callers get the same 410: there is no mock either.\n\nOnce the per-entity report is live (enabled AND priced), the body also\npoints to POST /v1/reports/entity; while it is dark the body is unchanged.",
+        "description": "De-listed compliance report: answers 410 Gone, charges nothing.\n\nThis route used to sell a \"full compliance assessment for an entity\", but it\nreturned the same EU AI Act briefing for every entity_id. There is no\nper-entity AI Act data to build a real one from, so it was withdrawn. For a\nreadiness score from inputs you supply, use\nGET /v1/compliance/readiness/{entity_id}.\n\nThe route is kept as a tombstone rather than deleted so an agent that still\nholds the old listing gets a clear, machine-readable answer instead of a\nbare 404. It is absent from ENDPOINT_PRICING_PREFIXES, so the payment gate\nnever quotes a 402 for it, and it takes no API key because the response\nreveals nothing. Sandbox callers get the same 410: there is no mock either.\n\nOnce the per-entity report is live (enabled AND priced), the body also\npoints to POST /v1/reports/entity; while it is dark the body is unchanged.",
         "operationId": "compliance_report_v1_compliance_report__entity_id__get",
         "parameters": [
           {
@@ -2714,7 +2714,7 @@
     "/v1/quickstart": {
       "get": {
         "summary": "Quickstart Guide",
-        "description": "Interactive quickstart guide \u2014 no auth required.\n\nReturns everything needed to make a first API call:\nendpoints, pricing, curl examples, and payment instructions.",
+        "description": "Interactive quickstart guide, no auth required.\n\nReturns everything needed to make a first API call:\nendpoints, pricing, curl examples, and payment instructions.",
         "operationId": "quickstart_guide_v1_quickstart_get",
         "responses": {
           "200": {
@@ -2730,7 +2730,7 @@
     },
     "/v1/kyb/check": {
       "post": {
-        "summary": "Kyb Check",
+        "summary": "KYB Check",
         "description": "Full KYB (Know Your Business) verification.\n\nCombines entity trust check with sanctions screening and company\nregistration verification. Returns comprehensive KYB result with\nverification status, risk flags, and compliance recommendations.\n\nPriced at $1.50 per call via x402 (see ENDPOINT_PRICING).",
         "operationId": "kyb_check_v1_kyb_check_post",
         "requestBody": {
@@ -2757,7 +2757,7 @@
             }
           },
           "404": {
-            "description": "Not cached (X-Response-Quality: cached) \u2014 no data source was called",
+            "description": "Not cached (X-Response-Quality: cached); no data source was called",
             "content": {
               "application/json": {
                 "schema": {
@@ -2789,8 +2789,8 @@
         "tags": [
           "mcp"
         ],
-        "summary": "Mcp Check Entity",
-        "description": "Check entity trust score (MCP-compatible endpoint).",
+        "summary": "MCP Check Entity",
+        "description": "Company check (MCP-compatible endpoint).",
         "operationId": "mcp_check_entity_v1_mcp_check_entity_post",
         "requestBody": {
           "content": {
@@ -2834,7 +2834,7 @@
         "tags": [
           "mcp"
         ],
-        "summary": "Mcp Check Agent",
+        "summary": "MCP Check Agent",
         "description": "Verify AI agent trust (MCP-compatible endpoint).",
         "operationId": "mcp_check_agent_v1_mcp_check_agent_post",
         "requestBody": {
@@ -2879,7 +2879,7 @@
         "tags": [
           "mcp"
         ],
-        "summary": "Mcp Trust Score",
+        "summary": "MCP Trust Score",
         "description": "The caller's own latest stored trust score for an entity (MCP-compatible endpoint, free).",
         "operationId": "mcp_trust_score_v1_mcp_trust_score_post",
         "requestBody": {
@@ -2924,7 +2924,7 @@
         "tags": [
           "mcp"
         ],
-        "summary": "Mcp Verify Wallet",
+        "summary": "MCP Verify Wallet",
         "description": "Screen a wallet: OFAC SDN match, on-chain signals, named rules. Free ($0).",
         "operationId": "mcp_verify_wallet_v1_mcp_verify_wallet_post",
         "requestBody": {
@@ -2969,7 +2969,7 @@
         "tags": [
           "mcp"
         ],
-        "summary": "Mcp Risk Score",
+        "summary": "MCP Risk Score",
         "description": "Quick risk assessment (MCP-compatible endpoint).",
         "operationId": "mcp_risk_score_v1_mcp_risk_score_post",
         "requestBody": {
@@ -3071,7 +3071,7 @@
     },
     "/.well-known/security.txt": {
       "get": {
-        "summary": "Security Txt",
+        "summary": "Security TXT",
         "operationId": "security_txt__well_known_security_txt_get",
         "responses": {
           "200": {
@@ -4300,7 +4300,10 @@
           "waitlist_signups",
           "abandoned_signups",
           "lead_lists",
-          "report_email_settings"
+          "report_email_settings",
+          "chat_transcripts",
+          "chat_tool_audit",
+          "chat_turn_stats"
         ],
         "title": "DataCategory"
       },
