@@ -11,7 +11,7 @@
 
 ## Core Concepts
 
-- [Pricing](https://docs.limitguard.ai/pricing.md): Pay only for what you use: USDC per API call
+- [Pricing](https://docs.limitguard.ai/pricing.md): API prices: USDC per call, or from a prepaid API key balance
 - [x402 Protocol](https://docs.limitguard.ai/x402-protocol.md): Pay-per-use USDC micropayments for AI agents, no subscription required
 - [Discovery](https://docs.limitguard.ai/discovery.md): Machine-readable discovery for AI agents: MCP, A2A, x402, and llms.txt
 
