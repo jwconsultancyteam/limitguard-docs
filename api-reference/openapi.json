@@ -6576,6 +6576,7 @@
                   "no_domain",
                   "free_mail_domain",
                   "refused",
+                  "robots_disallowed",
                   "timeout",
                   "error"
                 ]
@@ -6585,7 +6586,7 @@
               }
             ],
             "title": "Website Phones Reason",
-            "description": "Why no website phone numbers were read. None when the website was read. website_phones_disabled: website phone lookup is off. sole_trader_data_disabled: the company is a sole trader or partnership, so its contact details are personal data and were not read for this business. no_domain: there is no company website to read. free_mail_domain: the only domain given is a free email provider. refused: the website does not allow it to be read. timeout: the website did not answer in time. error: the website could not be read."
+            "description": "Why no website phone numbers were read. None when the website was read. website_phones_disabled: website phone lookup is off. sole_trader_data_disabled: the company is a sole trader or partnership, so its contact details are personal data and were not read for this business. no_domain: there is no company website to read. free_mail_domain: the only domain given is a free email provider. refused: the website does not allow it to be read. robots_disallowed: the website's robots.txt does not allow its contact pages to be read, so the phone was not checked. timeout: the website did not answer in time. error: the website could not be read."
           },
           "discovered_identifiers": {
             "items": {
@@ -8868,8 +8869,31 @@
             "type": "string",
             "title": "Source Label",
             "examples": [
-              "published on https://example.nl/contact"
+              "on bol.com, company details page, next to its Chamber of Commerce number"
             ]
+          },
+          "page_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "home",
+                  "company_details",
+                  "contact",
+                  "about"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Kind"
+          },
+          "register_number_on_page": {
+            "type": "boolean",
+            "title": "Register Number On Page",
+            "description": "The page also shows the company's own KVK/KBO or VAT number.",
+            "default": false
           }
         },
         "additionalProperties": false,
