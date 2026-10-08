@@ -1,0 +1,27 @@
+---
+title: "September 8, 2026"
+description: "Outage post-mortem published for the June 19 to September 5 event-loop block"
+---
+
+## Post-mortem Published
+
+A new **Post-mortems** section collects write-ups of production incidents. The first
+entry covers the outage that ran from 2026-06-19 to 2026-09-05.
+
+### June 19 to September 5 outage
+
+[Outage post-mortem, 2026-06-19 to 2026-09-05](/postmortems/2026-09-langfuse-event-loop)
+covers 78 days during which `api.limitguard.ai` returned HTTP 503. The process stayed
+alive throughout: its asyncio event loop was blocked in one synchronous call to the
+tracing backend that had no timeout, and a blocked process still counted as running, so
+the platform never restarted it.
+
+<Note>
+  No API behavior changed with this entry, and no customer data was involved. The fixes
+  it describes shipped to the API between September 5 and September 6, 2026.
+</Note>
+
+The page documents the timeline, the root cause, why no monitor reached a person, and the
+changes made since: probes moved off the event loop with a bounded pool and timeouts, a
+30 s loop watchdog that turns a hung process into an exited one, host-side alerting and
+restart, and settlement reconciliation for rows stranded by a hard exit.

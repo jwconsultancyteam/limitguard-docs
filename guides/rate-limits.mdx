@@ -1,0 +1,338 @@
+---
+title: "Rate Limits"
+description: "Rate limit behavior, tiers, and Retry-After headers"
+---
+
+Limitguard enforces rate limits to ensure fair access and API stability. They are abuse limits, not a quota you buy: every call is paid for, either per call with x402 or from an API key's prepaid balance. A key's tier (bought as a prepaid top-up) only selects its burst limits.
+
+## Rate Limits by Tier
+
+| Tier | Requests / Minute | Requests / 24 h | Auth Method |
+|------|:-----------------:|:---------------:|-------------|
+| **Unauthenticated** | 10 / min per IP | No daily cap | No key, no payment |
+| **Unpaid 402 quote** | 120 / min per IP | No daily cap | A request x402 answers with the price only |
+| **x402 payer** | 60 / min per payer | No daily cap | `PAYMENT-SIGNATURE` or `X-PAYMENT` header (pay per call) |
+| **Free** | 10 / min | 500 | `lg_live_` API key, free tier (pays per call) |
+| **Indie** | 30 / min | 1,000 | `lg_live_` API key, $29 prepaid top-up |
+| **Starter** | 60 / min | 10,000 | `lg_live_` API key, $99 prepaid top-up |
+| **Growth** | 120 / min | 50,000 | `lg_live_` API key, $299 prepaid top-up |
+| **Pro** | 300 / min | 250,000 | `lg_live_` API key, $999 prepaid top-up |
+
+<Note>
+Both windows are rolling: the per-minute limit over the last 60 seconds, the daily limit over the last 24 hours. Nothing resets on a calendar boundary. Entity checks also have a per-entity limit per caller, against enumeration.
+</Note>
+
+## Middleware Execution Order
+
+Rate limiting runs early in the stack, before sandbox bypass and x402 payment verification:
+
+```
+Request → Logging → Security → Size Limit → Rate Limit → Tenant → Sandbox → x402 → Router
+```
+
+This means a sandbox request that exceeds 10 req/min is rejected at the **Rate Limit** step, before the sandbox middleware ever runs.
+
+## HTTP 429: Rate Limit Exceeded
+
+When a rate limit is hit, the API returns **HTTP 429 Too Many Requests** with a `Retry-After` header and a JSON error body.
+
+### Response Headers
+
+| Header | Type | Description |
+|--------|------|-------------|
+| `X-RateLimit-Limit` | integer | Maximum requests allowed in the current window |
+| `X-RateLimit-Remaining` | integer | Requests remaining in the current window |
+| `X-RateLimit-Reset` | Unix timestamp | When the current window resets (UTC epoch seconds) |
+| `Retry-After` | integer | Seconds to wait before retrying |
+
+### Example: Sandbox Limit Exceeded
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1708434060
+Content-Type: application/json
+```
+
+```json
+{
+  "error": "Sandbox rate limit exceeded (10 req/min). Use a real API key for higher limits."
+}
+```
+
+### Example: Free Tier Daily Limit Reached
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 3600
+X-RateLimit-Limit: 500
+X-RateLimit-Remaining: 0
+Content-Type: application/problem+json
+```
+
+```json
+{
+  "type": "about:blank",
+  "title": "Rate Limit Exceeded",
+  "status": 429,
+  "detail": "Exceeded per-day limit of 500 requests for free tier.",
+  "retry_after": 3600
+}
+```
+
+<Warning>
+Always read the `Retry-After` header rather than hard-coding a wait time: it is 60 seconds for a per-minute limit and 3600 seconds for the rolling 24-hour limit.
+</Warning>
+
+## x402 Payers Have No Daily Cap
+
+Callers paying per call with x402 have no daily request cap: each successful payment authorizes exactly one API call, so cost is the throttle. A verified payer is still limited to 60 requests per minute, and entity checks keep their per-entity limit.
+
+<Tip>
+If you are building an AI agent that may need to make bursts of requests, x402 is the right choice. You pay per call and have no daily cap. See the [x402 Protocol](/x402-protocol) guide for implementation details.
+</Tip>
+
+### Cost-Based Throttling vs. Count-Based Throttling
+
+| Mechanism | API Key Tiers | x402 |
+|-----------|:-------------:|:----:|
+| Per-minute limit | Yes (by tier) | Yes (60 / min per payer) |
+| Rolling 24-hour limit | Yes (by tier) | No |
+| Cost per call | Yes, debited from the prepaid balance | Yes, paid per call |
+| Suitable for AI agent bursts | Up to the tier's per-minute limit | Up to 60 / min |
+
+## Best Practices
+
+### 1. Always Respect `Retry-After`
+
+Never retry before `Retry-After` seconds have elapsed. Retrying too early counts against the same window and triggers the same 429 immediately.
+
+### 2. Implement Exponential Backoff
+
+For transient errors (5xx) use exponential backoff. For 429 specifically, always use the exact `Retry-After` value. Do not apply additional multipliers on top of it.
+
+### 3. Monitor `X-RateLimit-Remaining`
+
+Poll `X-RateLimit-Remaining` on each response to detect approaching limits before they are hit. Shed load or switch to x402 before reaching zero.
+
+### 4. Never Load Test Production
+
+Use a sandbox key (`lg_sandbox_...`) for load testing. The 10 req/min sandbox limit exists to prevent accidental load on real data sources.
+
+---
+
+## Code Examples: Handling 429 with Retry Logic
+
+<CodeGroup>
+
+```bash curl
+#!/usr/bin/env bash
+# Retry with Retry-After backoff: handles both rate limit types
+
+API_KEY="lg_live_xxxxxxxxxxxxxxxxxxxx"
+MAX_ATTEMPTS=5
+
+headers_file=$(mktemp)
+trap 'rm -f "$headers_file"' EXIT
+attempt=1
+while [ $attempt -le $MAX_ATTEMPTS ]; do
+  # -D keeps this response's own headers, so Retry-After comes from the 429 itself
+  response=$(curl -s -D "$headers_file" -w "\n%{http_code}" -X POST https://api.limitguard.ai/v1/entity/check \
+    -H "X-API-Key: $API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"entity_name": "Acme Corp BV", "country": "NL"}')
+
+  http_code=$(echo "$response" | tail -n1)
+  body=$(echo "$response" | sed '$d')
+
+  if [ "$http_code" -eq 200 ]; then
+    echo "$body"
+    exit 0
+  elif [ "$http_code" -eq 429 ]; then
+    retry_after=$(grep -i "^retry-after:" "$headers_file" | awk '{print $2}' | tr -d '\r')
+    retry_after=${retry_after:-60}
+    echo "Rate limited. Waiting ${retry_after}s before retry ${attempt}/${MAX_ATTEMPTS}..." >&2
+    sleep "$retry_after"
+  else
+    echo "Error $http_code: $body" >&2
+    exit 1
+  fi
+
+  attempt=$((attempt + 1))
+done
+
+echo "Exhausted $MAX_ATTEMPTS attempts." >&2
+exit 1
+```
+
+```python Python
+import time
+import httpx
+
+def check_entity(
+    entity_name: str,
+    country: str,
+    api_key: str,
+    max_attempts: int = 5,
+) -> dict:
+    """
+    POST /v1/entity/check with automatic 429 retry.
+
+    Respects Retry-After for rate limits.
+    Uses exponential backoff for 5xx transient errors.
+    """
+    url = "https://api.limitguard.ai/v1/entity/check"
+    headers = {
+        "X-API-Key": api_key,
+        "Content-Type": "application/json",
+    }
+    payload = {"entity_name": entity_name, "country": country}
+
+    for attempt in range(1, max_attempts + 1):
+        response = httpx.post(url, headers=headers, json=payload, timeout=30)
+
+        if response.status_code == 200:
+            return response.json()
+
+        if response.status_code == 429:
+            retry_after = int(response.headers.get("Retry-After", 60))
+            remaining = response.headers.get("X-RateLimit-Remaining", "0")
+            reset_at = response.headers.get("X-RateLimit-Reset", "unknown")
+            print(
+                f"[attempt {attempt}/{max_attempts}] Rate limited. "
+                f"Remaining: {remaining}. Reset at: {reset_at}. "
+                f"Waiting {retry_after}s..."
+            )
+            time.sleep(retry_after)
+            continue
+
+        if response.status_code >= 500:
+            # Exponential backoff for transient server errors
+            wait = min(2 ** attempt, 60)
+            print(
+                f"[attempt {attempt}/{max_attempts}] Server error "
+                f"{response.status_code}. Waiting {wait}s..."
+            )
+            time.sleep(wait)
+            continue
+
+        # Non-retryable error (4xx other than 429)
+        response.raise_for_status()
+
+    raise RuntimeError(f"Exhausted {max_attempts} attempts for entity check.")
+
+
+# Usage
+result = check_entity(
+    entity_name="Acme Corp BV",
+    country="NL",
+    api_key="lg_live_xxxxxxxxxxxxxxxxxxxx",
+)
+print(result)
+```
+
+```javascript JavaScript
+/**
+ * POST /v1/entity/check with automatic 429 retry.
+ * Respects Retry-After for rate limits.
+ * Uses exponential backoff for 5xx transient errors.
+ */
+async function checkEntity(
+  entityName,
+  country,
+  apiKey,
+  { maxAttempts = 5 } = {}
+) {
+  const url = "https://api.limitguard.ai/v1/entity/check";
+  const headers = {
+    "X-API-Key": apiKey,
+    "Content-Type": "application/json",
+  };
+  const body = JSON.stringify({ entity_name: entityName, country });
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await fetch(url, { method: "POST", headers, body });
+
+    if (response.ok) {
+      return response.json();
+    }
+
+    if (response.status === 429) {
+      const retryAfter = parseInt(
+        response.headers.get("Retry-After") ?? "60",
+        10
+      );
+      const remaining = response.headers.get("X-RateLimit-Remaining") ?? "0";
+      const resetAt = response.headers.get("X-RateLimit-Reset") ?? "unknown";
+      console.warn(
+        `[attempt ${attempt}/${maxAttempts}] Rate limited. ` +
+          `Remaining: ${remaining}. Reset at: ${resetAt}. ` +
+          `Waiting ${retryAfter}s...`
+      );
+      await sleep(retryAfter * 1000);
+      continue;
+    }
+
+    if (response.status >= 500) {
+      const wait = Math.min(2 ** attempt, 60);
+      console.warn(
+        `[attempt ${attempt}/${maxAttempts}] Server error ${response.status}. ` +
+          `Waiting ${wait}s...`
+      );
+      await sleep(wait * 1000);
+      continue;
+    }
+
+    // Non-retryable (4xx other than 429)
+    const error = await response.json().catch(() => ({}));
+    throw new Error(
+      `Limitguard API error ${response.status}: ${error.error ?? response.statusText}`
+    );
+  }
+
+  throw new Error(`Exhausted ${maxAttempts} attempts for entity check.`);
+}
+
+// Usage
+const result = await checkEntity(
+  "Acme Corp BV",
+  "NL",
+  "lg_live_xxxxxxxxxxxxxxxxxxxx"
+);
+console.log(result);
+```
+
+</CodeGroup>
+
+## Upgrading Your Tier
+
+If you are consistently hitting rate limits on an API key, you have two options:
+
+<CardGroup cols={2}>
+  <Card title="Top up to a higher tier" icon="arrow-up" href="/authentication">
+    Top up to Indie, Starter, Growth, or Pro for higher per-minute and daily limits.
+  </Card>
+  <Card title="Switch to x402" icon="credit-card" href="/x402-protocol">
+    Pay per call with USDC. No daily cap; 60 requests per minute per payer.
+  </Card>
+</CardGroup>
+
+To create a key, then upgrade it:
+
+```bash
+# 1. Create a free key (only `free` or `sandbox` can be provisioned directly)
+curl -X POST https://api.limitguard.ai/v1/keys/create \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "tier": "free"}'
+
+# 2. Upgrade by paying via x402 (POST; returns 402 first: sign and retry with X-PAYMENT)
+curl -X POST https://api.limitguard.ai/v1/keys/upgrade/pro \
+  -H "X-API-Key: lg_live_..." \
+  -H "X-PAYMENT: <base64 payment>"
+```
+
+Available tiers: `free`, `sandbox`, `indie`, `starter`, `growth`, `pro`. See [Authentication](/authentication#api-key-authentication) for top-up prices and limits.

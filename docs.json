@@ -1,0 +1,165 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Limitguard",
+  "description": "Limitguard is a lead validation service for lead generation agencies, sales agents and their clients: it checks the company behind each lead against the official business registers (KVK in the Netherlands, KBO in Belgium), EU VAT (VIES) and the OFAC, EU and UN sanctions lists, and returns proceed, review or block with the source on every line. Developers and AI agents can use the same checks over its HTTP API, MCP server and A2A service, hosted in the EU.",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": {
+    "light": "/favicon.svg",
+    "dark": "/favicon-dark.svg"
+  },
+  "colors": {
+    "primary": "#0A6B4A",
+    "light": "#10B981",
+    "dark": "#0A6B4A"
+  },
+  "background": {
+    "color": {
+      "light": "#F3EEE2",
+      "dark": "#14201A"
+    }
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "limitguard.ai",
+        "href": "https://limitguard.ai"
+      },
+      {
+        "label": "API Status",
+        "href": "https://status.limitguard.ai"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get API Key",
+      "href": "https://dashboard.limitguard.ai/sign-up"
+    }
+  },
+  "navigation": {
+    "anchors": [
+      {
+        "anchor": "API Reference",
+        "icon": "code",
+        "href": "/api-reference/introduction"
+      },
+      {
+        "anchor": "GitHub",
+        "icon": "github",
+        "href": "https://github.com/jwconsultancyteam/limitguard-docs"
+      }
+    ],
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication",
+              "sandbox"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "pricing",
+              "x402-protocol",
+              "discovery"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/errors",
+              "guides/rate-limits",
+              "guides/webhooks",
+              "guides/trust-architecture",
+              "guides/ai-agent-integration",
+              "guides/frameworks",
+              "guides/pay-per-call"
+            ]
+          },
+          {
+            "group": "Post-mortems",
+            "pages": [
+              "postmortems/2026-09-downtime-log",
+              "postmortems/2026-09-langfuse-event-loop"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "openapi": "api-reference/openapi.json"
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Changelog",
+            "pages": [
+              "changelog/2026-09-24",
+              "changelog/2026-09-08",
+              "changelog/2026-09-07",
+              "changelog/2026-09-05",
+              "changelog/2026-02-20"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "api": {
+    "baseUrl": "https://api.limitguard.ai",
+    "auth": {
+      "method": "key",
+      "name": "X-API-Key"
+    },
+    "playground": {
+      "mode": "simple"
+    }
+  },
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true
+  },
+  "search": {
+    "prompt": "Search Limitguard docs..."
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/jwconsultancyteam/limitguard-docs",
+      "website": "https://limitguard.ai"
+    }
+  },
+  "seo": {
+    "indexing": "navigable",
+    "metatags": {
+      "og:site_name": "Limitguard",
+      "og:description": "Limitguard API docs: check the company behind each lead against the KVK and KBO registers, EU VAT and sanctions lists, and get proceed, review or block with the source, over the HTTP API, MCP or A2A."
+    }
+  },
+  "redirects": [
+    {
+      "source": "/errors",
+      "destination": "/guides/errors"
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+---
+title: "Authentication"
+description: "API keys, x402 USDC micropayments, and sandbox mode"
+---
+
+Limitguard supports two authentication modes: **API key** (prepaid balance) and **x402 USDC micropayments** (pay-per-use). [Sandbox mode](/sandbox) is available for testing without either.
+
+## API Key Authentication
+
+Pass your API key in the `X-API-Key` header:
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.limitguard.ai/v1/entity/check \
+  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"entity_name": "Acme Corp BV", "country": "NL"}'
+```
+
+```python Python
+import httpx
+
+response = httpx.post(
+    "https://api.limitguard.ai/v1/entity/check",
+    headers={"X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx"},
+    json={"entity_name": "Acme Corp BV", "country": "NL"},
+)
+```
+
+```javascript JavaScript
+const response = await fetch("https://api.limitguard.ai/v1/entity/check", {
+  method: "POST",
+  headers: {
+    "X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ entity_name: "Acme Corp BV", country: "NL" }),
+});
+```
+
+</CodeGroup>
+
+A paid-tier API key skips the per-call x402 payment: each call is debited at list price from the key's prepaid balance instead. A free key still pays per call. The tier only selects the key's rate limits (see [Rate Limits](/guides/rate-limits)).
+
+### Key Format
+
+| Prefix | Type | Use |
+|--------|------|-----|
+| `lg_live_` | Production key | Live data, real sources |
+| `lg_sandbox_` | Sandbox key (`"tier": "sandbox"` on `POST /v1/keys/create`) | Mock data, never charged, 10 requests per minute per IP |
+
+### Creating Keys
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.limitguard.ai/v1/keys/create \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "tier": "free"}'
+```
+
+```python Python
+response = httpx.post(
+    "https://api.limitguard.ai/v1/keys/create",
+    json={"email": "you@example.com", "tier": "free"},
+)
+print(response.json()["api_key"])
+```
+
+```javascript JavaScript
+const response = await fetch("https://api.limitguard.ai/v1/keys/create", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email: "you@example.com", tier: "free" }),
+});
+const { api_key } = await response.json();
+```
+
+</CodeGroup>
+
+`POST /v1/keys/create` can only provision `free` or `sandbox` tiers directly. To move up the ladder, create a free key first, then pay via `POST /v1/keys/upgrade/{tier}` (x402 required even if you already hold a key: see [Pricing](/pricing#api-key-tier-upgrades)):
+
+| Tier | Top-up (credited to the prepaid balance) | Rate limits |
+|------|------------------------------------------|-------------|
+| `free` / `sandbox` | 500 calls (a ceiling, not an allowance: REST calls are still paid per call over x402) | 10 / min, 500 / 24 h |
+| `indie` | $29 | 30 / min, 1,000 / 24 h |
+| `starter` | $99 | 60 / min, 10,000 / 24 h |
+| `growth` | $299 | 120 / min, 50,000 / 24 h |
+| `pro` | $999 | 300 / min, 250,000 / 24 h |
+
+A top-up buys balance, not a number of calls: each call is debited at its list price. Check the balance with `GET /v1/keys/usage`.
+
+<Warning>
+The plaintext key is returned **once only**: store it securely. It is never stored server-side.
+</Warning>
+
+## x402 USDC Micropayments
+
+For AI agents and pay-per-use access without a subscription. Send the base64-encoded JSON payment object in the `PAYMENT-SIGNATURE` header (x402 V2); the V1 `X-PAYMENT` header is still accepted.
+
+<Tip>
+See the full [x402 Protocol](/x402-protocol) guide for step-by-step implementation with code examples.
+</Tip>
+
+### x402 V2 Flow
+
+<Steps>
+  <Step title="Request without payment">
+    Make your API request normally. You'll receive HTTP 402 with payment requirements.
+  </Step>
+  <Step title="Build payment signature">
+    Construct an EIP-3009 `TransferWithAuthorization` signature using the payment details from the 402 response: `network`, `asset`, `amount` and `payTo` of the `accepts` entry you pay.
+  </Step>
+  <Step title="Retry with payment">
+    Retry the same request with the `PAYMENT-SIGNATURE` header (or the V1 `X-PAYMENT` header) containing the base64-encoded payment object.
+  </Step>
+</Steps>
+
+### HTTP 402 Response
+
+When you make a request without payment, the API returns the payment requirements (trimmed: the live body lists Base, Solana and a `settled-transfer` option, and recovery hints under `extensions`):
+
+```json
+{
+  "x402Version": 2,
+  "error": "Payment Required",
+  "errorCode": "payment_required",
+  "resource": {
+    "url": "https://api.limitguard.ai/v1/entity/check",
+    "description": "Full entity trust check across multiple verification layers...",
+    "mimeType": "application/json"
+  },
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "amount": "1050000",
+      "maxAmountRequired": "1050000",
+      "payTo": "0xFacilitatorAddress",
+      "maxTimeoutSeconds": 600,
+      "extra": {"name": "USD Coin", "version": "2", "decimals": 6}
+    }
+  ]
+}
+```
+
+`amount` is in USDC 6-decimal units: `1050000` is the `fresh` price of `POST /v1/entity/check` today. Always pay the `amount` the 402 quotes; [Pricing](/pricing) lists every endpoint. The full body is on the [x402 Protocol](/x402-protocol) page.
+
+### Supported Networks
+
+| Network | CAIP-2 Chain ID | USDC Contract |
+|---------|----------------|---------------|
+| Base Mainnet | `eip155:8453` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Base Sepolia (testnet) | `eip155:84532` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| Solana Mainnet | `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
+| Solana Devnet | `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1` | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` |
+
+The production API (`api.limitguard.ai`) quotes Base Mainnet and Solana Mainnet only: its `/.well-known/x402.json` says `testnet_supported: false`. The two testnets work only against a test environment that lists them in its `accepts` array.
+
+### V1 Backward Compatibility
+
+`PAYMENT-SIGNATURE` is the x402 V2 header and is recommended for new integrations; it takes priority when both are sent. The older `X-PAYMENT` header (V1) is still accepted.
+
+### Response Headers on Success
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `X-Payment-Verified` | `true` | Payment accepted and verified |
+| `X-Payment-Amount` | `1050000` | Amount in USDC 6-decimal units |
+| `X-Payment-Fallback` | `true` | Circuit breaker triggered (rare) |
+
+## Free Endpoints
+
+These endpoints never require payment or authentication:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health` | API health status |
+| `POST /v1/keys/create` | Self-service key provisioning |
+| `GET /.well-known/x402.json` | x402 service listing |
+| `GET /.well-known/agent.json` | A2A agent card |
+| `GET /.well-known/mcp.json` | MCP manifest |
+| `GET /.well-known/security.txt` | Security contact (RFC 9116) |
+| `GET /v1/self-verify` | Limitguard's own trust score |
+| `GET /v1/methodology` | Scoring methodology |
+| `GET /v1/badge/{entity_id}` | SVG trust badge |
+| `GET /v1/legal/*` | Legal documents |
+| `GET /llms.txt` | LLM-readable summary |
+| `GET /llms-full.txt` | LLM-readable full reference |

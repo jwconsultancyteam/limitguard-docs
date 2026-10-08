@@ -1,0 +1,151 @@
+---
+title: "Pricing"
+description: "API prices: USDC per call, or from a prepaid API key balance"
+---
+
+All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol), or hold a paid-tier [API key](/authentication) with a prepaid balance that each priced call is debited from.
+
+<Note>
+  The dashboard at [dashboard.limitguard.ai](https://dashboard.limitguard.ai) is priced separately, in euros: per lead, per company check with a PDF report, and optional monthly or yearly plans that include credit. See [limitguard.ai/pricing](https://limitguard.ai/pricing/).
+</Note>
+
+**What it is:** Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, with website age in the company check, and returns proceed, review or block with the source on every line. Developers and AI agents can use its HTTP API, MCP server and A2A service, hosted in the EU.
+
+**Start here:** Free sandbox key, no wallet. The sandbox covers entity, risk and KYB checks; Lead Verify and the agent check need a live key or an x402 payment. Lead Verify $0.27 per lead and agent check $0.75 per wallet; $0.11-1.85 per call; entity and risk checks $0.88-1.05 fresh ($1.50 KYB), $0.11 cached ($0.25 KYB) when available.
+
+## Tiered Pricing
+
+Four core endpoints sell two quality tiers. Select with the `X-Response-Quality` header (default: `fresh`).
+
+| Endpoint | Cached | Fresh (default) |
+|----------|--------|-----------------|
+| `POST /v1/entity/check` | $0.11 | $1.05 |
+| `POST /v1/risk/score` | $0.11 | $0.90 |
+| `POST /v1/reputation/score` | $0.11 | $0.90 |
+| `POST /v1/kyb/check` | $0.25 | $1.50 |
+
+`enhanced` was retired on these four endpoints on 2026-09-24: it ran the same sources as `fresh`, so `X-Response-Quality: enhanced` is now quoted, charged and served at the `fresh` price, and the 402 body's `info.note` says so. `POST /v1/entity/deep-check` keeps its own tiers (see [x402 Protocol](/x402-protocol)).
+
+### Quality Tier Definitions
+
+<AccordionGroup>
+  <Accordion title="Cached (cheapest)" icon="bolt">
+    Return Redis-cached result if available. Use when freshness isn't critical and you want the lowest cost. Set `X-Response-Quality: cached`.
+  </Accordion>
+  <Accordion title="Fresh (default)" icon="rotate">
+    Always run full data source fan-out. This is the default behavior when no header is sent. Set `X-Response-Quality: fresh`.
+  </Accordion>
+</AccordionGroup>
+
+## Flat-Priced Endpoints
+
+These endpoints have a single price regardless of quality tier:
+
+| Endpoint | Price |
+|----------|-------|
+| `POST /v1/leads/verify` | $0.27 |
+| `POST /v1/agent/check` | $0.75 |
+| `POST /v1/sanctions/screen` | $0.11 |
+| `GET /v1/reputation/history/{entity_hash}` | $0.11 |
+| `GET /v1/wallet/balance` | $0.11 |
+| `GET /v1/compliance/alerts` | $0.11 |
+| `GET /v1/compliance/readiness/{entity_id}` | $0.11 |
+| `POST /v1/reports/entity` | $1.85 |
+
+`POST /v1/reports/entity` builds a per-entity report from one real check: registry identity, sanctions and PEP screening, domain signals, risk score, up to 3 findings, a per-source status table (a source that did not answer is shown unavailable, never clean) and an evidence hash. Send identifiers or the `check_id` of an earlier report's check. Reading a stored report back with `GET /v1/reports/{report_id}` is free (`?format=pdf` for a PDF). Sandbox keys cannot create reports: they are built only from real checks.
+
+### Deep check
+
+`POST /v1/entity/deep-check` has its own two tiers and no cached tier: `deep` is its `fresh` tier (the default) and `extended` is its `enhanced` tier.
+
+| Endpoint | Fresh (default) | Enhanced |
+|----------|-----------------|----------|
+| `POST /v1/entity/deep-check` | $0.88 | $1.71 |
+
+- `deep` (`fresh`): PEP and relative/close-associate matches from OpenSanctions, plus a Dutch Centraal Insolventieregister insolvency screen (NL only).
+- `extended` (`enhanced`): the same, plus adverse media screening against a global news index.
+- `credit` (Italy only, available when enabled): the same as `deep`, plus an Italian credit report from Openapi.com.
+
+## MCP Tool Endpoints
+
+The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are priced per call like the REST API. `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `verify_wallet`, `get_trust_score` (your own most recent stored score for an entity) and `sanctions_preview` are free; `get_compliance_report`, `sanctions_screen`, `check_agent_wallet` and `verify_lead` are billed at the price of the REST endpoint they call (`POST /v1/reports/entity`, `POST /v1/sanctions/screen`, `POST /v1/agent/check` and `POST /v1/leads/verify`, in the tables above). `check_agent` is an unimplemented placeholder: $0.00, and hidden from the MCP tool list. The REST mirrors:
+
+| Endpoint | Tool | Price |
+|----------|------|-------|
+| `POST /v1/mcp/check-entity` | `check_entity` | $1.05 |
+| `POST /v1/mcp/risk-score` | `get_risk_score` | $0.90 |
+| `POST /v1/mcp/check-agent` | `check_agent` | $0.00 |
+| `POST /v1/mcp/trust-score` | `get_trust_score` | $0.00 |
+| `POST /v1/mcp/verify-wallet` | `verify_wallet` | $0.00 |
+
+<Note>
+  The `Endpoint` column shows the REST transport path. MCP clients invoke these by tool name with the arguments declared in the [MCP manifest](/guides/ai-agent-integration#mcp-model-context-protocol). Every REST mirror is a `POST` with a JSON body, `verify_wallet` included.
+</Note>
+
+## API Key Tier Upgrades
+
+Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key. See [Authentication](/authentication#api-key-authentication) for the full tier ladder. The balance does not expire or reset.
+
+API key top-ups (Indie, Starter, Growth, Pro in USD) are prepaid balances for the API; they are not the dashboard's monthly or yearly plans.
+
+| Endpoint | Price | Rate limits |
+|----------|-------|---------|
+| `POST /v1/keys/upgrade/indie` | $29 | 30 / min, 1,000 / 24 h |
+| `POST /v1/keys/upgrade/starter` | $99 | 60 / min, 10,000 / 24 h |
+| `POST /v1/keys/upgrade/growth` | $299 | 120 / min, 50,000 / 24 h |
+| `POST /v1/keys/upgrade/pro` | $999 | 300 / min, 250,000 / 24 h |
+
+## Free Endpoints
+
+No payment or API key required:
+
+| Category | Endpoints |
+|----------|-----------|
+| **Health** | `GET /health` |
+| **Key provisioning** | `POST /v1/keys/create` |
+| **Discovery** | `/.well-known/x402.json`, `/.well-known/agent.json`, `/.well-known/mcp.json` |
+| **Transparency** | `/v1/self-verify`, `/v1/methodology`, `/v1/self-verify/signals` |
+| **Trust badges** | `/v1/badge/{id}`, `/v1/badge/{id}.json`, `/v1/verify/{id}` |
+| **Certificates** | `/v1/certificate/{hash}` (verification only) |
+| **Legal** | `/v1/legal/privacy`, `/v1/legal/terms`, `/v1/legal/dpa` |
+| **LLM** | `/llms.txt`, `/llms-full.txt` |
+
+## Payment Methods
+
+<CardGroup cols={2}>
+  <Card title="x402 USDC Micropayments" icon="credit-card">
+    AI agents and anonymous callers pay per request via x402 V2 protocol. No subscription required.
+
+    **Networks:** Base Mainnet and Solana Mainnet. Base Sepolia and Solana Devnet only in test environments.
+
+    [Learn more →](/x402-protocol)
+  </Card>
+  <Card title="Prepaid API Key" icon="key">
+    Paid-tier API keys skip x402 on each call; the call is debited from the key's prepaid balance instead. Top-ups are paid via x402. Free and sandbox keys hold no balance and pay per call.
+
+    **Tiers:** Free (500 calls / 24 h), Indie ($29), Starter ($99), Growth ($299), Pro ($999).
+
+    [Learn more →](/authentication)
+  </Card>
+</CardGroup>
+
+## USDC Amount Reference
+
+For x402 integration, amounts use 6 decimal places (`1_000_000 = $1.00`):
+
+| Price | USDC 6-decimal | x402 `amount` field |
+|-------|---------------|---------------------|
+| $0.11 | 110,000 | `"110000"` |
+| $0.25 | 250,000 | `"250000"` |
+| $0.27 | 270,000 | `"270000"` |
+| $0.75 | 750,000 | `"750000"` |
+| $0.88 | 880,000 | `"880000"` |
+| $0.90 | 900,000 | `"900000"` |
+| $1.05 | 1,050,000 | `"1050000"` |
+| $1.50 | 1,500,000 | `"1500000"` |
+| $1.71 | 1,710,000 | `"1710000"` |
+| $1.85 | 1,850,000 | `"1850000"` |
+| $29 | 29,000,000 | `"29000000"` |
+| $99 | 99,000,000 | `"99000000"` |
+| $299 | 299,000,000 | `"299000000"` |
+| $999 | 999,000,000 | `"999000000"` |

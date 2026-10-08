@@ -1,0 +1,105 @@
+---
+title: "API Reference"
+description: "Complete reference for every Limitguard API endpoint"
+sidebarTitle: "Overview"
+---
+
+## Base URL
+
+```
+https://api.limitguard.ai
+```
+
+## Authentication
+
+All paid endpoints require one of:
+
+| Method | Header | Description |
+|--------|--------|-------------|
+| **API Key** | `X-API-Key: lg_live_...` | Prepaid balance, debited at list price per call |
+| **x402 USDC** | `PAYMENT-SIGNATURE: <base64>` (V1: `X-PAYMENT`) | Pay-per-call, no subscription |
+| **Sandbox** | `X-API-Key: lg_sandbox_...` | Free sandbox key from `POST /v1/keys/create` (`"tier": "sandbox"`), mock data |
+
+See [Authentication](/authentication) for full details.
+
+## Request Format
+
+All POST endpoints accept JSON:
+
+```bash
+curl -X POST https://api.limitguard.ai/v1/entity/check \
+  -H "X-API-Key: lg_live_xxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"entity_name": "Acme Corp BV", "country": "NL"}'
+```
+
+## Response Format
+
+All responses return JSON with consistent structure. Error responses follow [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) problem details:
+
+```json Error Response
+{
+  "type": "about:blank",
+  "title": "Validation Error",
+  "status": 422,
+  "detail": [{"field": "country", "message": "Invalid value"}]
+}
+```
+
+## Quality Tiers
+
+Control cost vs. freshness on tiered endpoints:
+
+| Header Value | Description |
+|-------------|-------------|
+| `X-Response-Quality: cached` | Serve from cache if available (cheapest) |
+| `X-Response-Quality: fresh` | Full data source fan-out (default) |
+
+## Rate Limits
+
+| Mode | Limit |
+|------|-------|
+| Sandbox | 10 requests/minute per IP |
+| Free tier API key | 10 / min, 500 / 24 h |
+| Paid API key | Based on tier |
+| x402 (no key) | 60 / min per payer, no daily cap |
+
+See [Rate Limits](/guides/rate-limits) for details.
+
+## Endpoint Groups
+
+<CardGroup cols={2}>
+  <Card title="Lead Verify" icon="user-check" href="/api-reference/leads/lead-verify">
+    Check one Dutch or Belgian sales lead against the KVK or KBO register, VIES, sanctions lists and its email domain.
+  </Card>
+  <Card title="Company checks" icon="shield-check">
+    Entity checks, risk scoring and KYB verification.
+  </Card>
+  <Card title="Reputation" icon="chart-line">
+    Trust decay scoring, reputation history, and watchlists.
+  </Card>
+  <Card title="Compliance" icon="scale-balanced">
+    Regulatory alerts and EU AI Act readiness. Per-entity reports are `POST /v1/reports/entity`.
+  </Card>
+  <Card title="Financial & Treasury" icon="wallet">
+    Wallet balances, treasury status, and settlement verification.
+  </Card>
+  <Card title="Webhooks" icon="bell">
+    Register endpoints for real-time event notifications.
+  </Card>
+  <Card title="Certificates & Badges" icon="certificate">
+    Issue, verify, and display trust certificates and badges.
+  </Card>
+</CardGroup>
+
+## OpenAPI Specification
+
+The full OpenAPI 3.1 specification is available for download:
+
+- **This documentation** is auto-generated from the spec
+- **Interactive playground**: test endpoints directly from these docs
+- **Code generation**: use the spec with any OpenAPI client generator
+
+<Tip>
+Use the interactive API playground on each endpoint page to test requests directly. Set your API key in the authorization section and make live requests.
+</Tip>
