@@ -55,7 +55,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/NotCachedResponse"
                 }
               }
             }
@@ -65,7 +65,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
                 }
               }
             }
@@ -119,7 +119,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
                 }
               }
             }
@@ -173,7 +173,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/NotCachedResponse"
                 }
               }
             }
@@ -183,7 +183,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
                 }
               }
             }
@@ -564,7 +564,7 @@
     "/v1/audit/verify": {
       "get": {
         "summary": "Verify Audit Chain",
-        "description": "Verify audit trail hash chain integrity.",
+        "description": "Verify the caller's own audit entries and the chain links around them.\n\nTenant-scoped like /audit/trail. records_checked counts the\ncaller's entries only; no service-wide totals.",
         "operationId": "verify_audit_chain_v1_audit_verify_get",
         "responses": {
           "200": {
@@ -1062,65 +1062,12 @@
         ]
       }
     },
-    "/v1/data/inventory": {
-      "get": {
-        "summary": "Get Data Inventory",
-        "description": "Data inventory for GDPR Art. 30 register of processing activities.",
-        "operationId": "get_data_inventory_v1_data_inventory_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/DataInventoryItem"
-                  },
-                  "type": "array",
-                  "title": "Response Get Data Inventory V1 Data Inventory Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ]
-      }
-    },
-    "/v1/data/retention/enforce": {
-      "post": {
-        "summary": "Enforce Retention",
-        "description": "Trigger retention cleanup (admin). Deletes expired records per policy.",
-        "operationId": "enforce_retention_v1_data_retention_enforce_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Enforce Retention V1 Data Retention Enforce Post"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ]
-      }
-    },
     "/v1/badge/{entity_id}.json": {
       "get": {
-        "summary": "Get Badge JSON",
-        "description": "Return JSON badge data for entity.\n\nPublic endpoint (no auth) with CORS headers.\n\nArgs:\n    entity_id: Entity identifier\n\nReturns:\n    BadgeData with trust score and metadata",
+        "summary": "Badge JSON (withdrawn)",
+        "description": "Withdrawn: answers 410 Gone and charges nothing.\n\nThe badge showed a demo score that was not based on any check. To check a\ncompany, use POST /v1/entity/check.",
         "operationId": "get_badge_json_v1_badge__entity_id__json_get",
+        "deprecated": true,
         "parameters": [
           {
             "name": "entity_id",
@@ -1133,13 +1080,11 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
+          "410": {
+            "description": "Withdrawn. Nothing is charged; see alternatives.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadgeData"
-                }
+                "schema": {}
               }
             }
           },
@@ -1158,9 +1103,10 @@
     },
     "/v1/badge/{entity_id}": {
       "get": {
-        "summary": "Get Badge SVG",
-        "description": "Return SVG badge for entity.\n\nPublic endpoint (no auth) for cross-origin embedding.\nIncludes CORS headers and cache control.\n\nArgs:\n    entity_id: Entity identifier (email, domain, wallet)\n    variant: Badge display variant (score, level, shield)\n    theme: Visual theme (light, dark)\n\nReturns:\n    SVG image with trust score/level",
+        "summary": "Badge SVG (withdrawn)",
+        "description": "Withdrawn: answers 410 Gone with a JSON body and no image.\n\nThe badge showed a demo score that was not based on any check. To check a\ncompany, use POST /v1/entity/check.",
         "operationId": "get_badge_svg_v1_badge__entity_id__get",
+        "deprecated": true,
         "parameters": [
           {
             "name": "entity_id",
@@ -1170,29 +1116,11 @@
               "type": "string",
               "title": "Entity Id"
             }
-          },
-          {
-            "name": "variant",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/BadgeVariant",
-              "default": "score"
-            }
-          },
-          {
-            "name": "theme",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/BadgeTheme",
-              "default": "light"
-            }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
+          "410": {
+            "description": "Withdrawn. Nothing is charged; see alternatives.",
             "content": {
               "application/json": {
                 "schema": {}
@@ -1214,9 +1142,10 @@
     },
     "/v1/verify/{entity_id}": {
       "get": {
-        "summary": "Get Verification Data",
-        "description": "Return verification page data for entity.\n\nPublic endpoint (no auth) with CORS headers.\nReturns extended verification details beyond badge data.\n\nArgs:\n    entity_id: Entity identifier\n\nReturns:\n    VerificationResponse with detailed trust data",
+        "summary": "Verification page data (withdrawn)",
+        "description": "Withdrawn: answers 410 Gone and charges nothing.\n\nThe page showed a demo score that was not based on any check. To check a\ncompany, use POST /v1/entity/check.",
         "operationId": "get_verification_data_v1_verify__entity_id__get",
+        "deprecated": true,
         "parameters": [
           {
             "name": "entity_id",
@@ -1229,13 +1158,11 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
+          "410": {
+            "description": "Withdrawn. Nothing is charged; see alternatives.",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VerificationResponse"
-                }
+                "schema": {}
               }
             }
           },
@@ -1682,7 +1609,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/NotCachedResponse"
                 }
               }
             }
@@ -2057,10 +1984,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Filter by jurisdiction",
+              "description": "Filter by jurisdiction of the source list: us, eu or un",
               "title": "Jurisdiction"
             },
-            "description": "Filter by jurisdiction"
+            "description": "Filter by jurisdiction of the source list: us, eu or un"
           },
           {
             "name": "severity",
@@ -2249,8 +2176,10 @@
             "required": false,
             "schema": {
               "$ref": "#/components/schemas/SubscriptionTier",
+              "description": "Stored on the subscription, not used yet: no tier sends a digest or alert.",
               "default": "basic"
-            }
+            },
+            "description": "Stored on the subscription, not used yet: no tier sends a digest or alert."
           },
           {
             "name": "webhook_url",
@@ -2265,8 +2194,10 @@
                   "type": "null"
                 }
               ],
+              "description": "Stored on the subscription, not used yet: nothing is posted to it. Must be https.",
               "title": "Webhook Url"
-            }
+            },
+            "description": "Stored on the subscription, not used yet: nothing is posted to it. Must be https."
           }
         ],
         "responses": {
@@ -2401,6 +2332,231 @@
             }
           }
         }
+      }
+    },
+    "/v1/reports/entity": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Create Entity Report",
+        "description": "Build a per-entity report from one real check (or a stored check_id).",
+        "operationId": "create_entity_report_v1_reports_entity_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntityReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/v1/reports/{report_id}": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Get Entity Report",
+        "description": "A stored report, owner only; ``?format=pdf`` renders it as PDF.\n\nWith X-Report-Token instead of a key: the report that token was issued for.",
+        "operationId": "get_entity_report_v1_reports__report_id__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "pdf"
+              ],
+              "type": "string",
+              "default": "json",
+              "title": "Format"
+            }
+          },
+          {
+            "name": "X-Report-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Report-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The stored report as JSON, or as PDF with ?format=pdf.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityReport"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sanctions/preview": {
+      "post": {
+        "tags": [
+          "sanctions"
+        ],
+        "summary": "Sanctions Preview",
+        "description": "Free yes/no screen of a name against the local OFAC SDN, EU and UN lists.",
+        "operationId": "sanctions_preview_v1_sanctions_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SanctionsScreenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SanctionsPreviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/v1/sanctions/screen": {
+      "post": {
+        "tags": [
+          "sanctions"
+        ],
+        "summary": "Sanctions Screen Route",
+        "description": "Screen a name against the local OFAC SDN, EU and UN lists: matched entries.",
+        "operationId": "sanctions_screen_route_v1_sanctions_screen_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SanctionsScreenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SanctionsScreenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/v1/agent/check": {
@@ -2616,7 +2772,7 @@
     "/v1/kyb/check": {
       "post": {
         "summary": "KYB Check",
-        "description": "Full KYB (Know Your Business) verification.\n\nCombines entity trust check with sanctions screening and company\nregistration verification. Returns comprehensive KYB result with\nverification status, risk flags, and compliance recommendations.\n\nPriced at $1.50 per call via x402 (see ENDPOINT_PRICING).",
+        "description": "Full KYB (Know Your Business) verification.\n\nCombines entity trust check with sanctions screening and company\nregistration verification. Returns comprehensive KYB result with\nverification status, risk flags, and compliance recommendations.\n`verified` means trust_score 60 or more; `register_verified` says whether\nthe KVK or KBO register found the company.\n\nPriced at $1.50 per call via x402 (see ENDPOINT_PRICING).",
         "operationId": "kyb_check_v1_kyb_check_post",
         "requestBody": {
           "content": {
@@ -2630,10 +2786,11 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "KYB result",
             "content": {
               "application/json": {
                 "schema": {
+                  "$ref": "#/components/schemas/KYBCheckResponse",
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Kyb Check V1 Kyb Check Post"
@@ -2646,7 +2803,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/NotCachedResponse"
                 }
               }
             }
@@ -2719,8 +2876,8 @@
         "tags": [
           "mcp"
         ],
-        "summary": "MCP Check Agent",
-        "description": "Verify AI agent trust (MCP-compatible endpoint).",
+        "summary": "MCP Check Agent (not implemented)",
+        "description": "Not implemented: always answers status \"unimplemented\", verified false and\ntrust_score 0, at no charge. Do not use it for authorization decisions. To\ncheck an agent wallet, call POST /v1/agent/check instead.",
         "operationId": "mcp_check_agent_v1_mcp_check_agent_post",
         "requestBody": {
           "content": {
@@ -2975,6 +3132,228 @@
   },
   "components": {
     "schemas": {
+      "AccountValue": {
+        "properties": {
+          "current": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous"
+          },
+          "reason_current": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "not_in_filing",
+                  "left_blank",
+                  "not_published_short_form"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Current"
+          },
+          "reason_previous": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "not_in_filing",
+                  "left_blank",
+                  "not_published_short_form"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Previous"
+          }
+        },
+        "type": "object",
+        "title": "AccountValue",
+        "description": "One account code, current and previous year.\n\nWhole euros except code 9087 (average staff in full-time equivalents). A\nmissing amount is None with its reason, never 0."
+      },
+      "ActivityEvidence": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          },
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "registrant",
+                  "number",
+                  "site_data",
+                  "name_city"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution"
+          },
+          "registrant": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registrant"
+          },
+          "site_names": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Site Names"
+          },
+          "products": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Products"
+          },
+          "numbers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Numbers"
+          },
+          "shops": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Shops"
+          },
+          "domain_registered_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain Registered At"
+          },
+          "matched_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Name"
+          },
+          "matched_city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched City"
+          },
+          "matched_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ActivityEvidence",
+        "description": "What the company's website and shop listings show about its activities.\n\n``attribution`` is the Amendment 2 rule's answer (business_activities.attribute):\na name match and one related source, the domain's RDAP ``registrant``, a company\nor VAT ``number`` on the site, or the site's own structured data (``site_data``);\nelse ``name_city`` (a site name matching a trade name, same city); None: the\nsite is not the company's as far as the sources show, and no activity is shown.\n``registrant`` holds the organisation only (org, city, country, registrar_host),\nnever a person's fields."
+      },
       "AdverseMediaArticle": {
         "properties": {
           "headline": {
@@ -3368,7 +3747,7 @@
               }
             ],
             "title": "Webhook Url",
-            "description": "Webhook URL for enterprise tier"
+            "description": "Stored on the subscription, not used yet: nothing is posted to it."
           },
           "created_at": {
             "type": "string",
@@ -3388,74 +3767,6 @@
         ],
         "title": "AlertSubscriptionCreated",
         "description": "A new subscription plus the delivery status of its alert feed."
-      },
-      "BadgeData": {
-        "properties": {
-          "entity_id": {
-            "type": "string",
-            "title": "Entity Id",
-            "description": "Entity identifier (email, domain, wallet)"
-          },
-          "trust_score": {
-            "type": "integer",
-            "maximum": 100.0,
-            "minimum": 0.0,
-            "title": "Trust Score",
-            "description": "Trust score 0-100"
-          },
-          "trust_level": {
-            "type": "string",
-            "title": "Trust Level",
-            "description": "Trust level (HIGH, MEDIUM, LOW)"
-          },
-          "cluster": {
-            "type": "string",
-            "title": "Cluster",
-            "description": "Entity cluster classification"
-          },
-          "last_verified": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Last Verified",
-            "description": "Last verification timestamp"
-          },
-          "sources_checked": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Sources Checked",
-            "description": "Number of sources verified"
-          }
-        },
-        "type": "object",
-        "required": [
-          "entity_id",
-          "trust_score",
-          "trust_level",
-          "cluster",
-          "last_verified",
-          "sources_checked"
-        ],
-        "title": "BadgeData",
-        "description": "Badge data returned by /v1/badge/{entity_id}.json endpoint."
-      },
-      "BadgeTheme": {
-        "type": "string",
-        "enum": [
-          "dark",
-          "light"
-        ],
-        "title": "BadgeTheme",
-        "description": "Visual theme for badge rendering."
-      },
-      "BadgeVariant": {
-        "type": "string",
-        "enum": [
-          "score",
-          "level",
-          "shield"
-        ],
-        "title": "BadgeVariant",
-        "description": "Badge display variants."
       },
       "BalanceComponent": {
         "properties": {
@@ -3515,6 +3826,329 @@
         ],
         "title": "BalanceComponent",
         "description": "USDC and native (ETH) balance of the wallet on the deployed Base chain."
+      },
+      "BalanceSheet": {
+        "properties": {
+          "assets": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assets"
+          },
+          "assets_current": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assets Current"
+          },
+          "assets_noncurrent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assets Noncurrent"
+          },
+          "equity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity"
+          },
+          "liabilities": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Liabilities"
+          },
+          "liabilities_current": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Liabilities Current"
+          },
+          "liabilities_noncurrent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Liabilities Noncurrent"
+          },
+          "provisions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provisions"
+          },
+          "equity_and_liabilities": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity And Liabilities"
+          }
+        },
+        "type": "object",
+        "title": "BalanceSheet",
+        "description": "Whole euros, as filed."
+      },
+      "BeAccountsSection": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "has_filings": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Filings"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "model_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "full",
+                  "short",
+                  "consolidated",
+                  "unknown"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Kind"
+          },
+          "consolidated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated"
+          },
+          "enterprise_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enterprise Name"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "approval_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Date"
+          },
+          "years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Years"
+          },
+          "values": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AccountValue"
+            },
+            "type": "object",
+            "title": "Values"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History"
+          },
+          "history_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History Reason"
+          },
+          "periods": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Periods"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "cache_age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Age Days"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "web_services",
+                  "consult"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "BeAccountsSection",
+        "description": "Belgian annual accounts filed with the National Bank of Belgium.\n\nShown on the report, never scored. ``values`` maps the official account code\n(``\"70\"`` turnover, ``\"10/15\"`` equity, ...) to the filed amounts; ``history``\nholds the two older years a small company's second filing adds. On any\nstatus other than ``ok`` every figure field is empty, never \"nothing filed\".\n``source`` is ``\"consult\"`` when read from the public Consult app; None\nmeans the web services, or a report stored before."
       },
       "Branches": {
         "properties": {
@@ -4022,6 +4656,81 @@
         "title": "ComplianceSourceStatus",
         "description": "Health status of a regulatory source."
       },
+      "CorrelationLink": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "value_display": {
+            "type": "string",
+            "title": "Value Display"
+          },
+          "seen_with_report_id": {
+            "type": "string",
+            "title": "Seen With Report Id"
+          },
+          "seen_at": {
+            "type": "string",
+            "title": "Seen At"
+          },
+          "scope": {
+            "type": "string",
+            "const": "workspace_reports",
+            "title": "Scope",
+            "default": "workspace_reports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "value_display",
+          "seen_with_report_id",
+          "seen_at"
+        ],
+        "title": "CorrelationLink"
+      },
+      "Correlations": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "scope_note": {
+            "type": "string",
+            "title": "Scope Note"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/CorrelationLink"
+            },
+            "type": "array",
+            "title": "Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "scope_note"
+        ],
+        "title": "Correlations"
+      },
       "CreditReportResult": {
         "properties": {
           "screened": {
@@ -4191,52 +4900,6 @@
           "chat_turn_stats"
         ],
         "title": "DataCategory"
-      },
-      "DataInventoryItem": {
-        "properties": {
-          "category": {
-            "$ref": "#/components/schemas/DataCategory"
-          },
-          "record_count": {
-            "type": "integer",
-            "title": "Record Count"
-          },
-          "oldest_record": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Oldest Record"
-          },
-          "retention_days": {
-            "type": "integer",
-            "title": "Retention Days"
-          },
-          "next_cleanup": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next Cleanup"
-          }
-        },
-        "type": "object",
-        "required": [
-          "category",
-          "record_count",
-          "retention_days"
-        ],
-        "title": "DataInventoryItem"
       },
       "DeepCheckRequest": {
         "properties": {
@@ -4697,6 +5360,128 @@
         "title": "DomainProbes",
         "description": "Each probe's own status: \"unavailable\" when it got no answer."
       },
+      "DomainSignals": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "domain": {
+            "type": "string",
+            "title": "Domain"
+          },
+          "domain_age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain Age Days"
+          },
+          "has_mx": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Mx"
+          },
+          "has_spf": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Spf"
+          },
+          "has_dmarc": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Dmarc"
+          },
+          "ssl_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssl Valid"
+          },
+          "ssl_issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ssl Issuer"
+          },
+          "registered_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "domain"
+        ],
+        "title": "DomainSignals"
+      },
       "DormantShell": {
         "properties": {
           "score": {
@@ -4947,7 +5732,7 @@
               }
             ],
             "title": "Cbe Number",
-            "description": "Belgian CBE number (format: 0XXX.XXX.XXX)"
+            "description": "Belgian CBE number: 0XXX.XXX.XXX, or the same 10 digits without dots"
           },
           "domain": {
             "anyOf": [
@@ -5055,6 +5840,351 @@
         ],
         "title": "EntityCheckRequest",
         "description": "Full entity check request - always runs country risk and sanctions; runs each other data source whose identifier is supplied (up to 8 total).\n\n`entity_name` and `country` are required; identifiers (kvk_number, cbe_number, domain, iban, vat_number, wallet_address) are optional and raise confidence."
+      },
+      "EntityReport": {
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "title": "Report Id"
+          },
+          "check_id": {
+            "type": "string",
+            "title": "Check Id"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "entity": {
+            "$ref": "#/components/schemas/ReportEntity"
+          },
+          "identity": {
+            "items": {
+              "$ref": "#/components/schemas/IdentityRecord"
+            },
+            "type": "array",
+            "title": "Identity"
+          },
+          "identification": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Identification"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sanctions": {
+            "$ref": "#/components/schemas/SanctionsScreen"
+          },
+          "pep": {
+            "$ref": "#/components/schemas/PepScreen"
+          },
+          "wallet": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WalletScreen"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DomainSignals"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "financials": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FinancialsSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "group_structure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GroupStructure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "group_chain": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GroupChain"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "be_accounts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BeAccountsSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "website_phones": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReportWebsitePhone"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Phones"
+          },
+          "website_phones_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Phones Reason"
+          },
+          "activity_evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivityEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kbo_functions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportKboFunctions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entity_links": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportEntityLinks"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "risk": {
+            "$ref": "#/components/schemas/RiskSection"
+          },
+          "correlations": {
+            "$ref": "#/components/schemas/Correlations"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Findings"
+          },
+          "findings_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Findings Note"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ReportSource"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "attributions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Attributions"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "check_id",
+          "created_at",
+          "entity",
+          "sanctions",
+          "pep",
+          "risk",
+          "correlations",
+          "evidence"
+        ],
+        "title": "EntityReport"
+      },
+      "EntityReportRequest": {
+        "properties": {
+          "check_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Id",
+            "description": "Id of a check stored by an earlier /v1/reports/entity call"
+          },
+          "entity_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Name"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "kvk_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kvk Number"
+          },
+          "cbe_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cbe Number"
+          },
+          "vat_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vat Number"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 253
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "iban": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 34
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iban"
+          },
+          "wallet_address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wallet Address",
+            "description": "Crypto wallet address (named wallet_address, as on /v1/entity/check)"
+          },
+          "wallet_chain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wallet Chain"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EntityReportRequest",
+        "description": "Body of POST /v1/reports/entity.\n\nSend either ``check_id`` (rebuild from a check this store already holds) or\nidentifiers (``entity_name`` + ``country`` plus any of the optional ones),\nnever both. Identifier fields keep the names of POST /v1/entity/check."
       },
       "ErasureRequest": {
         "properties": {
@@ -5171,6 +6301,40 @@
         "title": "ErrorResponse",
         "description": "RFC 7807 Problem Details response."
       },
+      "Evidence": {
+        "properties": {
+          "report_hash": {
+            "type": "string",
+            "title": "Report Hash"
+          },
+          "hash_algorithm": {
+            "type": "string",
+            "title": "Hash Algorithm",
+            "default": "sha256"
+          },
+          "canonicalization": {
+            "type": "string",
+            "title": "Canonicalization",
+            "default": "json.dumps(sort_keys=True, default=str) of the report without 'evidence'"
+          },
+          "audit_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Event Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_hash"
+        ],
+        "title": "Evidence"
+      },
       "FeedbackRequest": {
         "properties": {
           "subject": {
@@ -5255,6 +6419,260 @@
         "title": "FeedbackResponse",
         "description": "Confirmation that feedback was received."
       },
+      "FinancialsBenchmark": {
+        "properties": {
+          "fiscal_year": {
+            "type": "integer",
+            "title": "Fiscal Year"
+          },
+          "same_sector": {
+            "type": "boolean",
+            "title": "Same Sector"
+          },
+          "equity_ratio_pct": {
+            "type": "integer",
+            "title": "Equity Ratio Pct"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "lower",
+              "higher"
+            ],
+            "title": "Direction"
+          },
+          "share": {
+            "type": "integer",
+            "enum": [
+              50,
+              75,
+              90
+            ],
+            "title": "Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fiscal_year",
+          "same_sector",
+          "equity_ratio_pct",
+          "direction",
+          "share"
+        ],
+        "title": "FinancialsBenchmark",
+        "description": "Where the filing's own-capital ratio sits among Dutch filings of the same\nyear (KVK open data, aggregates only). ``share`` percent of those companies have a\nhigher (direction \"lower\") or a lower (direction \"higher\") ratio; ``same_sector``\nis False when the comparison is with every Dutch company of the year."
+      },
+      "FinancialsSection": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "retrieved_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved Note"
+          },
+          "cache_age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Age Days"
+          },
+          "has_filings": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Filings"
+          },
+          "financial_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Financial Year"
+          },
+          "adoption_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adoption Date"
+          },
+          "sbi_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sbi Code"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "default": "EUR"
+          },
+          "balance_sheet": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BalanceSheet"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "income_statement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IncomeStatement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consolidated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated"
+          },
+          "consolidated_balance_sheet": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BalanceSheet"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consolidated_income_statement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IncomeStatement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "negative_equity": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Negative Equity"
+          },
+          "current_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Ratio"
+          },
+          "filing_age_years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filing Age Years"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FinancialsBenchmark"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "derived_note": {
+            "type": "string",
+            "title": "Derived Note",
+            "default": "negative_equity, current_ratio and filing_age_years are derived from the filing as inputs for your own assessment, not a credit rating"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "FinancialsSection",
+        "description": "Financials (NL): the latest annual accounts filed with KVK.\n\n``has_filings`` is None whenever the source did not answer: an\n``unavailable`` source never reads as \"none filed\"."
+      },
       "Finding": {
         "properties": {
           "action": {
@@ -5280,6 +6698,422 @@
           "expected_result"
         ],
         "title": "Finding"
+      },
+      "GroupChain": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "not_found",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "nearest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nearest"
+          },
+          "top": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/GroupLink"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Links"
+          },
+          "filing_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filing Year"
+          },
+          "filing_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filing Reference"
+          },
+          "parents_screened": {
+            "type": "boolean",
+            "const": false,
+            "title": "Parents Screened",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "GroupChain",
+        "description": "A Belgian company's group: the parent named in its NBB filing, chained up through GLEIF.\n\nRead from the latest filing's consolidated-accounts declaration and shareholder\nstructure, then each named parent's GLEIF direct and ultimate parent. The chain\nstops at the first missing link. Shown, never scored; parents are not\nscreened for sanctions (Walker, 2026-09-25)."
+      },
+      "GroupLink": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "shareholder",
+              "consolidating_parent",
+              "direct_parent",
+              "ultimate_parent"
+            ],
+            "title": "Role"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "country_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Text"
+          },
+          "enterprise_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enterprise Number"
+          },
+          "share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Pct"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "largest",
+                  "smallest"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
+          },
+          "lei": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lei"
+          },
+          "lei_registration_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lei Registration Status"
+          },
+          "lei_lapsed_since": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lei Lapsed Since"
+          },
+          "lookup": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookup"
+          },
+          "lookup_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookup Source"
+          },
+          "of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Of"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "source"
+        ],
+        "title": "GroupLink",
+        "description": "One link of a group chain, with the source it comes from.\n\n``shareholder`` and ``consolidating_parent`` come from the NBB filing\n(``source`` \"NBB filing <year>\"), with ``lookup`` saying how the GLEIF search\nfor it went (\"ok\", \"no_lei\", \"ambiguous_name\", \"not_cached\", \"country_unknown\",\n...). ``direct_parent`` and ``ultimate_parent`` come from GLEIF and name the\nlink they belong to in ``of``."
+      },
+      "GroupStructure": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "not_found",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "lei": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lei"
+          },
+          "legal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Name"
+          },
+          "entity_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Status"
+          },
+          "registration_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Status"
+          },
+          "next_renewal_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Renewal Date"
+          },
+          "matched_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "registration_number",
+                  "legal_name"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched By"
+          },
+          "direct_parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParentEntity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ultimate_parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParentEntity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "cache_age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Age Days"
+          },
+          "parents_screened": {
+            "type": "boolean",
+            "const": false,
+            "title": "Parents Screened",
+            "default": false
+          },
+          "source": {
+            "type": "string",
+            "const": "gleif",
+            "title": "Source",
+            "default": "gleif"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "GroupStructure",
+        "description": "Group structure from GLEIF Level 2 data.\n\nParents are not screened for sanctions (Walker, 2026-09-25): that is a\nseparately priced add-on, so ``parents_screened`` is always False. A\nparent is None when GLEIF holds no parent LEI record; on any status\nother than ``ok`` every entity field is None, never \"no parent\"."
       },
       "HTTPValidationError": {
         "properties": {
@@ -5493,6 +7327,58 @@
         "title": "IcpFit",
         "description": "The company against the caller's ideal-customer profile. Information only."
       },
+      "Identification": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "given",
+              "website"
+            ],
+            "title": "Method"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "correlation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation"
+          },
+          "discovered_identifiers": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveredIdentifier"
+            },
+            "type": "array",
+            "title": "Discovered Identifiers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "status"
+        ],
+        "title": "Identification",
+        "description": "How the company was identified: from the numbers found on its own\nwebsite, each checked with its register. Absent when the customer gave a\nnumber or discovery was skipped; present for every other outcome, also\nwhen nothing was found or the read was refused, blocked, timed out or failed."
+      },
       "IdentityComponent": {
         "properties": {
           "status": {
@@ -5593,6 +7479,288 @@
         ],
         "title": "IdentityComponent",
         "description": "ERC-8004 identity registration of the wallet, and of the given agent id."
+      },
+      "IdentityRecord": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "registration_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Number"
+          },
+          "legal_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Status"
+          },
+          "founding_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Founding Date"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "nace_main": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nace Main"
+          },
+          "contacts": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contacts"
+          },
+          "contacts_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contacts Reason"
+          },
+          "data_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Date"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompanyProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "juridical_situation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Juridical Situation"
+          },
+          "activities": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activities"
+          },
+          "places_of_business": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Places Of Business"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "status"
+        ],
+        "title": "IdentityRecord"
+      },
+      "IncomeStatement": {
+        "properties": {
+          "gross_margin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Margin"
+          },
+          "operating_result": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operating Result"
+          },
+          "result_before_tax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Before Tax"
+          },
+          "result_after_tax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result After Tax"
+          },
+          "employee_benefits_expenses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Benefits Expenses"
+          }
+        },
+        "type": "object",
+        "title": "IncomeStatement",
+        "description": "Whole euros, as filed."
       },
       "Industry": {
         "properties": {
@@ -5824,7 +7992,7 @@
           "registration_number": {
             "type": "string",
             "title": "Registration Number",
-            "description": "Company registration number (KVK, CBE, etc.)"
+            "description": "KVK (NL) or KBO/CBE (BE) company number. For other countries it is not checked against a company register; it is only used to find the company's LEI in GLEIF (group_structure)"
           },
           "country": {
             "type": "string",
@@ -5878,6 +8046,204 @@
         ],
         "title": "KYBCheckRequest",
         "description": "Request model for KYB verification."
+      },
+      "KYBCheckResponse": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "title": "Entity Id",
+            "description": "The entity_id sent in the request"
+          },
+          "registration_number": {
+            "type": "string",
+            "title": "Registration Number",
+            "description": "The registration_number sent in the request"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-2 country code, upper case"
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified",
+            "description": "True when trust_score is 60 or more. It is a score threshold, not a register match: it can be true when no company register was checked. See register_verified."
+          },
+          "register_verified": {
+            "type": "boolean",
+            "title": "Register Verified",
+            "description": "True only when the company register in register_checked found the company (KVK for NL, KBO for BE). False when it did not, when the lookup failed, and when register_checked is null."
+          },
+          "register_checked": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "KVK",
+                  "KBO"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Register Checked",
+            "description": "The company register this check asked: KVK (NL) or KBO (BE). Null when none was asked: the country is not NL or BE, a BE check had no CBE number, or the register was busy and skipped."
+          },
+          "sanctions_flagged": {
+            "type": "boolean",
+            "title": "Sanctions Flagged",
+            "description": "True when the sanctions screen matched the entity"
+          },
+          "kyb_status": {
+            "type": "string",
+            "title": "Kyb Status",
+            "description": "One of approved, review_required, edd_required or rejected"
+          },
+          "trust_score": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Trust Score",
+            "description": "0-100 trust score. Higher = more trustworthy"
+          },
+          "trust_level": {
+            "type": "string",
+            "title": "Trust Level",
+            "description": "Trust level derived from trust_score"
+          },
+          "cluster": {
+            "type": "string",
+            "title": "Cluster",
+            "description": "Entity cluster classification"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation",
+            "description": "Action recommendation"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "Confidence in the assessment (0-1)"
+          },
+          "top_factors": {
+            "items": {
+              "$ref": "#/components/schemas/TopFactor"
+            },
+            "type": "array",
+            "title": "Top Factors",
+            "description": "Top factors behind the score"
+          },
+          "sources_checked": {
+            "type": "integer",
+            "title": "Sources Checked",
+            "description": "Number of data sources that answered"
+          },
+          "processing_time_ms": {
+            "type": "integer",
+            "title": "Processing Time Ms",
+            "description": "Time taken to produce the answer"
+          },
+          "risk_flags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Risk Flags",
+            "description": "Negative factors and register flags, as source: signal"
+          },
+          "correlations": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Correlations",
+            "description": "Cross-source correlation scores"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings",
+            "description": "What to do about each correlation"
+          },
+          "group_structure": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Group Structure",
+            "description": "LEI and parents from GLEIF; informational, never scored"
+          },
+          "group_chain": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Chain",
+            "description": "Belgian parent chain from the NBB filing; null otherwise"
+          },
+          "company_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompanyProfile"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the KVK register says about the company; null when it has no record"
+          },
+          "response_quality": {
+            "type": "string",
+            "title": "Response Quality",
+            "description": "The tier this answer was served at"
+          },
+          "disclaimers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Disclaimers",
+            "description": "Notes about this answer, e.g. a retired tier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id",
+          "registration_number",
+          "country",
+          "verified",
+          "register_verified",
+          "register_checked",
+          "sanctions_flagged",
+          "kyb_status",
+          "trust_score",
+          "trust_level",
+          "cluster",
+          "recommendation",
+          "confidence",
+          "top_factors",
+          "sources_checked",
+          "processing_time_ms",
+          "risk_flags",
+          "correlations",
+          "findings",
+          "group_structure",
+          "group_chain",
+          "company_profile",
+          "response_quality",
+          "disclaimers"
+        ],
+        "title": "KYBCheckResponse",
+        "description": "Response body of POST /v1/kyb/check."
       },
       "KeyCreateRequest": {
         "properties": {
@@ -6651,21 +9017,23 @@
           },
           "version": {
             "type": "string",
-            "title": "Version"
+            "title": "Version",
+            "description": "Version id printed on the page, e.g. terms-2026-10-07"
           },
           "effective_date": {
             "type": "string",
             "format": "date-time",
             "title": "Effective Date"
           },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
           "last_updated": {
             "type": "string",
             "format": "date-time",
             "title": "Last Updated"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Canonical page with the full text"
           }
         },
         "type": "object",
@@ -6674,54 +9042,28 @@
           "title",
           "version",
           "effective_date",
-          "content",
-          "last_updated"
+          "last_updated",
+          "url"
         ],
         "title": "LegalDocument",
-        "description": "Legal document (privacy policy, terms of service, or DPA)."
+        "description": "Legal document (privacy policy, terms of service, or DPA).\n\nThe current version id and where to read it, not the text: the page at\n`url` is the only copy, so the API cannot drift from it."
       },
-      "PepMatch": {
+      "NotCachedResponse": {
         "properties": {
-          "caption": {
+          "type": {
             "type": "string",
-            "title": "Caption",
-            "description": "Matched entity display name"
+            "title": "Type",
+            "default": "about:blank"
           },
-          "schema_type": {
+          "title": {
             "type": "string",
-            "title": "Schema Type",
-            "description": "FollowTheMoney schema, e.g. Person"
+            "title": "Title"
           },
-          "topics": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Topics",
-            "description": "Risk topics, e.g. role.pep, role.rca"
+          "status": {
+            "type": "integer",
+            "title": "Status"
           },
-          "datasets": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Datasets"
-          },
-          "score": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Score",
-            "description": "Match confidence"
-          },
-          "countries": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Countries"
-          },
-          "birth_date": {
+          "detail": {
             "anyOf": [
               {
                 "type": "string"
@@ -6730,18 +9072,163 @@
                 "type": "null"
               }
             ],
-            "title": "Birth Date"
+            "title": "Detail"
+          },
+          "instance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instance"
+          },
+          "errorCode": {
+            "type": "string",
+            "title": "Errorcode",
+            "default": "not_cached"
+          },
+          "retry": {
+            "$ref": "#/components/schemas/NotCachedRetry"
           }
         },
         "type": "object",
         "required": [
-          "caption",
-          "schema_type",
-          "topics",
-          "score"
+          "title",
+          "status",
+          "retry"
         ],
-        "title": "PepMatch",
-        "description": "One OpenSanctions PEP/RCA match, projected to the fields we stand behind."
+        "title": "NotCachedResponse",
+        "description": "The 404 main.py's not_cached handler returns (X-Response-Quality: cached\nwith no cached result). It carries errorCode and retry next to the RFC 7807 fields."
+      },
+      "NotCachedRetry": {
+        "properties": {
+          "header": {
+            "type": "string",
+            "title": "Header",
+            "default": "X-Response-Quality"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "default": "fresh"
+          },
+          "price_usdc": {
+            "type": "number",
+            "title": "Price Usdc"
+          },
+          "price_raw": {
+            "type": "integer",
+            "title": "Price Raw"
+          }
+        },
+        "type": "object",
+        "required": [
+          "price_usdc",
+          "price_raw"
+        ],
+        "title": "NotCachedRetry",
+        "description": "How to retry a not_cached 404: the header, its value and the fresh price."
+      },
+      "ParentEntity": {
+        "properties": {
+          "lei": {
+            "type": "string",
+            "title": "Lei"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lei"
+        ],
+        "title": "ParentEntity"
+      },
+      "PepScreen": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "screened_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screened At"
+          },
+          "exposure": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exposure"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/app__models__report__PepMatch"
+            },
+            "type": "array",
+            "title": "Matches"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "PepScreen"
       },
       "PepScreenResult": {
         "properties": {
@@ -6762,7 +9249,7 @@
           },
           "matches": {
             "items": {
-              "$ref": "#/components/schemas/PepMatch"
+              "$ref": "#/components/schemas/app__models__response__PepMatch"
             },
             "type": "array",
             "title": "Matches"
@@ -7048,6 +9535,545 @@
         "title": "RegisteredAddress",
         "description": "The address in the register. City only when the register shields it."
       },
+      "ReportEntity": {
+        "properties": {
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_name",
+          "country"
+        ],
+        "title": "ReportEntity"
+      },
+      "ReportEntityLink": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "trades_as",
+              "brand",
+              "group_member"
+            ],
+            "title": "Kind"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "site": {
+            "type": "string",
+            "title": "Site"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "evidence": {
+            "type": "string",
+            "enum": [
+              "place_of_business_address",
+              "registered_address",
+              "register_phone",
+              "register_email",
+              "company_number",
+              "domain_registrant",
+              "group_site"
+            ],
+            "title": "Evidence"
+          },
+          "place_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place Number"
+          },
+          "place_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place Name"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "site",
+          "evidence",
+          "confidence"
+        ],
+        "title": "ReportEntityLink",
+        "description": "One link the link check judged and the gate showed, with the evidence it\nrests on. ``evidence`` is a code; the view turns it into a source line.\n\nThis docstring is published in the API reference (the report routes declare\nEntityReport), so it names no internal engine (scripts/scan_sync_diff.py)."
+      },
+      "ReportEntityLinks": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/ReportEntityLink"
+            },
+            "type": "array",
+            "title": "Links"
+          },
+          "group_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Name"
+          },
+          "group_site": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Site"
+          },
+          "place_checks": {
+            "items": {
+              "$ref": "#/components/schemas/ReportPlaceCheck"
+            },
+            "type": "array",
+            "title": "Place Checks"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ReportEntityLinks",
+        "description": "What the company trades as and the group it belongs to, from the websites\nthe register lists, judged by the link check (lg-entity-link). ``links`` are the\nshown links only: a name alone never links."
+      },
+      "ReportFunction": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "examples": [
+              "Bestuurder"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "Jan Janssens"
+            ]
+          },
+          "given": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given",
+            "description": "A natural person's given name(s) as printed; None for a legal person."
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since",
+            "description": "ISO date; None when the page's date is unreadable."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "name"
+        ],
+        "title": "ReportFunction",
+        "description": "One line of the register's \"Functies\" block, as printed there."
+      },
+      "ReportKboFunctions": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "functions": {
+            "items": {
+              "$ref": "#/components/schemas/ReportFunction"
+            },
+            "type": "array",
+            "title": "Functions"
+          },
+          "register_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Register Phone"
+          },
+          "register_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Register Email"
+          },
+          "register_website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Register Website"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "register_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Register Date",
+            "description": "The page's own 'state of the KBO database' date."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ReportKboFunctions",
+        "description": "The people and contact lines read from the company's public KBO search page\nat check time. ``status`` ok: ``functions`` is the whole \"Functies\" block ([] = the\nregister lists none). Anything else: no name, never a stale or guessed one."
+      },
+      "ReportPlaceCheck": {
+        "properties": {
+          "number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number"
+          },
+          "place_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place Name"
+          },
+          "address_result": {
+            "type": "string",
+            "enum": [
+              "match",
+              "no_match"
+            ],
+            "title": "Address Result"
+          },
+          "website_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Name"
+          },
+          "name_result": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "match",
+                  "differs"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Result"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "address_result"
+        ],
+        "title": "ReportPlaceCheck",
+        "description": "One place of business the register lists, against the websites it lists.\n``name_result`` only when the address matched."
+      },
+      "ReportSource": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "status"
+        ],
+        "title": "ReportSource"
+      },
+      "ReportWebsitePhone": {
+        "properties": {
+          "number": {
+            "type": "string",
+            "title": "Number",
+            "description": "E.164",
+            "examples": [
+              "+3220000000"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "landline",
+              "mobile",
+              "freephone"
+            ],
+            "title": "Type"
+          },
+          "found_on_url": {
+            "type": "string",
+            "title": "Found On Url"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "title": "Retrieved At"
+          },
+          "source": {
+            "type": "string",
+            "const": "website",
+            "title": "Source",
+            "default": "website"
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label",
+            "examples": [
+              "on example.com, contact page"
+            ]
+          },
+          "page_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "home",
+                  "company_details",
+                  "contact",
+                  "about"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Kind"
+          },
+          "register_number_on_page": {
+            "type": "boolean",
+            "title": "Register Number On Page",
+            "default": false
+          },
+          "whatsapp": {
+            "type": "boolean",
+            "title": "Whatsapp",
+            "description": "The site links this number on wa.me.",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "number",
+          "type",
+          "found_on_url",
+          "retrieved_at",
+          "source_label"
+        ],
+        "title": "ReportWebsitePhone",
+        "description": "A phone number the company publishes on its own website, read as\nlead verify reads it (, ``models.lead_verify.WebsitePhone``), plus whether\nthe same site links it to WhatsApp. The company's number, never a person's."
+      },
       "ReputationComponent": {
         "properties": {
           "status": {
@@ -7280,6 +10306,97 @@
         "title": "RiskResponse",
         "description": "Lighter risk-only response from /v1/risk/score."
       },
+      "RiskSection": {
+        "properties": {
+          "trust_score": {
+            "type": "integer",
+            "title": "Trust Score"
+          },
+          "trust_level": {
+            "type": "string",
+            "title": "Trust Level"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation"
+          },
+          "cluster": {
+            "type": "string",
+            "title": "Cluster"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "sources_checked": {
+            "type": "integer",
+            "title": "Sources Checked"
+          },
+          "rules_fired": {
+            "items": {
+              "$ref": "#/components/schemas/RuleFired"
+            },
+            "type": "array",
+            "title": "Rules Fired"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trust_score",
+          "trust_level",
+          "recommendation",
+          "cluster",
+          "confidence",
+          "sources_checked"
+        ],
+        "title": "RiskSection"
+      },
+      "RuleFired": {
+        "properties": {
+          "rule": {
+            "type": "string",
+            "title": "Rule"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "cap",
+              "correlation",
+              "factor",
+              "source_gap"
+            ],
+            "title": "Kind"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "effect": {
+            "type": "string",
+            "title": "Effect"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule",
+          "kind",
+          "effect"
+        ],
+        "title": "RuleFired"
+      },
       "SanctionsBlock": {
         "properties": {
           "screened": {
@@ -7419,6 +10536,343 @@
         ],
         "title": "SanctionsComponent",
         "description": "OFAC SDN digital-currency address list match for the wallet."
+      },
+      "SanctionsList": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "as_of_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of Reason",
+            "default": "not_reported_by_source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SanctionsList"
+      },
+      "SanctionsMatch": {
+        "properties": {
+          "list": {
+            "type": "string",
+            "title": "List",
+            "description": "The list's display name"
+          },
+          "list_key": {
+            "type": "string",
+            "title": "List Key",
+            "description": "The list's stable key"
+          },
+          "entry_id": {
+            "type": "string",
+            "title": "Entry Id",
+            "description": "The entry's id on its list"
+          },
+          "entry_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Type",
+            "description": "Person, entity, vessel or aircraft"
+          },
+          "matched_name": {
+            "type": "string",
+            "title": "Matched Name",
+            "description": "The listed name or alias that matched"
+          },
+          "programmes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Programmes",
+            "description": "Sanctions programmes of the entry"
+          },
+          "countries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Countries",
+            "description": "Countries the entry names"
+          },
+          "listed_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listed On",
+            "description": "Date the entry was listed"
+          },
+          "match_score": {
+            "type": "number",
+            "title": "Match Score",
+            "description": "1.0 for an exact name match, lower for a token match"
+          },
+          "match_type": {
+            "type": "string",
+            "enum": [
+              "name_exact",
+              "name_tokens"
+            ],
+            "title": "Match Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "list",
+          "list_key",
+          "entry_id",
+          "matched_name",
+          "programmes",
+          "countries",
+          "match_score",
+          "match_type"
+        ],
+        "title": "SanctionsMatch",
+        "description": "One list entry the name matched.\n\n``List`` from typing: the field named ``list`` shadows the builtin in this body."
+      },
+      "SanctionsPreviewResponse": {
+        "properties": {
+          "possible_match": {
+            "type": "boolean",
+            "title": "Possible Match"
+          },
+          "lists_checked": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lists Checked"
+          },
+          "list_dates": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "List Dates",
+            "description": "Each list's publication date, by list name"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "description": "Where the full match details are and what they cost"
+          }
+        },
+        "type": "object",
+        "required": [
+          "possible_match",
+          "lists_checked",
+          "list_dates",
+          "detail"
+        ],
+        "title": "SanctionsPreviewResponse",
+        "description": "The free preview: yes or no, never an entry."
+      },
+      "SanctionsScreen": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "screened_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screened At"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "no_match",
+              "match",
+              "not_screened"
+            ],
+            "title": "Result"
+          },
+          "match_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Score"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          },
+          "lists": {
+            "items": {
+              "$ref": "#/components/schemas/SanctionsList"
+            },
+            "type": "array",
+            "title": "Lists"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "result",
+          "threshold"
+        ],
+        "title": "SanctionsScreen"
+      },
+      "SanctionsScreenRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Company or person name to screen"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-2 country code (optional; orders matches, never excludes one)"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SanctionsScreenRequest"
+      },
+      "SanctionsScreenResponse": {
+        "properties": {
+          "possible_match": {
+            "type": "boolean",
+            "title": "Possible Match"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/SanctionsMatch"
+            },
+            "type": "array",
+            "title": "Matches"
+          },
+          "matches_truncated": {
+            "type": "boolean",
+            "title": "Matches Truncated",
+            "description": "True when more entries matched than are listed"
+          },
+          "lists_checked": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lists Checked"
+          },
+          "list_dates": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "List Dates",
+            "description": "Each list's publication date, by list name"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          },
+          "screened_at": {
+            "type": "string",
+            "title": "Screened At",
+            "description": "ISO 8601 timestamp of the screen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "possible_match",
+          "matches",
+          "matches_truncated",
+          "lists_checked",
+          "list_dates",
+          "disclaimer",
+          "screened_at"
+        ],
+        "title": "SanctionsScreenResponse",
+        "description": "The paid screen: the matched entries."
       },
       "ScoreHistoryEntry": {
         "properties": {
@@ -7706,7 +11160,8 @@
           "pro",
           "enterprise"
         ],
-        "title": "SubscriptionTier"
+        "title": "SubscriptionTier",
+        "description": "Stored on the subscription, not used yet: no digest, alert or webhook is\nsent for any tier (delivery is by polling GET /v1/compliance/alerts)."
       },
       "TopFactor": {
         "properties": {
@@ -7937,12 +11392,12 @@
                 "type": "null"
               }
             ],
-            "description": "Suggested deeper check when recommendation is review or edd"
+            "description": "Suggested deeper check when recommendation is review or enhanced_due_diligence"
           },
           "response_quality": {
             "type": "string",
             "title": "Response Quality",
-            "description": "Quality tier used for this response: cached, fresh, or enhanced",
+            "description": "Quality tier used for this response: cached or fresh. 'enhanced' was retired on 2026-09-24; a request for it is served fresh with a note in disclaimers",
             "default": "fresh"
           },
           "cache_hit": {
@@ -7985,7 +11440,7 @@
           "processing_time_ms"
         ],
         "title": "TrustResponse",
-        "description": "Full trust intelligence response from /v1/entity/check."
+        "description": "Trust check response from /v1/entity/check: trust score, recommendation, top factors and findings."
       },
       "TrustScoreRequest": {
         "properties": {
@@ -8274,6 +11729,80 @@
         ],
         "title": "ValidationError"
       },
+      "ValidationErrorItem": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field",
+            "description": "The rejected field's name (the last part of its location)"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Why it was rejected; generic unless the rule is ours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "message"
+        ],
+        "title": "ValidationErrorItem",
+        "description": "One rejected field of a 422."
+      },
+      "ValidationErrorResponse": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "https://docs.limitguard.ai/errors#validation-error"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": "Validation Error"
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "default": 422
+          },
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorItem"
+            },
+            "type": "array",
+            "title": "Detail"
+          },
+          "instance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instance"
+          },
+          "errorCode": {
+            "type": "string",
+            "title": "Errorcode",
+            "default": "validation_error"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": "Nothing was charged."
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ValidationErrorResponse",
+        "description": "RFC 7807 body of a 422 request validation error.\n\nThe shape main.py's RequestValidationError handler sends, so a generated client\nparses `detail` as the list it is, not as a string."
+      },
       "VatBlock": {
         "properties": {
           "checked": {
@@ -8326,69 +11855,6 @@
           "checked"
         ],
         "title": "VatBlock"
-      },
-      "VerificationResponse": {
-        "properties": {
-          "entity_id": {
-            "type": "string",
-            "title": "Entity Id",
-            "description": "Entity identifier"
-          },
-          "trust_score": {
-            "type": "integer",
-            "maximum": 100.0,
-            "minimum": 0.0,
-            "title": "Trust Score",
-            "description": "Trust score 0-100"
-          },
-          "trust_level": {
-            "type": "string",
-            "title": "Trust Level",
-            "description": "Trust level (HIGH, MEDIUM, LOW)"
-          },
-          "cluster": {
-            "type": "string",
-            "title": "Cluster",
-            "description": "Entity cluster classification"
-          },
-          "last_verified": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Last Verified",
-            "description": "Last verification timestamp"
-          },
-          "sources_checked": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Sources Checked",
-            "description": "Number of sources verified"
-          },
-          "verification_details": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Verification Details",
-            "description": "Detailed verification breakdown"
-          },
-          "risk_flags": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Risk Flags",
-            "description": "Active risk indicators"
-          }
-        },
-        "type": "object",
-        "required": [
-          "entity_id",
-          "trust_score",
-          "trust_level",
-          "cluster",
-          "last_verified",
-          "sources_checked"
-        ],
-        "title": "VerificationResponse",
-        "description": "Extended verification data returned by /v1/verify/{entity_id} endpoint."
       },
       "VerifyWalletRequest": {
         "properties": {
@@ -8575,6 +12041,67 @@
         "title": "WalletRiskComponent",
         "description": "The wallet screen's own risk score and the named rules that fired."
       },
+      "WalletScreen": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "chain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chain"
+          },
+          "valid_format": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Format"
+          },
+          "screening": {
+            "type": "string",
+            "title": "Screening"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "address",
+          "screening"
+        ],
+        "title": "WalletScreen"
+      },
       "WatchlistAddRequest": {
         "properties": {
           "entity_id": {
@@ -8599,7 +12126,7 @@
             "type": "integer",
             "minimum": 3600.0,
             "title": "Rescore Interval",
-            "description": "Seconds between rescores",
+            "description": "Seconds between rescores. Applies only when change monitoring is switched on for this service; it is off by default. The service enforces a minimum interval (7 days by default).",
             "default": 604800
           },
           "country": {
@@ -8612,7 +12139,7 @@
               }
             ],
             "title": "Country",
-            "description": "ISO 3166-1 alpha-2 country code. With a country and at least one typed identifier, the entry is under change monitoring on plans that include it (weekly re-check, changes sent as identifier.change.new webhooks)."
+            "description": "ISO 3166-1 alpha-2 country code. With a country and at least one typed identifier, the entry is under change monitoring on plans that include it, when change monitoring is switched on for this service (then a weekly re-check, changes sent as identifier.change.new webhooks). It is off by default."
           },
           "kvk_number": {
             "anyOf": [
@@ -8908,6 +12435,38 @@
         "title": "WebsitePhone",
         "description": "A phone number the company publishes on its website."
       },
+      "app__models__report__PepMatch": {
+        "properties": {
+          "caption": {
+            "type": "string",
+            "title": "Caption"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "datasets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Datasets"
+          },
+          "topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Topics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "caption",
+          "score"
+        ],
+        "title": "PepMatch"
+      },
       "app__models__request__RiskScoreRequest": {
         "properties": {
           "entity_name": {
@@ -8933,6 +12492,69 @@
         ],
         "title": "RiskScoreRequest",
         "description": "Lighter risk-only request - faster, fewer sources."
+      },
+      "app__models__response__PepMatch": {
+        "properties": {
+          "caption": {
+            "type": "string",
+            "title": "Caption",
+            "description": "Matched entity display name"
+          },
+          "schema_type": {
+            "type": "string",
+            "title": "Schema Type",
+            "description": "FollowTheMoney schema, e.g. Person"
+          },
+          "topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Topics",
+            "description": "Risk topics, e.g. role.pep, role.rca"
+          },
+          "datasets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Datasets"
+          },
+          "score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "description": "Match confidence"
+          },
+          "countries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Countries"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "caption",
+          "schema_type",
+          "topics",
+          "score"
+        ],
+        "title": "PepMatch",
+        "description": "One OpenSanctions PEP/RCA match, projected to the fields we stand behind."
       },
       "app__routers__mcp__RiskScoreRequest": {
         "properties": {
