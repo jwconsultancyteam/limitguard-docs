@@ -4141,6 +4141,33 @@
               }
             ],
             "title": "Source"
+          },
+          "bookkeeping": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bookkeeping"
+          },
+          "filings": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filings"
           }
         },
         "type": "object",
@@ -7662,6 +7689,18 @@
             ],
             "title": "Juridical Situation"
           },
+          "legal_form": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Form"
+          },
           "activities": {
             "anyOf": [
               {
@@ -7691,6 +7730,18 @@
               }
             ],
             "title": "Places Of Business"
+          },
+          "establishments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Establishments"
           }
         },
         "type": "object",
@@ -9860,6 +9911,28 @@
             ],
             "title": "Register Date",
             "description": "The page's own 'state of the KBO database' date."
+          },
+          "legal_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Form"
+          },
+          "legal_form_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Form Since"
           }
         },
         "additionalProperties": false,
