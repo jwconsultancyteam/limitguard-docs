@@ -6271,6 +6271,13 @@
             "type": "string",
             "format": "date-time",
             "title": "Completed At"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
           }
         },
         "type": "object",
