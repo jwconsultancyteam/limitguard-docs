@@ -255,7 +255,7 @@ console.log(`Trust Score: ${result.trust_score}/100`);
     {"source": "vat", "signal": "VIES verified EU VAT", "impact": "positive", "weight": 0.20},
     {"source": "sanctions", "signal": "No sanctions match", "impact": "positive", "weight": 0.25}
   ],
-  "sources_checked": ["kvk", "sanctions", "country_risk", "domain", "vat"],
+  "sources_checked": 5,
   "processing_time_ms": 342
 }
 ```
@@ -276,6 +276,8 @@ curl -X POST https://api.limitguard.ai/v1/risk/score \
 ```
 
 ```python Python
+import httpx
+
 response = httpx.post(
     "https://api.limitguard.ai/v1/risk/score",
     headers={"X-API-Key": "lg_live_xxxxxxxxxxxxxxxxxxxx"},

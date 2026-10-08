@@ -653,7 +653,9 @@ def build_x402_payment(
         "nonce": bytes.fromhex(nonce[2:]),
     }
 
-    signable = encode_typed_data(domain, types, "TransferWithAuthorization", message)
+    signable = encode_typed_data(
+        full_message={"types": types, "primaryType": "TransferWithAuthorization", "domain": domain, "message": message}
+    )
     signed = Account.sign_message(signable, private_key=sender_key)
 
     payload = {
@@ -998,7 +1000,7 @@ class TrustGatedAgent:
         }
 
         signable = encode_typed_data(
-            domain, types, "TransferWithAuthorization", message
+            full_message={"types": types, "primaryType": "TransferWithAuthorization", "domain": domain, "message": message}
         )
         signed = Account.sign_message(signable, private_key=self.wallet.key)
 
@@ -1505,16 +1507,32 @@ async function verifyEntity(entityName, country) {
 ### Writing Agent Tests with Sandbox
 
 ```python
-import pytest
 import httpx
 
 API_KEY = "lg_sandbox_xxxxxxxxxxxxxxxxxxxx"  # a sandbox key: mock data, never charged
 
 
-@pytest.mark.asyncio
-async def test_agent_blocks_on_high_risk():
-    """Agent should block payment when trust score is below threshold."""
-    # Sandbox always returns trust_score: 75 — test the routing logic
+def score_to_decision(score: int) -> str:
+    """The same thresholds as TrustGatedAgent above."""
+    if score >= 80:
+        return "proceed"
+    if score >= 60:
+        return "review"
+    if score >= 40:
+        return "enhanced_due_diligence"
+    return "block"
+
+
+def test_score_routing():
+    """The routing logic, without a network call."""
+    assert score_to_decision(85) == "proceed"
+    assert score_to_decision(75) == "review"
+    assert score_to_decision(30) == "block"
+
+
+def test_sandbox_response_routes():
+    """A sandbox check returns a well-formed score the agent can route."""
+    # The sandbox answers with mock data (trust_score 75, so "review").
     response = httpx.post(
         "https://api.limitguard.ai/v1/entity/check",
         headers={"X-API-Key": API_KEY},
@@ -1534,8 +1552,7 @@ async def test_agent_blocks_on_high_risk():
     assert decision in ("proceed", "review", "enhanced_due_diligence", "block")
 
 
-@pytest.mark.asyncio
-async def test_discovery_returns_pricing():
+def test_discovery_returns_pricing():
     """Agent should be able to read pricing from discovery endpoint."""
     response = httpx.get("https://api.limitguard.ai/.well-known/x402.json")
     assert response.status_code == 200
