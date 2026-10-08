@@ -79,8 +79,11 @@ Response (HTTP 402):
 }
 ```
 
-Each `accepts` entry is a standard x402 `PaymentRequirements` object, so official
-clients (npm `x402-fetch`) can consume it directly. Notes on individual fields:
+Each `accepts` entry is a standard x402 `PaymentRequirements` object, so the official
+v2 clients (npm `@x402/fetch` 2.x, PyPI `x402`) can consume it directly. The unscoped
+npm `x402-fetch` 1.x cannot: it validates `network` against v1 names (`base`,
+`base-sepolia`) and rejects the CAIP-2 `eip155:8453` entry before signing. Notes on
+individual fields:
 
 | Field | Meaning |
 |---|---|
@@ -440,9 +443,15 @@ Both cache keys are case-insensitive and ignore surrounding whitespace, so a fre
 
 ## Official x402 Client Payloads
 
-The official x402 clients (`@x402/fetch` and `x402-fetch` on npm, `x402` on PyPI) send a
+The official x402 clients (`@x402/fetch` 2.x on npm, `x402` on PyPI) send a
 payload shaped differently from the flat one built in Step 2. Both of their shapes are
-accepted as-is, with no adapter needed:
+accepted as-is, with no adapter needed. The server also accepts the v1 shape the
+unscoped npm `x402-fetch` 1.x sends, but that package cannot pay a Limitguard 402 today:
+it rejects the CAIP-2 `network` before signing.
+
+`@x402/fetch` refuses any single payment over $1 by default. Pass
+`spendControls: { maxAmountPerPayment: "$3" }` to its config so it pays the entity
+check, KYB, reports and deep-check, which cost more than $1.
 
 ```jsonc
 // EVM (exact scheme, EIP-3009)
