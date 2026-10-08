@@ -288,11 +288,12 @@ async function processEvent(event) {
 
 ## Event Types
 
-These are the event types you can register. Only `sanctions.match.new` is sent today; the others are accepted so an integration can subscribe ahead of time, and `delivered_events` tells you which of yours are live.
+These are the event types you can register. `sanctions.match.new` and `identifier.change.new` are sent today; the others are accepted so an integration can subscribe ahead of time, and `delivered_events` tells you which of yours are live.
 
 | Event | Sent today | Meaning |
 |-------|------------|---------|
 | `sanctions.match.new` | Yes | A sanctions-list change (designation, amendment or delisting) matches an entity or wallet you checked, or your watchlist |
+| `identifier.change.new` | Yes | A registry identifier of an entry on your watchlist changed (seen in a check made with your key) |
 | `trust.score.changed` | Not yet | A monitored entity's trust score changed |
 | `trust.level.downgrade` | Not yet | A monitored entity's `trust_level` moved to a lower band |
 | `certificate.expired` | Not yet | A certificate passed its `expires_at` |

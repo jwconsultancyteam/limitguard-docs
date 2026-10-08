@@ -290,7 +290,7 @@ async function checkEntity(
     // Non-retryable (4xx other than 429)
     const error = await response.json().catch(() => ({}));
     throw new Error(
-      `Limitguard API error ${response.status}: ${error.error ?? response.statusText}`
+      `Limitguard API error ${response.status}: ${error.detail ?? response.statusText}`
     );
   }
 

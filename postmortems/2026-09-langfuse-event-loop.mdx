@@ -18,9 +18,9 @@ All times UTC.
 | 2026-06-19 13:57:56 | Last log line. The event-loop thread enters a blocking `read()` on a socket to Langfuse, our tracing backend, and never returns. Every request queued behind it hangs. The reverse proxy reports no upstreams and serves 503. |
 | 2026-06-19 to 2026-09-05 | The container never exits, so the `restart: unless-stopped` policy never fires. The Docker healthcheck keeps executing into the hung process every 15 s. Each of those execs leaks descriptors that are never reclaimed, and by September the container's shim has reached its file-descriptor hard limit (524,287), at which point `docker exec` stops working too. |
 | 2026-09-05 | The outage is found during unrelated work. Read-only diagnosis before any restart: the main thread is in `read()` on fd 13, a blocking socket to the tracing host; the shim is at its descriptor limit. |
-| 2026-09-05 17:16 | The fix from PR #167 is deployed from its branch. The wedged container cannot be stopped normally and is killed and recreated. Service restored. |
-| 2026-09-05 20:03 | PR #167 merged after CI. PR #168 adds Slack alerting the same evening. |
-| 2026-09-06 | PR #171 (dedicated thread pool for blocking probes) and PR #172 (settlement reconciliation after a hard exit) merged. |
+| 2026-09-05 17:16 | The event-loop fix is deployed from its branch. The wedged container cannot be stopped normally and is killed and recreated. Service restored. |
+| 2026-09-05 20:03 | The event-loop fix merged after CI. Slack alerting was added the same evening. |
+| 2026-09-06 | A dedicated thread pool for blocking probes and settlement reconciliation after a hard exit merged. |
 
 ## Root cause
 
@@ -42,12 +42,12 @@ The lesson is not "add a dashboard". Every signal that would have shown the outa
 
 ## Fixes
 
-| PR | Change |
+| Fix | Change |
 |---|---|
-| #167 | The tracing probe runs in a worker thread with a 2 s cap and a 60 s cache; the tracing client gets a 5 s timeout; DNS and TLS probes are offloaded with a hard cap. A loop watchdog exits the process if the event loop is unresponsive for 30 s, so the platform restarts it. |
-| #168 | CI and host security signals post to Slack. |
-| #171 | Blocking probes get their own thread pool, sized from the container's CPU limit rather than the host's, with its saturation state exposed. Without this, slow resolvers could silently degrade results while `/health` stayed green. |
-| #172 | Settlement reconciliation for rows stranded by a hard exit between crediting a ledger and submitting the on-chain leg. The watchdog from #167 introduced hard exits as a recovery path; this closes the consistency gap that path could open. |
+| Event-loop fix | The tracing probe runs in a worker thread with a 2 s cap and a 60 s cache; the tracing client gets a 5 s timeout; DNS and TLS probes are offloaded with a hard cap. A loop watchdog exits the process if the event loop is unresponsive for 30 s, so the platform restarts it. |
+| Alerting | CI and host security signals post to Slack. |
+| Probe thread pool | Blocking probes get their own thread pool, sized from the container's CPU limit rather than the host's, with its saturation state exposed. Without this, slow resolvers could silently degrade results while `/health` stayed green. |
+| Settlement reconciliation | Settlement reconciliation for rows stranded by a hard exit between crediting a ledger and submitting the on-chain leg. The watchdog from the event-loop fix introduced hard exits as a recovery path; this closes the consistency gap that path could open. |
 
 On the host, a cron job restarts the container if Docker reports it unhealthy, and host-side scripts post to Slack. The in-process watchdog is the first line; the host cron is the second.
 

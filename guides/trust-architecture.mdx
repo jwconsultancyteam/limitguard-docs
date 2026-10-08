@@ -237,7 +237,7 @@ The `cluster` field classifies entities into behavioural archetypes based on sig
 | `large_enterprise` | Registry-verified, high domain age, multiple positive signals |
 | `newly_registered` | Registration under 12 months: not inherently suspicious, but reduced confidence |
 | `unverified_jurisdiction` | Country risk flag or no registry match |
-| `high_risk_indicators` | One or more active risk flags (sanctions proximity, FATF jurisdiction, mixer wallet) |
+| `high_risk_indicators` | One or more active risk flags (sanctions proximity, FATF jurisdiction). Wallets are not screened here; use `verify_wallet` |
 | `sanctioned_entity` | Direct sanctions match: automatic `block` recommendation |
 
 ### Confidence Score
@@ -254,16 +254,17 @@ Build confidence thresholds into your integration policy. For example: require `
 
 ### Where Your Data Lives
 
-| Layer | Location | Provider |
-|-------|----------|----------|
-| API, audit log and cache (Redis) | Germany | Contabo GmbH (VPS) |
-| Dashboard application | Germany (Falkenstein) | Hetzner Online GmbH |
-| Database: dashboard accounts, workspaces and check records | Ireland (AWS eu-west-1) | Supabase |
-| CDN and web application firewall | Global edge network | Cloudflare, Inc. |
-| Operator | Breda, the Netherlands | Ambulatio Consulting B.V. (trading as Limitguard), KVK 77272471 |
+| Layer | Location |
+|-------|----------|
+| API, audit log and cache | Germany |
+| Dashboard application | Germany |
+| Database: dashboard accounts, workspaces and check records | Ireland |
+| CDN and web application firewall | Global edge network |
+
+Limitguard is operated by Ambulatio Consulting B.V. (trading as Limitguard), Breda, the Netherlands, KVK 77272471. The companies that process data for us are listed in section 4 of the [privacy policy](https://limitguard.ai/privacy).
 
 <Note>
-Application data (API requests, check records, audit logs and dashboard accounts) is stored in the EU. Cloudflare, a US company, routes and filters traffic to Limitguard under the EU-US Data Privacy Framework; the [privacy policy](https://limitguard.ai/privacy) describes its role.
+Application data (API requests, check records, audit logs and dashboard accounts) is stored in the EU. The edge network that routes and filters traffic is run by a US company under the EU-US Data Privacy Framework; the [privacy policy](https://limitguard.ai/privacy) names it and describes its role.
 </Note>
 
 ### How We Handle Personal Data
@@ -451,7 +452,7 @@ Trust certificates are records Limitguard issues, stores, and verifies over its 
 
 ### Querying Certificates
 
-```bash
+```http
 # Issue (requires an API key; being restricted to Limitguard admins)
 POST /v1/certificate/issue
 

@@ -6,7 +6,7 @@ description: "Complete error catalog with causes and fixes"
 All Limitguard API errors follow [RFC 7807 Problem Details](https://www.rfc-editor.org/rfc/rfc7807) for consistent, machine-readable responses. Every error has a `type`, `title`, `status`, and `detail` field, which makes automated error handling straightforward for both human developers and AI agents.
 
 <Note>
-The `type` field is always `"about:blank"` in the current API version. Future versions may introduce specific problem type URIs.
+The `type` field is `"about:blank"` for most errors. Entity report errors (see [Entity report errors](#entity-report-errors)) use a `type` URI that links to their entry on this page.
 </Note>
 
 ## Status Code Reference
@@ -932,7 +932,7 @@ def build_evm_payment(chain_id, amount, sender_key, recipient, usdc_address):
         "EIP712Domain": [{"name": "name", "type": "string"}, {"name": "version", "type": "string"}, {"name": "chainId", "type": "uint256"}, {"name": "verifyingContract", "type": "address"}],
         "TransferWithAuthorization": [{"name": "from", "type": "address"}, {"name": "to", "type": "address"}, {"name": "value", "type": "uint256"}, {"name": "validAfter", "type": "uint256"}, {"name": "validBefore", "type": "uint256"}, {"name": "nonce", "type": "bytes32"}],
     }
-    signed = Account.sign_message(encode_typed_data(domain, types, "TransferWithAuthorization", message), private_key=sender_key)
+    signed = Account.sign_message(encode_typed_data(full_message={"types": types, "primaryType": "TransferWithAuthorization", "domain": domain, "message": message}), private_key=sender_key)
     payload = {"chainId": chain_id, "amount": str(amount), "sender": sender, "recipient": recipient, "nonce": nonce, "signature": signed.signature.hex(), "validAfter": now - 10, "validBefore": now + 300}
     return base64.b64encode(json.dumps(payload).encode()).decode()
 ```
@@ -1045,7 +1045,7 @@ async function buildEvmPayment(chainId, amount, signer, recipient, usdcAddress) 
 
 ## Free Endpoints (Never Error on Auth)
 
-These endpoints always return 200 and never require authentication or payment. They will not return 401, 402, or 403:
+These endpoints never require authentication or payment, so they never return 401, 402, or 403:
 
 | Endpoint | Purpose |
 |----------|---------|
