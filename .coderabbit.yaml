@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# Most pull requests here come from limitguard-ai's public-repo-sync workflow (branch
+# sync/limitguard-ai, author limitguard-sync[bot]). They are rendered, not hand-written,
+# and are still reviewed: this is the public documentation of the Limitguard API.
+language: en-US
+tone_instructions: "Plain English, short. Only flag what a reader would notice: a wrong price, a wrong request or response, a broken link or code sample, or an internal detail that should not be public."
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "**/*.mdx"
+      instructions: "Check that prices, endpoints, headers and limits agree across pricing.mdx, the api-reference pages and the guides; that code samples are valid for their language; and that no internal name, hostname, issue number or email address appears. The brand is spelled Limitguard."
+    - path: "docs.json"
+      instructions: "Mintlify navigation. Check it is valid JSON and every page it lists exists in the repository."
+    - path: "llms.txt"
+      instructions: "Index read by AI agents. Check every link points at a page that exists."
+  tools:
+    gitleaks:
+      enabled: true
+    markdownlint:
+      enabled: true
+chat:
+  auto_reply: true
