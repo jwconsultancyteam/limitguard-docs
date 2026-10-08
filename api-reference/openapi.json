@@ -9933,6 +9933,39 @@
               }
             ],
             "title": "Legal Form Since"
+          },
+          "address_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Since"
+          },
+          "vat_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vat Since"
+          },
+          "employer_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employer Since"
           }
         },
         "additionalProperties": false,
