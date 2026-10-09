@@ -6,7 +6,7 @@ description: "API prices: USDC per call, or from a prepaid API key balance"
 All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol), or hold a paid-tier [API key](/authentication) with a prepaid balance that each priced call is debited from.
 
 <Note>
-  The dashboard at [dashboard.limitguard.ai](https://dashboard.limitguard.ai) is priced separately, in euros: per lead, per company check with a PDF report, and optional monthly or yearly plans that include credit. See [limitguard.ai/pricing](https://limitguard.ai/pricing/).
+  The dashboard at [dashboard.limitguard.ai](https://dashboard.limitguard.ai/?utm_source=docs&utm_medium=docs&utm_campaign=signup&utm_content=pricing) is priced separately, in euros: per lead, per company check with a PDF report, and optional monthly or yearly plans that include credit. See [limitguard.ai/pricing](https://limitguard.ai/pricing/?utm_source=docs&utm_medium=docs&utm_campaign=pricing&utm_content=pricing).
 </Note>
 
 **What it is:** Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, with website age in the company check, and returns proceed, review or block with the source on every line. Developers and AI agents can use its HTTP API, MCP server and A2A service, hosted in the EU.
@@ -64,7 +64,7 @@ These endpoints have a single price regardless of quality tier:
 
 - `deep` (`fresh`): PEP and relative/close-associate matches from OpenSanctions, plus a Dutch Centraal Insolventieregister insolvency screen (NL only).
 - `extended` (`enhanced`): the same, plus adverse media screening against a global news index.
-- `credit` (Italy only, available when enabled): the same as `deep`, plus an Italian credit report from Openapi.com.
+- `credit` ($2.45, Italy only, available when enabled): the same as `deep`, plus an Italian credit report from Openapi.com.
 
 ## MCP Tool Endpoints
 
@@ -145,6 +145,7 @@ For x402 integration, amounts use 6 decimal places (`1_000_000 = $1.00`):
 | $1.50 | 1,500,000 | `"1500000"` |
 | $1.71 | 1,710,000 | `"1710000"` |
 | $1.85 | 1,850,000 | `"1850000"` |
+| $2.45 | 2,450,000 | `"2450000"` |
 | $29 | 29,000,000 | `"29000000"` |
 | $99 | 99,000,000 | `"99000000"` |
 | $299 | 299,000,000 | `"299000000"` |

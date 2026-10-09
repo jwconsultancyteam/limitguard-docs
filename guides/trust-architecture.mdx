@@ -261,15 +261,15 @@ Build confidence thresholds into your integration policy. For example: require `
 | Database: dashboard accounts, workspaces and check records | Ireland |
 | CDN and web application firewall | Global edge network |
 
-Limitguard is operated by Ambulatio Consulting B.V. (trading as Limitguard), Breda, the Netherlands, KVK 77272471. The companies that process data for us are listed in section 4 of the [privacy policy](https://limitguard.ai/privacy).
+Limitguard is operated by Ambulatio Consulting B.V. (trading as Limitguard), Breda, the Netherlands, KVK 77272471. The companies that process data for us are listed in section 4 of the [privacy policy](https://limitguard.ai/privacy?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture).
 
 <Note>
-Application data (API requests, check records, audit logs and dashboard accounts) is stored in the EU. The edge network that routes and filters traffic is run by a US company under the EU-US Data Privacy Framework; the [privacy policy](https://limitguard.ai/privacy) names it and describes its role.
+Application data (API requests, check records, audit logs and dashboard accounts) is stored in the EU. The edge network that routes and filters traffic is run by a US company under the EU-US Data Privacy Framework; the [privacy policy](https://limitguard.ai/privacy?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture) names it and describes its role.
 </Note>
 
 ### How We Handle Personal Data
 
-Limitguard is hosted in the EU: API and dashboard in the EU, database in Ireland. The [data processing agreement](https://limitguard.ai/dpa) and its sub-processor list (section 6) are published. These are the measures behind it:
+Limitguard is hosted in the EU: API and dashboard in the EU, database in Ireland. The [data processing agreement](https://limitguard.ai/dpa?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture) and its sub-processor list (section 6) are published. These are the measures behind it:
 
 <Steps>
   <Step title="Data minimization">
@@ -285,7 +285,7 @@ Limitguard is hosted in the EU: API and dashboard in the EU, database in Ireland
     Application data is stored in the EU (see the table above). Cloudflare routes traffic under the EU-US Data Privacy Framework.
   </Step>
   <Step title="Legal documents">
-    The [privacy policy](https://limitguard.ai/privacy), [data processing agreement](https://limitguard.ai/dpa) and [terms of service](https://limitguard.ai/terms) are published on limitguard.ai. The API also serves them at `GET /v1/legal/privacy`, `/v1/legal/dpa` and `/v1/legal/terms`.
+    The [privacy policy](https://limitguard.ai/privacy?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture), [data processing agreement](https://limitguard.ai/dpa?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture) and [terms of service](https://limitguard.ai/terms?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture) are published on limitguard.ai. The API also serves them at `GET /v1/legal/privacy`, `/v1/legal/dpa` and `/v1/legal/terms`.
   </Step>
 </Steps>
 
@@ -410,7 +410,7 @@ curl https://api.limitguard.ai/v1/self-verify
 }
 ```
 
-The sixth signal is an EU data-protection signal: it points to the [privacy policy](https://limitguard.ai/privacy) and describes EU hosting, data minimisation and erasure. It describes those measures; it is not a certification.
+The sixth signal is an EU data-protection signal: it points to the [privacy policy](https://limitguard.ai/privacy?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture) and describes EU hosting, data minimisation and erasure. It describes those measures; it is not a certification.
 
 <Tip>
 We recommend integrating `/v1/self-verify` into your vendor due diligence workflow. The response is computed on every request, not cached.
@@ -496,7 +496,7 @@ Policy: https://limitguard.ai/security
 
 ### Responsible Disclosure
 
-We operate a responsible disclosure programme. Security researchers who identify vulnerabilities in good faith will receive acknowledgement, coordinated disclosure timelines, and credit. See [limitguard.ai/security](https://limitguard.ai/security) for the full programme terms.
+We operate a responsible disclosure programme. Security researchers who identify vulnerabilities in good faith will receive acknowledgement, coordinated disclosure timelines, and credit. See [limitguard.ai/security](https://limitguard.ai/security?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture) for the full programme terms.
 
 ---
 
@@ -504,7 +504,7 @@ We operate a responsible disclosure programme. Security researchers who identify
 
 | Claim | How to Verify |
 |-------|--------------|
-| EU data storage | [Privacy policy](https://limitguard.ai/privacy) and [DPA](https://limitguard.ai/dpa): providers, locations and purposes |
+| EU data storage | [Privacy policy](https://limitguard.ai/privacy?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture) and [DPA](https://limitguard.ai/dpa?utm_source=docs&utm_medium=docs&utm_campaign=legal&utm_content=trust_architecture): providers, locations and purposes |
 | Dutch operator | KVK register: Ambulatio Consulting B.V. (trading as Limitguard), KVK 77272471 |
 | Limited retention | `GET /v1/data/retention`: every data category and its retention period |
 | GDPR Art. 17 erasure | `DELETE /v1/data/purge`: functional endpoint, not just a policy |
