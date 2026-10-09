@@ -49,6 +49,6 @@
 
 ## Optional
 
-- [Limitguard.ai](https://limitguard.ai): Product site
+- [Limitguard.ai](https://limitguard.ai/?utm_source=llms_txt&utm_medium=agent&utm_campaign=home&utm_content=llms_txt): Product site
 - [API status](https://api.limitguard.ai/health): Live health check
 - [Limitguard API llms.txt](https://api.limitguard.ai/llms.txt): The live API's own machine-readable summary (distinct from this docs-site index)
