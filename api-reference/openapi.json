@@ -11155,6 +11155,7 @@
             "enum": [
               "no_match",
               "match",
+              "possible_match",
               "not_screened"
             ],
             "title": "Result"
@@ -11180,6 +11181,42 @@
             },
             "type": "array",
             "title": "Lists"
+          },
+          "matched_on": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched On"
+          },
+          "listed_caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listed Caption"
+          },
+          "listed_countries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Listed Countries"
+          },
+          "listed_case": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listed Case"
           }
         },
         "type": "object",
