@@ -7747,6 +7747,17 @@
             ],
             "title": "Registration Number"
           },
+          "number_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number Source"
+          },
           "legal_status": {
             "anyOf": [
               {
@@ -10238,6 +10249,28 @@
             ],
             "title": "Legal Form Since"
           },
+          "legal_situation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Situation"
+          },
+          "legal_situation_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Situation Since"
+          },
           "address_since": {
             "anyOf": [
               {
@@ -12318,6 +12351,18 @@
             ],
             "title": "Reason",
             "description": "Why the VAT number was not checked or not valid. vies_unavailable: the EU VAT service did not answer, so it was not checked. invalid_format: the number is not in an EU VAT number format. non_eu_country: the number does not start with an EU country code."
+          },
+          "derived_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived Number",
+            "description": "A Dutch legal entity's VAT number when none was sent: NL + its RSIN + B01, B02 or B03, shown only when the EU VAT service confirmed it valid. null otherwise."
           }
         },
         "additionalProperties": false,
