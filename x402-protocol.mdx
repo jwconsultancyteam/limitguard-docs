@@ -94,12 +94,12 @@ individual fields:
 | `extra.name` / `extra.version` | EIP-712 domain values to sign with on EVM chains (informational on Solana) |
 | `extra.decimals` | USDC decimals (6) |
 
-Every 402 also carries additive recovery hints under `extensions.bazaar.info`, so an agent without a wallet can still get started (full reference: [Errors](https://docs.limitguard.ai/guides/errors)):
+Every 402 also carries additive recovery hints under `extensions.bazaar.info`, so an agent without a wallet can still get started (full reference: [Errors](/guides/errors)):
 
 | Field | Value |
 |---|---|
 | `extensions.bazaar.info.recovery.url` | `https://api.limitguard.ai/v1/quickstart` (+ a `curl` one-liner) |
-| `extensions.bazaar.info.documentation_url` | `https://docs.limitguard.ai/x402-protocol` |
+| `extensions.bazaar.info.documentation_url` | `https://docs.limitguard.ai/x402-protocol?utm_source=api&utm_medium=agent&utm_campaign=docs&utm_content=x402_protocol` |
 | `extensions.bazaar.info.sandbox.curl` | `POST /v1/keys/create {"email": "...", "tier": "sandbox"}` → free `lg_sandbox_` key, no wallet |
 | `extensions.bazaar.info.prepaidBalance` | Only on `errorCode: insufficient_balance` (API-key holder whose prepaid balance is below the price): `balance_usd`, `price_usd`, `topup.url` (`POST /v1/keys/topup/{usd}`), and a note that paying this call by x402 also works |
 
@@ -433,7 +433,7 @@ as `fresh`.
 
 `cached` is served only from cache. If nothing is cached for the entity, the response is
 `404` with `errorCode: "not_cached"` and a `retry` block naming `X-Response-Quality: fresh`
-and its price; no data source is called (see [Errors](https://docs.limitguard.ai/guides/errors)) and the request is not
+and its price; no data source is called (see [Errors](/guides/errors)) and the request is not
 charged. The unpaid 402 quote for a `cached` request probes the cache first: on a
 confirmed miss it is priced at the `fresh` tier and carries
 `extensions.bazaar.info.cachedTierAvailable: false`, so a caller is not sold the cheap
@@ -444,7 +444,7 @@ or unreachable) the cached price is quoted as before; a miss on the paid call is
 not charged, because settlement is gated on the route's 2xx response. The probe's
 answer is subject to the per-entity limit: an anonymous caller gets at most 5 quotes
 per entity per hour on these four endpoints (the same counter that meters the checks
-themselves, see [Rate limits](https://docs.limitguard.ai/guides/rate-limits)), then `429`, so cache state cannot be used to
+themselves, see [Rate limits](/guides/rate-limits)), then `429`, so cache state cannot be used to
 enumerate which entities have been checked.
 Fresh calls fill the cache, so "cached when available" means: after a fresh check of
 the same request (entity, country and the same identifiers; a different KVK number is a
