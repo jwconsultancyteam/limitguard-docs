@@ -4600,6 +4600,135 @@
         "title": "CompanyProfile",
         "description": "What the KVK register says about the company, in fields and in plain lines."
       },
+      "CompanyWebsite": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "found",
+              "not_found",
+              "skipped",
+              "timeout",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "Why no website was found. None when found. discovery_disabled: the step is off. natural_person: not a legal person in the register, so nothing is read. no_number: no register number to cache it under. no_candidate: no domain to try (no register email domain and no usable name). not_confirmed: no site tried showed the company number or the company name at its registered address. site_unreadable or deadline: a site did not answer in time (timeout). Any other value is the error's type (error)."
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain",
+            "description": "The confirmed site, a bare domain."
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "register_email",
+                  "name"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method",
+            "description": "register_email: the domain of the email address the register lists. name: a domain built from the company name or a trade name."
+          },
+          "confirmed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "number",
+                  "name_address"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed By",
+            "description": "number: a page shows the company or VAT number. name_address: a page shows the company name at its registered address."
+          },
+          "number_on_site": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number On Site",
+            "description": "Whether a page shows the company or VAT number."
+          },
+          "trading_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trading Name",
+            "description": "The name the site gives the company, when it differs from the legal name."
+          },
+          "mx": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "no_mx",
+                  "lookup_failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mx",
+            "description": "Whether the found domain receives email (an MX record)."
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "CompanyWebsite",
+        "description": "The company's own website, found when the register and the lead give none,\nand confirmed by the site itself (an unconfirmed site is never returned)."
+      },
       "ComplianceSourceStatus": {
         "properties": {
           "source_id": {
@@ -4924,7 +5053,10 @@
           "report_email_settings",
           "chat_transcripts",
           "chat_tool_audit",
-          "chat_turn_stats"
+          "chat_turn_stats",
+          "marketing_consent",
+          "email_events",
+          "email_suppressions"
         ],
         "title": "DataCategory"
       },
@@ -5887,6 +6019,17 @@
             "type": "string",
             "title": "Created At"
           },
+          "document_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Number"
+          },
           "entity": {
             "$ref": "#/components/schemas/ReportEntity"
           },
@@ -5937,6 +6080,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/FinancialsSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sector_comparison": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectorComparison"
               },
               {
                 "type": "null"
@@ -6022,6 +6175,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ReportEntityLinks"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "company_website": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportCompanyWebsite"
               },
               {
                 "type": "null"
@@ -9031,6 +9194,17 @@
             ],
             "title": "Identifier Discovery Reason"
           },
+          "company_website": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompanyWebsite"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The company's own website found when neither the register nor the lead gives one, read for its phone numbers (website_phones) once confirmed. null when the step did not run (a website was given or registered, or the lead is not a company in the register)."
+          },
           "sources_checked": {
             "type": "integer",
             "title": "Sources Checked"
@@ -9592,6 +9766,129 @@
         "type": "object",
         "title": "RegisteredAddress",
         "description": "The address in the register. City only when the register shields it."
+      },
+      "ReportCompanyWebsite": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "found",
+              "not_found",
+              "skipped",
+              "timeout",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "register_email",
+                  "name"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "confirmed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "number",
+                  "name_address"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed By"
+          },
+          "number_on_site": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number On Site"
+          },
+          "trading_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trading Name"
+          },
+          "mx": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "no_mx",
+                  "lookup_failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mx"
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ReportCompanyWebsite",
+        "description": "The company's own website, found when the register and the request give\nnone, and confirmed by its number or its name at the registered address."
       },
       "ReportEntity": {
         "properties": {
@@ -11126,6 +11423,30 @@
         ],
         "title": "ScoringMethodology",
         "description": "Published scoring methodology for transparency."
+      },
+      "SectorComparison": {
+        "properties": {
+          "fiscal_year": {
+            "type": "integer",
+            "title": "Fiscal Year"
+          },
+          "equity_ratio_p50_pct": {
+            "type": "integer",
+            "title": "Equity Ratio P50 Pct"
+          },
+          "filings": {
+            "type": "integer",
+            "title": "Filings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fiscal_year",
+          "equity_ratio_p50_pct",
+          "filings"
+        ],
+        "title": "SectorComparison",
+        "description": "The same-sector median own-capital ratio the PDF and dashboard print beside\nthe company's (``nl_benchmarks.sector_input``), read when the report was built so a\nlater snapshot never changes a stored report. ``filings`` is the cell's count."
       },
       "SelfVerificationResult": {
         "properties": {

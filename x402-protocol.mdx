@@ -3,7 +3,7 @@ title: "x402 Protocol"
 description: "Pay-per-use USDC micropayments for AI agents — no subscription required"
 ---
 
-{/* Generated from docs/x402-protocol.md in jwconsultancyteam/limitguard-ai by scripts/sync_public_repos.py. Edit the source, not this page. */}
+{/* Generated page; edit the source, not this page. */}
 
 Limitguard implements the x402 V2 micropayment protocol for AI agent pay-per-use access. No prepaid key or API key required: agents pay per call in USDC.
 
@@ -127,7 +127,7 @@ def build_x402_payment(
 
     # EIP-712 domain
     domain = {
-        "name": "USD Coin",
+        "name": "USD Coin",     # "USDC" on Base Sepolia: use the 402's accepts[].extra.name
         "version": "2",
         "chainId": chain_num,
         "verifyingContract": usdc_address,
@@ -160,27 +160,43 @@ def build_x402_payment(
         ],
     }
 
-    signable = encode_typed_data(domain, types, "TransferWithAuthorization", message)
+    signable = encode_typed_data(full_message={
+        "types": types,
+        "primaryType": "TransferWithAuthorization",
+        "domain": domain,
+        "message": message,
+    })
     signed = Account.sign_message(signable, private_key=sender_key)
 
+    # The x402 V2 payload (exact scheme), the shape the official clients send
     payload = {
-        "chainId": chain_id,
-        "amount": str(amount),
-        "sender": sender,
-        "recipient": recipient,
-        "nonce": nonce,
-        "signature": signed.signature.hex(),
-        "validAfter": now - 10,
-        "validBefore": now + 300,
+        "x402Version": 2,
+        "scheme": "exact",
+        "network": chain_id,
+        "payload": {
+            "signature": "0x" + bytes(signed.signature).hex(),
+            "authorization": {
+                "from": sender,
+                "to": recipient,
+                "value": str(amount),
+                "validAfter": str(message["validAfter"]),
+                "validBefore": str(message["validBefore"]),
+                "nonce": nonce,
+            },
+        },
     }
 
     return base64.b64encode(json.dumps(payload).encode()).decode()
 ```
 
+The legacy flat payload (`chainId`, `amount`, `sender`, `recipient`, `nonce`,
+`signature`, `validAfter`, `validBefore` at the top level) is still accepted, but new
+integrations should send the V2 shape above.
+
 ## Step 3: Make Paid Request
 
 ```python
-x_payment = build_x402_payment(
+payment = build_x402_payment(
     chain_id="eip155:8453",
     amount=1_050_000,        # $1.05 for /v1/entity/check (fresh)
     sender_key="0xYOUR_PRIVATE_KEY",
@@ -191,7 +207,7 @@ x_payment = build_x402_payment(
 import httpx
 response = httpx.post(
     "https://api.limitguard.ai/v1/entity/check",
-    headers={"X-PAYMENT": x_payment, "Content-Type": "application/json"},
+    headers={"PAYMENT-SIGNATURE": payment, "Content-Type": "application/json"},
     json={"entity_name": "Acme Corp BV", "country": "NL"},
 )
 ```
@@ -292,7 +308,7 @@ it, submit your hash promptly after it confirms. The EIP-3009 (`PAYMENT-SIGNATUR
 and the Solana partially-signed-transaction path are delivered to us privately, are not
 exposed to this race at all, and need neither the token nor the signature.
 
-### Proving you own the sending wallet (issue #365)
+### Proving you own the sending wallet
 
 Send the sending wallet's signature over the challenge and a copied hash becomes
 worthless to anyone else:
@@ -303,7 +319,7 @@ X-Payment-Challenge-Signature: <signature>
 
 **The field is optional today.** Omitting it behaves exactly as before: your proof is
 accepted and the redemption is counted as unsigned. It is planned to become **required**
-(issue #367) once unsigned redemptions fall to zero, so adopt it before then.
+once unsigned redemptions fall to zero, so adopt it before then.
 
 The signed message is exactly five UTF-8 lines joined by a newline, with **no trailing
 newline**:
@@ -383,7 +399,7 @@ Control cost via `X-Response-Quality` header:
 response = httpx.post(
     "https://api.limitguard.ai/v1/entity/check",
     headers={
-        "X-PAYMENT": x_payment_110000,  # $0.11 for cached
+        "PAYMENT-SIGNATURE": payment_110000,  # $0.11 for cached
         "X-Response-Quality": "cached",
         "Content-Type": "application/json",
     },
@@ -391,14 +407,14 @@ response = httpx.post(
 )
 ```
 
-The amount in `X-PAYMENT` must match or exceed the price for the selected tier:
+The amount in the payment must match or exceed the price for the selected tier:
 
 | Tier | /v1/entity/check amount |
 |---|---|
 | `cached` | 110,000 ($0.11) |
 | `fresh` | 1,050,000 ($1.05) |
 
-`enhanced` was retired on `/v1/entity/check` 2026-09-24 (#405): it took the identical
+`enhanced` was retired on `/v1/entity/check` 2026-09-24: it took the identical
 fan-out as `fresh`, so `X-Response-Quality: enhanced` is now quoted, charged and
 served at the `fresh` amount above (1,050,000), not the old 1,500,000 - the 402 body's
 `info.note` says so. The same retirement applies to `/v1/risk/score`,
@@ -406,11 +422,11 @@ served at the `fresh` amount above (1,050,000), not the old 1,500,000 - the 402 
 
 Not every tiered endpoint sells every tier. `POST /v1/entity/deep-check` sells `fresh`
 ($0.88, 880,000: PEP/RCA + Dutch insolvency register) and `enhanced` ($1.71, 1,710,000,
-adds adverse media) always (it is unaffected by the #405 retirement above, since its
+adds adverse media) always (it is unaffected by the `enhanced` retirement above, since its
 `enhanced` tier genuinely reaches a source `fresh` does not), plus a third, separately
-opt-in `credit` tier ($2.45, 2,450,000, adds an Italian credit report) only while
-`OPENAPI_CREDIT_API_KEY` is configured; `X-Response-Quality: credit` is otherwise
-quoted, charged and served as `fresh`, and even once configured a non-Italian request on
+opt-in `credit` tier ($2.45, 2,450,000, adds an Italian credit report) only when
+enabled; `X-Response-Quality: credit` is otherwise
+quoted, charged and served as `fresh`, and even when enabled a non-Italian request on
 the `credit` tier is requoted down to the `fresh` amount before payment is ever required.
 It has no cache-only branch, so `X-Response-Quality: cached` is quoted, charged and served
 as `fresh`.
@@ -444,7 +460,7 @@ Both cache keys are case-insensitive and ignore surrounding whitespace, so a fre
 ## Official x402 Client Payloads
 
 The official x402 clients (`@x402/fetch` 2.x on npm, `x402` on PyPI) send a
-payload shaped differently from the flat one built in Step 2. Both of their shapes are
+payload in the same shape as the one built in Step 2 on EVM. Both of their shapes are
 accepted as-is, with no adapter needed. The server also accepts the v1 shape the
 unscoped npm `x402-fetch` 1.x sends, but that package cannot pay a Limitguard 402 today:
 it rejects the CAIP-2 `network` before signing.
@@ -492,7 +508,7 @@ proof and is **not** gated on the `X-Payment-Challenge` token that a `txSignatur
 `txHash` proof must be redeemed with. To pay the network fee yourself and send a
 `txSignature` instead, construct the wallet with `broadcast=True`.
 
-These payloads work against `X-PAYMENT` on any paid endpoint and against `POST /x402/verify`
+These payloads work against `PAYMENT-SIGNATURE` (or `X-PAYMENT`) on any paid endpoint and against `POST /x402/verify`
 and `POST /x402/settle`.
 
 ## V1 Backward Compatibility
