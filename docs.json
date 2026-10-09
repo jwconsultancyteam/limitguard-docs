@@ -26,7 +26,7 @@
     "links": [
       {
         "label": "limitguard.ai",
-        "href": "https://limitguard.ai"
+        "href": "https://limitguard.ai/?utm_source=docs&utm_medium=docs&utm_campaign=home&utm_content=navbar"
       },
       {
         "label": "API Status",
@@ -36,7 +36,7 @@
     "primary": {
       "type": "button",
       "label": "Get API Key",
-      "href": "https://dashboard.limitguard.ai/sign-up"
+      "href": "https://dashboard.limitguard.ai/sign-up?utm_source=docs&utm_medium=docs&utm_campaign=signup&utm_content=navbar"
     }
   },
   "navigation": {
@@ -145,8 +145,10 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/jwconsultancyteam/limitguard-docs",
-      "website": "https://limitguard.ai"
+      "x": "https://x.com/Limitguard",
+      "linkedin": "https://www.linkedin.com/company/limitguard",
+      "github": "https://github.com/jwconsultancyteam/limitguard-mcp",
+      "website": "https://limitguard.ai/?utm_source=docs&utm_medium=docs&utm_campaign=home&utm_content=footer"
     }
   },
   "seo": {
