@@ -2559,6 +2559,53 @@
         ]
       }
     },
+    "/v1/sanctions/wallet": {
+      "post": {
+        "tags": [
+          "sanctions"
+        ],
+        "summary": "Sanctions Wallet",
+        "description": "Free yes/no check of a wallet address against the OFAC SDN list.\n\nThe full wallet screen (balances, age and activity, contract and delegation,\nrisk score with rules and advice, linked entities, ERC-8004 identity and\nreputation) is POST /v1/mcp/verify-wallet, priced in ``upgrade``.",
+        "operationId": "sanctions_wallet_v1_sanctions_wallet_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WalletSanctionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletSanctionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
     "/v1/agent/check": {
       "post": {
         "tags": [
@@ -12589,6 +12636,127 @@
         ],
         "title": "WalletRiskComponent",
         "description": "The wallet screen's own risk score and the named rules that fired."
+      },
+      "WalletSanctionsRequest": {
+        "properties": {
+          "wallet_address": {
+            "type": "string",
+            "title": "Wallet Address",
+            "description": "Blockchain wallet address"
+          },
+          "chain_id": {
+            "type": "string",
+            "title": "Chain Id",
+            "description": "CAIP-2 chain ID",
+            "default": "eip155:8453"
+          }
+        },
+        "type": "object",
+        "required": [
+          "wallet_address"
+        ],
+        "title": "WalletSanctionsRequest",
+        "description": "POST /v1/sanctions/wallet: the fields, defaults and validation of the full\nwallet screen's body (routers/mcp.py VerifyWalletRequest, then\nmcp_server.validation.VerifyWalletInput in the route), so a body moves\nbetween the two unchanged."
+      },
+      "WalletSanctionsResponse": {
+        "properties": {
+          "wallet_address": {
+            "type": "string",
+            "title": "Wallet Address",
+            "description": "The address in canonical form"
+          },
+          "chain_id": {
+            "type": "string",
+            "title": "Chain Id",
+            "description": "CAIP-2 chain ID"
+          },
+          "sanctioned": {
+            "type": "boolean",
+            "title": "Sanctioned"
+          },
+          "lists": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lists",
+            "description": "[\"OFAC SDN\"] on a match, else []"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of",
+            "description": "Publication date of the list"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "stale"
+            ],
+            "title": "Status",
+            "description": "stale when the loaded list is older than the freshness limit"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "upgrade": {
+            "$ref": "#/components/schemas/WalletSanctionsUpgrade"
+          }
+        },
+        "type": "object",
+        "required": [
+          "wallet_address",
+          "chain_id",
+          "sanctioned",
+          "lists",
+          "status",
+          "source",
+          "upgrade"
+        ],
+        "title": "WalletSanctionsResponse",
+        "description": "The free wallet sanctions check: yes or no, never a programme or entry id."
+      },
+      "WalletSanctionsUpgrade": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool",
+            "description": "The MCP tool of the full screen"
+          },
+          "price_usd": {
+            "type": "number",
+            "title": "Price Usd"
+          },
+          "adds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Adds",
+            "description": "What the full screen adds, in plain English"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "tool",
+          "price_usd",
+          "adds"
+        ],
+        "title": "WalletSanctionsUpgrade",
+        "description": "The paid full wallet screen the free answer points at."
       },
       "WalletScreen": {
         "properties": {
