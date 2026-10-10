@@ -68,7 +68,7 @@ These endpoints have a single price regardless of quality tier:
 
 ## MCP Tool Endpoints
 
-The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are priced per call like the REST API. `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `verify_wallet`, `get_trust_score` (your own most recent stored score for an entity) and `sanctions_preview` are free; `get_compliance_report`, `sanctions_screen`, `check_agent_wallet` and `verify_lead` are billed at the price of the REST endpoint they call (`POST /v1/reports/entity`, `POST /v1/sanctions/screen`, `POST /v1/agent/check` and `POST /v1/leads/verify`, in the tables above). `check_agent` is an unimplemented placeholder: $0.00, and hidden from the MCP tool list. The REST mirrors:
+The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are priced per call like the REST API. `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `verify_wallet` costs $0.11 per call; `get_trust_score` (your own most recent stored score for an entity), `sanctions_preview` and `wallet_sanctions_preview` are free; `get_compliance_report`, `sanctions_screen`, `check_agent_wallet` and `verify_lead` are billed at the price of the REST endpoint they call (`POST /v1/reports/entity`, `POST /v1/sanctions/screen`, `POST /v1/agent/check` and `POST /v1/leads/verify`, in the tables above). `check_agent` is an unimplemented placeholder: $0.00, and hidden from the MCP tool list. The REST mirrors:
 
 | Endpoint | Tool | Price |
 |----------|------|-------|
