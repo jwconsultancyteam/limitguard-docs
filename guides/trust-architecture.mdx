@@ -147,7 +147,7 @@ Limitguard queries these independent data sources in parallel, as far as the ide
   <Card title="7. Wallet Format Check" icon="wallet">
     **Address-format validation for ETH/EVM, BTC, and SOL addresses.**
 
-    The entity check only validates that a submitted wallet address is well-formed for its chain (regex match, no lookups). It does not screen against mixer, darknet, or sanctioned-wallet lists, and it is not factored into the trust score. For real wallet screening (OFAC SDN match, on-chain signals, and named risk rules), use the separate, free wallet screening tool (`verify_wallet` / `POST /v1/mcp/verify-wallet`).
+    The entity check only validates that a submitted wallet address is well-formed for its chain (regex match, no lookups). It does not screen against mixer, darknet, or sanctioned-wallet lists, and it is not factored into the trust score. For real wallet screening (OFAC SDN match, on-chain signals, and named risk rules), use the separate wallet screening tool (`verify_wallet` / `POST /v1/mcp/verify-wallet`, $0.11). The OFAC SDN match alone is free, as a yes/no wallet sanctions check (see Pricing).
   </Card>
 </CardGroup>
 

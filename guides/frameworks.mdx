@@ -14,7 +14,7 @@ For the raw MCP manifest (`/.well-known/mcp.json`), the tools it lists, and thei
 `tools/list` never requires authentication - any MCP client can discover Limitguard's tools without a key or a wallet. Calling a tool is different:
 
 - **With an API key** - send it as a Bearer token on the MCP connection: `Authorization: Bearer lg_live_xxxxxxxxxxxxxxxxxxxx`. A paid-tier key debits its prepaid balance per call, the same as REST.
-- **Without a key** - `tools/list` still works, and `verify_wallet` (wallet risk screening) is real and free ($0), callable with no key and no payment. Any other tool called without a key or a payment header gets back a JSON-RPC error naming the price and how to pay - there is no HTTP 402 on this transport, since a JSON-RPC error has no status-code channel.
+- **Without a key** - `tools/list` still works. A tool called without a key or a payment header gets back a JSON-RPC error naming the price and how to pay - there is no HTTP 402 on this transport, since a JSON-RPC error has no status-code channel. The free tools (`sanctions_preview`, `wallet_sanctions_preview` and `get_trust_score`) cost nothing but still need a key, and a free key is enough (`POST /v1/keys/create`).
 
 Every example below shows the Bearer-token form; drop the `headers` entry (or the `Authorization` key inside it) to connect keyless.
 
