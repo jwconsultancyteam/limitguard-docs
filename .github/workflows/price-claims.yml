@@ -1,0 +1,32 @@
+name: Price claims
+
+# Hand-written docs sentences are not refreshed by the generated-content sync.
+# This fails when a page calls a paid Limitguard tool or endpoint free, reading
+# what is paid from the live API and the generated limitguard-mcp README.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  price-claims:
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Self-test (the fixture holds a stale claim and must fail)
+        run: |
+          if python3 scripts/check_price_claims.py tests/price-claims-fixture; then
+            echo "::error::the check did not catch the stale fixture sentence"
+            exit 1
+          fi
+      - name: Check every page
+        run: python3 scripts/check_price_claims.py .
