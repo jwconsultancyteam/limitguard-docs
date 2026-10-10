@@ -533,7 +533,7 @@ An agent without a Limitguard key can pay per call inside the A2A conversation i
 2. **Pay.** Sign one of those requirements and send `message/send` again with the same `taskId` and the metadata `x402.payment.status: "payment-submitted"` and `x402.payment.payload` (the signed payment).
 3. **Result.** The payment is checked against the quote issued for that task, the skill runs, and the payment is settled only if the skill succeeded. The completed Task carries the result as an artifact and `x402.payment.receipts`. A task can be paid once.
 
-Free skills, such as `wallet_sanctions` (a yes or no against the OFAC list for a wallet, with a daily limit), need no key and no payment. A working Python client that asks for a quote, shows it and asks before signing is in the Limitguard repository: [`examples/a2a_x402_pay.py`](https://github.com/jwconsultancyteam/limitguard-ai/blob/main/examples/a2a_x402_pay.py).
+Free skills, such as `wallet_sanctions` (a yes or no against the OFAC list for a wallet, with a daily limit), need no key and no payment. A working Python client that asks for a quote, shows it and asks before signing is in the public limitguard-mcp repository: [`examples/a2a_x402_pay.py`](https://github.com/jwconsultancyteam/limitguard-mcp/blob/main/examples/a2a_x402_pay.py).
 
 ---
 
