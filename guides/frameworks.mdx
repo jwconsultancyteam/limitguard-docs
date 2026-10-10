@@ -42,9 +42,8 @@ async def main() -> None:
             "limitguard": {
                 "transport": "streamable_http",
                 "url": "https://api.limitguard.ai/mcp",
-                # Omit "headers" entirely to connect without a key -- tools/list
-                # and verify_wallet still work; other tools return a
-                # payment-required error until you attach one.
+                # Omit "headers" entirely to connect without a key: tools/list
+                # still works, but every tool call (free or paid) needs a key.
                 "headers": {"Authorization": "Bearer lg_live_xxxxxxxxxxxxxxxxxxxx"},
             }
         }
