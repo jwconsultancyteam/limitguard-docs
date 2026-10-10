@@ -11,7 +11,7 @@ All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol)
 
 **What it is:** Limitguard is a lead validation service for lead generation agencies, B2B marketing and sales teams: it checks the company behind each lead against official business registers (full coverage in the Netherlands and Belgium), EU VAT and sanctions lists, with website age in the company check, and returns proceed, review or block with the source on every line. Developers and AI agents can use its HTTP API, MCP server and A2A service, hosted in the EU.
 
-**Start here:** Free sandbox key, no wallet. The sandbox covers entity, risk and KYB checks; Lead Verify and the agent check need a live key or an x402 payment. Lead Verify $0.27 per lead and agent check $0.75 per wallet; $0.11-1.85 per call; entity and risk checks $0.88-1.05 fresh ($1.50 KYB), $0.11 cached ($0.25 KYB) when available.
+**Start here:** Free sandbox key, no wallet. The sandbox covers entity, risk and KYB checks; Lead Verify and the agent check need a live key or an x402 payment. Lead Verify \$0.27 per lead and agent check \$0.75 per wallet; \$0.11-1.85 per call; entity and risk checks \$0.88-1.05 fresh (\$1.50 KYB), \$0.11 cached (\$0.25 KYB) when available.
 
 ## Tiered Pricing
 
@@ -68,7 +68,7 @@ These endpoints have a single price regardless of quality tier:
 
 ## MCP Tool Endpoints
 
-The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are priced per call like the REST API. `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `get_trust_score` (your own most recent stored score for an entity), `sanctions_preview` and `wallet_sanctions_preview` (a yes/no OFAC SDN check of a wallet address) are free; `verify_wallet` (the full wallet screen) costs $0.11; `get_compliance_report`, `sanctions_screen`, `check_agent_wallet` and `verify_lead` are billed at the price of the REST endpoint they call (`POST /v1/reports/entity`, `POST /v1/sanctions/screen`, `POST /v1/agent/check` and `POST /v1/leads/verify`, in the tables above). `check_agent` is an unimplemented placeholder: $0.00, and hidden from the MCP tool list. The REST mirrors:
+The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are priced per call like the REST API. `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `get_trust_score` (your own most recent stored score for an entity), `sanctions_preview` and `wallet_sanctions_preview` (a yes/no OFAC SDN check of a wallet address) are free; `verify_wallet` (the full wallet screen) costs \$0.11; `get_compliance_report`, `sanctions_screen`, `check_agent_wallet` and `verify_lead` are billed at the price of the REST endpoint they call (`POST /v1/reports/entity`, `POST /v1/sanctions/screen`, `POST /v1/agent/check` and `POST /v1/leads/verify`, in the tables above). `check_agent` is an unimplemented placeholder: \$0.00, and hidden from the MCP tool list. The REST mirrors:
 
 | Endpoint | Tool | Price |
 |----------|------|-------|
@@ -123,7 +123,7 @@ No payment or API key required:
   <Card title="Prepaid API Key" icon="key">
     Paid-tier API keys skip x402 on each call; the call is debited from the key's prepaid balance instead. Top-ups are paid via x402. Free and sandbox keys hold no balance and pay per call.
 
-    **Tiers:** Free (500 calls / 24 h), Indie ($29), Starter ($99), Growth ($299), Pro ($999).
+    **Tiers:** Free (500 calls / 24 h), Indie (\$29), Starter (\$99), Growth (\$299), Pro (\$999).
 
     [Learn more →](/authentication)
   </Card>
