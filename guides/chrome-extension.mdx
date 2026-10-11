@@ -1,0 +1,86 @@
+---
+title: "Chrome extension"
+description: "Check the Dutch or Belgian company on the page you are on: install the Limitguard extension, add your API key and run a lead check in one click"
+---
+
+The Limitguard Chrome extension checks the company behind the page you are looking at, while you prospect. Open it on a company website or a LinkedIn company page: it fills in what the page shows, you confirm, and one click tells you whether the company is real, active and safe to deal with.
+
+<Note>
+The extension is in review in the Chrome Web Store. Once it is published, search for **Limitguard** in the store to install it.
+</Note>
+
+## Set up
+
+<Steps>
+  <Step title="Install and pin">
+    Install the extension, then open the puzzle icon in the Chrome toolbar and pin **Limitguard** so it is one click away.
+  </Step>
+  <Step title="Add your API key">
+    Create a key in the [dashboard](https://dashboard.limitguard.ai) under **Keys**, open the extension, click **Add your API key** and paste it. The key is stored on this device only, never synced and never shown in full again. Checks are paid from the credit of the key's workspace.
+  </Step>
+  <Step title="Check a company">
+    Open the extension on a company page. Check the filled-in details, edit anything that is wrong, and click **Check this company**.
+  </Step>
+</Steps>
+
+## What you see
+
+Before a check the popup shows the price of one check and your credit left. After the check:
+
+- the verdict: real and active, inactive, not found, ambiguous, unverifiable or sanctioned
+- a risk word: **Low risk**, **Review first** or **High risk** (see below)
+- the register status, legal form and start date
+- the VAT number: valid, not valid or not checked
+- sanctions: a possible match, no match, or not screened
+- the lead score from 0 to 100 and any signals behind it
+- a link to run a full check of the company in your dashboard (that check has its own price and runs only when you click there)
+
+| Risk word | When |
+|---|---|
+| High risk | A sanctions match, or the company is inactive or not in the register |
+| Review first | The register gave no clear answer, any signal was raised, or the sanctions screen did not run |
+| Low risk | Real and active, screened with no sanctions match, no signals |
+
+A check is a [lead check](/guides/ai-agent-integration) (`POST /v1/leads/verify`); its price is on the [Pricing](/pricing) page.
+
+## What it fills in
+
+The extension reads a page only when you open it there. It suggests:
+
+- **Website domain** from the page address.
+- **Company name** from the site name the page declares, or on a LinkedIn company page from the page heading. On LinkedIn it reads the company name only, never people or posts.
+- **KVK, KBO or VAT number** from the text at the bottom of the page. A KVK number is taken only right after a word such as KvK or Kamer van Koophandel; a Belgian enterprise number must pass its checksum.
+- **Country** from the number it found, else the `.nl` or `.be` domain (the default is the Netherlands).
+
+Under the form it says where each value came from. You can change every field.
+
+## No number on the page
+
+- **Netherlands:** a company name is enough. Type the name and click Check: Limitguard looks it up in the KVK register and checks it when exactly one company matches. If several match, the answer is *ambiguous*; add the KVK number.
+- **Belgium:** a check needs the 10-digit KBO number. A Belgian VAT number is `BE` plus that number, so `BE0460370809` gives `0460370809`. Belgian websites must show the enterprise number, usually on their legal, disclaimer or terms page: open the extension on that page and it fills the number in.
+- **Only a website:** a domain alone does not identify a company in the register. Add the name (Netherlands) or the number.
+
+## Messages
+
+| Message | What to do |
+|---|---|
+| Add your API key to start | Paste a key from the dashboard in Settings |
+| Your API key was not accepted | Check or replace the key in Settings |
+| Not enough credit for this check | Top up in the dashboard |
+| Your workspace spending limit is reached | Change the limit in the dashboard |
+| Too many checks in a short time | Wait the time the message names |
+| The register did not answer | Nothing was charged; try again later |
+| Limitguard did not answer in time | The check may still have been charged: look at your credit before you try again |
+
+## Privacy and permissions
+
+Nothing from the page is sent until you click **Check this company**. When you open the extension it asks Limitguard only for the price and, with your key, your credit left. A check sends only the company name, number, VAT number, website and country you confirmed. The extension has no analytics or tracking and loads no code from other servers.
+
+| Permission | Why |
+|---|---|
+| `storage` | Keeps your API key and language on this device |
+| `activeTab` | Reads the address and title of the tab you opened the extension on, only then |
+| `scripting` | Reads the site name and the text at the bottom of that tab, only after you open the extension |
+| `api.limitguard.ai` | Sends the check you confirmed to the Limitguard API |
+
+Full details are in the [privacy policy](https://limitguard.ai/privacy/#chrome-extension). Remove your key in the extension's Settings, or uninstall the extension, at any time.

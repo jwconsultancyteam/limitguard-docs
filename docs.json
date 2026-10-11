@@ -81,6 +81,7 @@
               "guides/webhooks",
               "guides/trust-architecture",
               "guides/claude-connector",
+              "guides/chrome-extension",
               "guides/ai-agent-integration",
               "guides/frameworks",
               "guides/pay-per-call"
