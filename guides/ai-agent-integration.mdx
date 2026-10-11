@@ -79,7 +79,7 @@ curl https://api.limitguard.ai/.well-known/mcp.json
   "tools": [
     {
       "name": "verify_lead",
-      "description": "Lead verify for one NL or BE sales lead: is it a real, active company? Checks the KVK or KBO register (status, legal form, start date, main activity, staff, registered address) and cross-checks whatever else the lead holds: VAT number with VIES, mail server and disposable domain, IBAN country and bank (the account holder is not checked), and the company name against the OFAC, EU and UN sanctions lists. Returns a verdict, a 0-100 lead score, flags and one action per flag. An input not given is not checked and never counts against the lead. $0.27."
+      "description": "Lead verify for one NL or BE sales lead: is it a real, active company? Checks the KVK or KBO register and cross-checks what the lead holds: VAT with VIES, mail server and disposable domain, IBAN country and bank (not the holder), and the company name against the OFAC, EU and UN sanctions lists. Returns a verdict, a 0-100 lead score and flags, each with one action. An input not given is not checked. $0.27."
     },
     {
       "name": "check_agent_wallet",
@@ -95,7 +95,7 @@ curl https://api.limitguard.ai/.well-known/mcp.json
     },
     {
       "name": "verify_wallet",
-      "description": "MCP tool: Screen a wallet: OFAC SDN address match, on-chain signals (contract check, native and USDC balance, transaction count, first seen on Base) and named risk rules with up to 3 advice items. On Base, also reports any ERC-8004 agent the wallet owns and its open on-chain reputation as descriptive signals, never scored. Free ($0). Accepts EVM (0x...) and Solana (base58) addresses."
+      "description": "MCP tool: Screen a wallet: OFAC SDN address match, on-chain signals (contract check, native and USDC balance, transaction count, first seen on Base) and named risk rules with up to 3 advice items. On Base, also reports any ERC-8004 agent the wallet owns and its open on-chain reputation as descriptive signals, never scored. $0.11. Accepts EVM (0x...) and Solana (base58) addresses."
     },
     {
       "name": "get_risk_score",
@@ -103,7 +103,7 @@ curl https://api.limitguard.ai/.well-known/mcp.json
     },
     {
       "name": "get_compliance_report",
-      "description": "Per-entity report built from one real check's signals: identity, sanctions and PEP screening, domain signals, risk score, correlations with the caller's earlier reports, sources and an evidence hash. A source that did not answer is shown unavailable, never clean."
+      "description": "Per-entity report built from one real check's signals: identity, sanctions and PEP screening, domain signals, trust score (risk.trust_score, 0-100, 100 = best), correlations with the caller's earlier reports, sources and an evidence hash. A source that did not answer is shown unavailable, never clean."
     },
     {
       "name": "sanctions_preview",
@@ -111,7 +111,11 @@ curl https://api.limitguard.ai/.well-known/mcp.json
     },
     {
       "name": "sanctions_screen",
-      "description": "Sanctions screen of a company or person name against the OFAC SDN, EU and UN sanctions lists, held locally and refreshed daily. Returns each matched entry: list, entry id, matched name, programmes, countries, listing date and match score. Exact normalised or word-order-insensitive name match only; a name match is not a determination."
+      "description": "Sanctions screen of a company or person name against the OFAC SDN, EU and UN sanctions lists, held locally and refreshed daily. Returns each matched entry: list, entry id, entry type, programmes, countries, listing date and match score; the matched name is withheld over MCP (REST POST /v1/sanctions/screen returns it). Exact normalised or word-order-insensitive name match only; a name match is not a determination."
+    },
+    {
+      "name": "wallet_sanctions_preview",
+      "description": "Free yes/no check of a wallet address against the OFAC SDN digital-currency address list, held locally and refreshed daily: sanctioned, lists, the list date and its freshness, no programmes or entry ids. 10 per caller per UTC day, separate from the name preview, 50 per client IP across API keys. The full wallet screen is POST /v1/mcp/verify-wallet ($0.11)."
     }
   ],
   "a2a_endpoint": "https://api.limitguard.ai/a2a"
@@ -316,7 +320,7 @@ curl https://api.limitguard.ai/.well-known/agent.json
         "company_registry",
         "sales"
       ],
-      "description": "Lead verify for one NL or BE sales lead: is it a real, active company? Checks the KVK or KBO register (status, legal form, start date, main activity, staff, registered address) and cross-checks whatever else the lead holds: VAT number with VIES, mail server and disposable domain, IBAN country and bank (the account holder is not checked), and the company name against the OFAC, EU and UN sanctions lists. Returns a verdict, a 0-100 lead score, flags and one action per flag. An input not given is not checked and never counts against the lead.",
+      "description": "Lead verify for one NL or BE sales lead: is it a real, active company? Checks the KVK or KBO register and cross-checks what the lead holds: VAT with VIES, mail server and disposable domain, IBAN country and bank (not the holder), and the company name against the OFAC, EU and UN sanctions lists. Returns a verdict, a 0-100 lead score and flags, each with one action. An input not given is not checked.",
       "endpoint": "/v1/leads/verify",
       "method": "POST",
       "price_usdc": 0.27
