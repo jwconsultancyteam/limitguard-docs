@@ -524,6 +524,26 @@ exception: a CDP outage fails closed with
 `402 server_error` instead of falling back to the wallet cache, so a false "verified"
 never gets served on the same authorization the CDP outage might still land later.
 
+## Paying inside A2A (a2a-x402)
+
+Agents that talk to Limitguard over A2A (`POST https://api.limitguard.ai/a2a`; Agent Card at
+`https://api.limitguard.ai/.well-known/agent-card.json`) can pay a priced skill inside the
+conversation, with no API key, through the a2a-x402 extension v0.2:
+
+1. Send `message/send` with the header
+   `X-A2A-Extensions: https://github.com/google-agentic-commerce/a2a-x402/blob/main/spec/v0.2`.
+2. The reply is a Task in state `input-required`. Its `status.message.metadata["x402.payment.required"]`
+   holds the same x402 requirements a REST `402` would (USDC on Base and Solana).
+3. Sign one of them and send `message/send` again with the task's `taskId` and the metadata
+   `x402.payment.status: "payment-submitted"` and `x402.payment.payload` (the signed payment).
+4. The completed Task carries the result and `x402.payment.receipts`.
+
+The payment is checked against the quote stored for that task, and it is settled only when the
+skill succeeded. A task can be paid once. Send `x402.payment.status: "payment-rejected"` instead to
+cancel the task; nothing is charged. Without the header, a priced skill answers the JSON-RPC error
+`-32020` with its price. The free skill `wallet_sanctions` needs no payment. A small Python client is
+published as `examples/a2a_x402_pay.py` in the limitguard-mcp repository.
+
 ## Discovery
 
 AI agents can discover Limitguard's x402 payment requirements automatically:
