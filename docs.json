@@ -80,6 +80,7 @@
               "guides/rate-limits",
               "guides/webhooks",
               "guides/trust-architecture",
+              "guides/claude-connector",
               "guides/ai-agent-integration",
               "guides/frameworks",
               "guides/pay-per-call"
