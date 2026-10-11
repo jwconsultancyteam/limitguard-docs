@@ -298,7 +298,7 @@
     "/v1/keys/upgrade/{tier}": {
       "post": {
         "summary": "Upgrade Key",
-        "description": "Buy prepaid balance via x402 USDC payment.\n\nThe x402 price is credited 1:1 to the key's prepaid balance and the tier\nlabel is set to the higher of the current and purchased tier (the label\nselects burst limits in rate_limit.py; it never downgrades). Repeat\npurchases are allowed. Each priced call is then debited at the price in\nthe pricing table.\n\nThe x402 middleware handles payment verification before this handler runs.\nSend X-API-Key header to identify which key to credit.\n\nLadder prices: indie $29, starter $99, growth $299, pro $999.",
+        "description": "Buy prepaid balance via x402 USDC payment.\n\nThe x402 price is credited 1:1 to the key's prepaid balance and the tier\nlabel is set to the higher of the current and purchased tier (the label\nselects burst limits in rate_limit.py; it never downgrades). Repeat\npurchases are allowed. Each priced call is then debited at the price in\nthe pricing table.\n\nThe x402 middleware handles payment verification before this handler runs.\nSend X-API-Key header to identify which key to credit.\n\nLadder prices: indie \\$29, starter \\$99, growth \\$299, pro \\$999.",
         "operationId": "upgrade_key_v1_keys_upgrade__tier__post",
         "security": [
           {
@@ -3014,7 +3014,7 @@
           "mcp"
         ],
         "summary": "MCP Verify Wallet",
-        "description": "Screen a wallet: OFAC SDN match, on-chain signals, named rules. Free ($0).",
+        "description": "Screen a wallet: OFAC SDN match, on-chain signals, named rules. $0.11 per call.",
         "operationId": "mcp_verify_wallet_v1_mcp_verify_wallet_post",
         "requestBody": {
           "content": {
@@ -10952,6 +10952,18 @@
             "title": "Lists As Of",
             "default": {}
           },
+          "list_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List Note",
+            "description": "When the EU list was checked: its file can lack listings adopted after its date."
+          },
           "reason": {
             "anyOf": [
               {
@@ -11214,6 +11226,18 @@
             "title": "List Dates",
             "description": "Each list's publication date, by list name"
           },
+          "list_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List Note",
+            "description": "When the EU list was checked: its file can lack listings adopted after its date"
+          },
           "detail": {
             "type": "string",
             "title": "Detail",
@@ -11410,6 +11434,18 @@
             "type": "object",
             "title": "List Dates",
             "description": "Each list's publication date, by list name"
+          },
+          "list_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List Note",
+            "description": "When the EU list was checked: its file can lack listings adopted after its date"
           },
           "disclaimer": {
             "type": "string",
