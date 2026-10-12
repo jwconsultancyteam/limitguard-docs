@@ -6,7 +6,7 @@ description: "Complete error catalog with causes and fixes"
 All Limitguard API errors follow [RFC 7807 Problem Details](https://www.rfc-editor.org/rfc/rfc7807) for consistent, machine-readable responses. Every error has a `type`, `title`, `status`, and `detail` field, which makes automated error handling straightforward for both human developers and AI agents.
 
 <Note>
-The `type` field is `"about:blank"` for most errors. Entity report errors (see [Entity report errors](#entity-report-errors)) use a `type` URI that links to their entry on this page.
+The `type` field is `"about:blank"` for most errors. Validation errors, entity report errors (see [Entity report errors](#entity-report-errors)) and withdrawn trust badge calls (see [Trust Badge Unavailable](#trust-badge-unavailable)) use a `type` URI that links to their entry on this page.
 </Note>
 
 ## Status Code Reference
@@ -16,12 +16,13 @@ The `type` field is `"about:blank"` for most errors. Entity report errors (see [
 | `200` | OK | Successful GET or POST with result |
 | `201` | Created | Resource successfully created (e.g., API key, webhook) |
 | `204` | No Content | Successful DELETE, no body returned |
-| `400` | Bad Request | Missing required field or malformed JSON |
+| `400` | Bad Request | A path segment is still a `:name` placeholder, or an invalid tier on key creation or upgrade |
 | `401` | Unauthorized | Missing or invalid `X-API-Key` |
 | `402` | Payment Required | x402: no payment header sent, or insufficient amount |
 | `403` | Forbidden | Key exists but lacks permission for this endpoint or tier |
 | `404` | Not Found | Entity, webhook, or resource ID does not exist |
-| `422` | Unprocessable Entity | Request parsed but field values are invalid |
+| `410` | Gone | Withdrawn endpoint, such as the trust badge routes |
+| `422` | Unprocessable Entity | Missing field, invalid value or malformed JSON body |
 | `429` | Too Many Requests | Per-minute or rolling 24-hour rate limit exceeded |
 | `500` | Internal Server Error | Unexpected server error, safe to retry |
 | `503` | Service Unavailable | Planned maintenance or cascading dependency failure |
@@ -39,25 +40,30 @@ All non-2xx responses return RFC 7807 problem details:
   "type": "about:blank",
   "title": "Unauthorized",
   "status": 401,
-  "detail": "Invalid or missing API key"
+  "detail": "Invalid API key. Create one: POST https://api.limitguard.ai/v1/keys/create with JSON {\"email\": \"you@example.com\", \"tier\": \"free\"}, then send header Authorization: Bearer lg_... MCP setup: https://limitguard.ai/mcp",
+  "instance": "/v1/keys/usage"
 }
 ```
 
 ### Validation Error (422)
 
-Field-level validation errors return a `detail` array instead of a string. Field names are sanitized, so internal paths are not exposed:
+Field-level validation errors return a `detail` array instead of a string. A missing field, an invalid value and a malformed JSON body all answer this way. Field names are sanitized, so internal paths are not exposed:
 
 ```json
 {
-  "type": "about:blank",
+  "type": "https://docs.limitguard.ai/errors#validation-error",
   "title": "Validation Error",
   "status": 422,
   "detail": [
-    {"field": "country", "message": "Invalid ISO 3166-1 alpha-2 country code"},
-    {"field": "entity_name", "message": "Must be between 2 and 255 characters"}
-  ]
+    {"field": "entity_name", "message": "Invalid value"}
+  ],
+  "instance": "/v1/entity/check",
+  "errorCode": "validation_error",
+  "note": "Nothing was charged."
 }
 ```
+
+Most messages are the generic `Invalid value`. A few rules that Limitguard checks itself carry their own message.
 
 <Tip>
 When `detail` is an array, iterate over it to surface all field errors at once. This avoids fixing one error only to encounter the next on retry.
@@ -68,42 +74,29 @@ When `detail` is an array, iterate over it to surface all field errors at once. 
 ## 400 Bad Request
 
 <AccordionGroup>
-  <Accordion title="Missing required field">
-    **Cause:** A required request body field is absent entirely, or the request body is missing.
+  <Accordion title="Unsubstituted path parameter">
+    **Cause:** A path segment is a `:name` placeholder, such as `:entity_id`, copied from a discovery listing instead of a real identifier.
 
     ```json
     {
-      "type": "about:blank",
-      "title": "Bad Request",
-      "status": 400,
-      "detail": "Missing required field: entity_name"
+      "error": "unsubstituted_path_parameter",
+      "parameter": "entity_id",
+      "detail": "Replace :entity_id with a real identifier.",
+      "example": "/v1/reputation/history/acme-bv-nl"
     }
     ```
 
-    **Fix:** Check that your request includes all required fields. For `/v1/entity/check`, both `entity_name` and `country` are required. Verify you are sending `Content-Type: application/json` and a valid JSON body.
+    **Fix:** Replace the placeholder with a real value. The `example` field shows the shape of a call; it is not a guaranteed-valid identifier.
   </Accordion>
 
-  <Accordion title="Malformed JSON body">
-    **Cause:** The request body cannot be parsed as JSON, often because of a trailing comma, an unclosed brace, or non-UTF-8 encoding.
+  <Accordion title="Invalid tier on key creation or upgrade">
+    **Cause:** `POST /v1/keys/create` accepts only the free and sandbox tiers, and `POST /v1/keys/upgrade/{tier}` accepts only a tier you can upgrade to. `detail` says which.
 
-    ```json
-    {
-      "type": "about:blank",
-      "title": "Bad Request",
-      "status": 400,
-      "detail": "Invalid JSON body"
-    }
-    ```
-
-    **Fix:** Validate your JSON before sending. Use `json.dumps()` in Python or `JSON.stringify()` in JavaScript rather than constructing JSON strings manually.
-  </Accordion>
-
-  <Accordion title="Unsupported Content-Type">
-    **Cause:** The `Content-Type` header is missing or set to a value other than `application/json` on a POST endpoint.
-
-    **Fix:** Always include `-H "Content-Type: application/json"` on POST requests.
+    **Fix:** Create a free or sandbox key, then use `POST /v1/keys/upgrade/{tier}` with an x402 payment to upgrade.
   </Accordion>
 </AccordionGroup>
+
+A missing required field or a malformed JSON body is not a 400. It answers [422](#422-unprocessable-entity).
 
 ---
 
@@ -118,7 +111,8 @@ When `detail` is an array, iterate over it to surface all field errors at once. 
       "type": "about:blank",
       "title": "Unauthorized",
       "status": 401,
-      "detail": "Invalid or missing API key"
+      "detail": "Authentication required. Get a key: POST https://api.limitguard.ai/v1/keys/create with JSON {\"email\": \"you@example.com\", \"tier\": \"free\"}, send header Authorization: Bearer lg_... MCP setup: https://limitguard.ai/mcp",
+      "instance": "/v1/keys/usage"
     }
     ```
 
@@ -343,21 +337,6 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
 ## 404 Not Found
 
 <AccordionGroup>
-  <Accordion title="Entity not found">
-    **Cause:** A lookup endpoint (e.g., `GET /v1/reputation/history/{entity_hash}`) was called with an entity hash that does not exist in the system.
-
-    ```json
-    {
-      "type": "about:blank",
-      "title": "Not Found",
-      "status": 404,
-      "detail": "Entity hash abc123 not found"
-    }
-    ```
-
-    **Fix:** Entity hashes are generated by Limitguard from the entity data. Run a `POST /v1/entity/check` first to create the entity record, then use the returned `entity_hash` for subsequent lookups.
-  </Accordion>
-
   <Accordion title="Webhook not found">
     **Cause:** A `DELETE /v1/webhooks/{webhook_id}` or test call was made with an unknown `webhook_id`, or with the ID of a webhook another API key registered.
 
@@ -371,23 +350,74 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
   </Accordion>
 </AccordionGroup>
 
+### No History
+
+`GET /v1/reputation/history/{entity_hash}` answers 404 for an entity that has never been scored, so there is no trend to return. The payment is not settled, so nothing is charged.
+
+```json
+{
+  "type": "https://docs.limitguard.ai/errors#no-history",
+  "title": "No Reputation History",
+  "status": 404,
+  "detail": "This entity has never been scored, so there is no history to return. Run POST /v1/entity/check first; every check is recorded and becomes a point on this trend.",
+  "instance": "/v1/reputation/history/<entity_hash>",
+  "errorCode": "no_reputation_history"
+}
+```
+
+**Fix:** Run `POST /v1/entity/check` for the entity first. Every check is recorded and becomes a point on the trend.
+
+---
+
+## 410 Gone
+
+### Trust Badge Unavailable
+
+`GET /v1/badge/{entity_id}`, `GET /v1/badge/{entity_id}.json` and `GET /v1/verify/{entity_id}` were withdrawn on 8 Oct 2026. They showed a demo score that was not based on any check. They take no API key and charge nothing. The SVG route answers with this JSON body, not an image.
+
+```json
+{
+  "type": "https://docs.limitguard.ai/errors#trust-badge-unavailable",
+  "title": "Trust Badge Unavailable",
+  "status": 410,
+  "detail": "Trust badges and verification pages have been withdrawn. ...",
+  "instance": "<the path you called>",
+  "errorCode": "trust_badge_unavailable",
+  "alternatives": ["/v1/entity/check"]
+}
+```
+
+`instance` echoes the path you called, for example a `/v1/badge/` path. All three routes give the same 410 body.
+
+**What to do:** Remove the badge or link. To check a company, use `POST /v1/entity/check`.
+
+### Compliance Report Unavailable
+
+`GET /v1/compliance/report/{entity_id}` is withdrawn. It returned the same EU AI Act briefing for every entity, so it was not the per-entity assessment it was priced as. It answers 410 with `errorCode` `compliance_report_unavailable` and charges nothing.
+
+**What to do:** For an EU AI Act readiness score from inputs you supply, use `GET /v1/compliance/readiness/{entity_id}`. For a per-entity report built from a real check, use `POST /v1/reports/entity`; when it is offered, `alternatives` in the 410 body names it.
+
 ---
 
 ## 422 Unprocessable Entity
 
-422 errors occur when the request is syntactically valid JSON but the field values fail business-logic validation. For field validation the `detail` field is an **array** of field-level errors; a few checks made after validation (such as the webhook URL check) return a single string `detail` instead.
+422 errors occur when the request body is missing a required field, a value is invalid, or the body is not valid JSON. For field validation the `detail` field is an **array** of field-level errors; a few checks made after validation (such as the webhook URL check) return a single string `detail` instead. Nothing is charged.
 
 ```json
 {
-  "type": "about:blank",
+  "type": "https://docs.limitguard.ai/errors#validation-error",
   "title": "Validation Error",
   "status": 422,
   "detail": [
-    {"field": "country", "message": "Invalid ISO 3166-1 alpha-2 country code"},
-    {"field": "kvk_number", "message": "KVK number must be exactly 8 digits"}
-  ]
+    {"field": "country", "message": "Invalid value"}
+  ],
+  "instance": "/v1/entity/check",
+  "errorCode": "validation_error",
+  "note": "Nothing was charged."
 }
 ```
+
+A body that is not valid JSON (for example a trailing comma) answers the same way. Its `field` is the character position of the parse error, such as `"19"`. Send `Content-Type: application/json` and build the body with `json.dumps()` in Python or `JSON.stringify()` in JavaScript rather than by hand.
 
 <Warning>
 422 responses are sanitized: internal field paths and database details are never exposed. The `field` name matches the key in your request body.
@@ -441,7 +471,7 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
   <Accordion title="Invalid webhook event type">
     **Cause:** `events` array in `POST /v1/webhooks` contains an unrecognized event name.
 
-    **Fix:** Use event types from the list in the [Webhooks guide](/guides/webhooks#event-types): `sanctions.match.new`, `trust.score.changed`, `trust.level.downgrade` or `certificate.expired`. There is no `*` wildcard. Only `sanctions.match.new` is sent today; `delivered_events` in the registration response lists which of yours are live.
+    **Fix:** Use event types from the list in the [Webhooks guide](/guides/webhooks#event-types): `sanctions.match.new`, `trust.score.changed`, `trust.level.downgrade`, `certificate.expired` or `identifier.change.new`. There is no `*` wildcard. Only `sanctions.match.new` and `identifier.change.new` are sent today; `delivered_events` in the registration response lists which of yours are live.
   </Accordion>
 
   <Accordion title="Invalid webhook URL">
@@ -463,7 +493,7 @@ A 402 that rejects a payment carries `errorCode` in its body beside `error`; the
 
 ## 429 Too Many Requests
 
-Limitguard enforces two independent limits per key: a per-minute limit and a rolling 24-hour limit. A verified x402 payer has a per-minute limit only.
+Limitguard enforces three independent limits per key: a per-minute limit, a rolling 24-hour limit and a calendar-month cap. A verified x402 payer has a per-minute limit only.
 
 ### Rate Limit Response
 
@@ -490,21 +520,21 @@ X-RateLimit-Remaining: 0
 
 | Header | Description |
 |--------|-------------|
-| `Retry-After` | Seconds to wait: 60 for a per-minute limit, 3600 for the 24-hour limit |
+| `Retry-After` | Seconds to wait: 60 for a per-minute limit, 3600 for the 24-hour limit, and the seconds until 00:00 UTC on the 1st of next month for the monthly cap |
 | `X-RateLimit-Limit` | The limit that was hit, in requests per its window |
 | `X-RateLimit-Remaining` | Requests remaining in that window (0 on a 429) |
 
 ### Rate Limits by Tier
 
-| Tier | Requests/min | Requests / 24 h |
-|------|-------------|-----------------|
-| Unauthenticated (per IP) | 10 | No daily cap |
-| Free | 10 | 500 |
-| Indie | 30 | 1,000 |
-| Starter | 60 | 10,000 |
-| Growth | 120 | 50,000 |
-| Pro | 300 | 250,000 |
-| x402 payer (no key) | 60 | No daily cap |
+| Tier | Requests/min | Requests / 24 h | Requests / month |
+|------|-------------|-----------------|------------------|
+| Unauthenticated (per IP) | 10 | No daily cap | No monthly cap |
+| Free | 10 | 500 | 500 |
+| Indie | 30 | 1,000 | 1,000 |
+| Starter | 60 | 10,000 | 10,000 |
+| Growth | 120 | 50,000 | 50,000 |
+| Pro | 300 | 250,000 | 250,000 |
+| x402 payer (no key) | 60 | No daily cap | No monthly cap |
 
 See [Rate Limits](/guides/rate-limits#rate-limits-by-tier) for the authoritative table and [Pricing](/pricing#api-key-tier-upgrades) for upgrade prices.
 
@@ -523,6 +553,22 @@ When a key hits its rolling 24-hour limit, the `detail` names it:
 ```
 
 **Fix:** Wait for `Retry-After`, top up to a higher tier for a higher limit, or pay per call with x402, which has no daily cap. The daily caps on keys are abuse limits, not a usage allowance you buy.
+
+### Monthly Cap Reached
+
+Each key also has a calendar-month cap equal to its tier's number in the table above. It resets at 00:00 UTC on the 1st. The 429 carries `Retry-After` set to the seconds until then, and no `X-RateLimit-*` headers:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Monthly limit exceeded (500/500): a per-key abuse cap, not prepaid balance; resets monthly. ...",
+  "instance": "/v1/entity/check"
+}
+```
+
+**Fix:** Wait for the reset, top up to a higher tier for a higher cap (the highest tier has none above it), or pay that call keyless with x402. For a priced endpoint the `detail` quotes the price and names the keyless x402 call. A call you pay for with x402 counts toward the cap but is not refused by it.
 
 <Tip>
 Use the `X-Response-Quality: cached` header where acceptable: a cached answer costs less when the entity was already scored within the cache TTL.
@@ -1059,7 +1105,6 @@ These endpoints never require authentication or payment, so they never return 40
 | `GET /.well-known/mcp.json` | MCP manifest |
 | `GET /v1/self-verify` | Limitguard's own trust score |
 | `GET /v1/methodology` | Scoring methodology |
-| `GET /v1/badge/{entity_id}` | SVG trust badge |
 | `GET /llms.txt` | LLM-readable API summary |
 
 ---

@@ -79,43 +79,43 @@ curl https://api.limitguard.ai/.well-known/mcp.json
   "tools": [
     {
       "name": "verify_lead",
-      "description": "Lead verify for one NL or BE sales lead: is it a real, active company? Checks the KVK or KBO register and cross-checks what the lead holds: VAT with VIES, mail server and disposable domain, IBAN country and bank (not the holder), and the company name against the OFAC, EU and UN sanctions lists. Returns a verdict, a 0-100 lead score and flags, each with one action. An input not given is not checked. $0.27."
+      "description": "Verify a NL/BE sales lead against the registers in one call: real and active, VAT, mail server, IBAN, sanctions; a 0-100 lead score. $0.27."
     },
     {
       "name": "check_agent_wallet",
-      "description": "Agent wallet check in one call: screens an EVM wallet against the OFAC SDN digital-currency address list, reads its Base USDC and ETH balance, looks up its ERC-8004 identity registration (and, given an agent id, that agent's owner and payment wallet) and lists open ERC-8004 feedback, which is not scored. Returns one verdict and each part's status; a part that could not be read says so. $0.75."
+      "description": "Check a counterparty agent's EVM wallet in one call: OFAC SDN digital-currency address list match, Base USDC and ETH balance, ERC-8004 identity registration (and, given an agent id, that agent's owner and payment wallet) and open ERC-8004 feedback, which is not scored. $0.75."
     },
     {
       "name": "check_entity",
-      "description": "MCP tool: entity trust check for LLM agents. Runs the /v1/entity/check engine on entity_name, country, kvk_number and domain only, so up to 5 sources (no IBAN, VAT or wallet)."
+      "description": "Company check on a business: sanctions screening and country risk, the Dutch KVK register for an NL company, and the website domain when you send it. Returns trust_score (0-100, 100 = best), trust_level (high means low risk), cluster, recommendation, confidence, top_factors and sources_checked."
     },
     {
       "name": "get_trust_score",
-      "description": "MCP tool: Look up your own most recent trust score for an entity you checked before, from your stored checks: score, level, when, which product, trend and how many checks are on record. Runs no new check and calls no data source. Free ($0)."
+      "description": "Look up your own most recent trust score for an entity you checked before, from your stored checks: score, level, when, which product, trend and how many checks are on record. Runs no new check and calls no data source. Free ($0)."
     },
     {
       "name": "verify_wallet",
-      "description": "MCP tool: Screen a wallet: OFAC SDN address match, on-chain signals (contract check, native and USDC balance, transaction count, first seen on Base) and named risk rules with up to 3 advice items. On Base, also reports any ERC-8004 agent the wallet owns and its open on-chain reputation as descriptive signals, never scored. $0.11. Accepts EVM (0x...) and Solana (base58) addresses."
+      "description": "Screen a wallet: OFAC SDN address match, on-chain signals (contract check, native and USDC balance, transaction count, first seen on Base) and named risk rules with up to 3 advice items. On Base, also reports any ERC-8004 agent the wallet owns and its open on-chain reputation as descriptive signals, never scored. $0.11. Supports EVM and Solana addresses."
     },
     {
       "name": "get_risk_score",
-      "description": "MCP tool: quick risk score for entity name + country pair."
+      "description": "Quick risk score from sanctions screening and country risk only, without the register or domain lookups of check_entity. Returns risk_score (0-100, 100 = riskiest), risk_level (high means high risk, the reverse of check_entity's trust_level), sanctions_match and fatf_status; no recommendation or factors."
     },
     {
       "name": "get_compliance_report",
-      "description": "Per-entity report built from one real check's signals: identity, sanctions and PEP screening, domain signals, trust score (risk.trust_score, 0-100, 100 = best), correlations with the caller's earlier reports, sources and an evidence hash. A source that did not answer is shown unavailable, never clean."
+      "description": "Per-entity report built from one real check: registry identity, sanctions and PEP screens, domain signals, risk score with the rules that fired, correlations, every finding as a ranked action, a per-source status table (ok / unavailable / error) and a report hash."
     },
     {
       "name": "sanctions_preview",
-      "description": "Free yes/no preview of the sanctions screen against the OFAC SDN, EU and UN sanctions lists: possible_match only, no entries. 10 per caller per UTC day, 50 per client IP across API keys; the matched entries are POST /v1/sanctions/screen."
+      "description": "Free yes/no sanctions preview against the local OFAC SDN, EU and UN lists. Returns possible_match, lists_checked, list_dates and list_note only, never an entry. 10 per caller per UTC day."
     },
     {
       "name": "sanctions_screen",
-      "description": "Sanctions screen of a company or person name against the OFAC SDN, EU and UN sanctions lists, held locally and refreshed daily. Returns each matched entry: list, entry id, entry type, programmes, countries, listing date and match score; the matched name is withheld over MCP (REST POST /v1/sanctions/screen returns it). Exact normalised or word-order-insensitive name match only; a name match is not a determination."
+      "description": "Sanctions screen against the local OFAC SDN, EU and UN lists: matched entries with list, entry id, programmes, countries, listing date and match score. A name match is not a determination."
     },
     {
       "name": "wallet_sanctions_preview",
-      "description": "Free yes/no check of a wallet address against the OFAC SDN digital-currency address list, held locally and refreshed daily: sanctioned, lists, the list date and its freshness, no programmes or entry ids. 10 per caller per UTC day, separate from the name preview, 50 per client IP across API keys. The full wallet screen is POST /v1/mcp/verify-wallet ($0.11)."
+      "description": "Free yes/no check of a wallet address against the OFAC SDN list: sanctioned, lists, the list date and its freshness, no programmes or entry ids. 10 per caller per UTC day, separate from sanctions_preview. The full wallet screen is verify_wallet ($0.11)."
     }
   ],
   "a2a_endpoint": "https://api.limitguard.ai/a2a"
@@ -568,14 +568,14 @@ curl https://api.limitguard.ai/.well-known/x402.json
       "method": "POST",
       "price_usdc": 1.05,
       "price_raw": 1050000,
-      "category": "trust_intelligence"
+      "category": "entity_verification"
     },
     {
       "path": "/v1/risk/score",
       "method": "POST",
       "price_usdc": 0.9,
       "price_raw": 900000,
-      "category": "trust_intelligence"
+      "category": "entity_verification"
     },
     {
       "path": "/v1/kyb/check",
@@ -916,7 +916,7 @@ class TrustResult:
     level: str
     decision: TrustDecision
     cluster: str
-    sources_checked: list[str]
+    sources_checked: int
     processing_ms: int
     paid_usdc: float
 
@@ -1084,7 +1084,7 @@ class TrustGatedAgent:
                 level="high_risk",
                 decision=TrustDecision.BLOCK,
                 cluster="unknown",
-                sources_checked=risk_data.get("sources_checked", []),
+                sources_checked=risk_data.get("sources_checked", 0),
                 processing_ms=risk_data.get("processing_time_ms", 0),
                 paid_usdc=total_paid,
             )
@@ -1101,7 +1101,7 @@ class TrustGatedAgent:
             level=trust_data["trust_level"],
             decision=decision,
             cluster=trust_data.get("cluster", "unknown"),
-            sources_checked=trust_data.get("sources_checked", []),
+            sources_checked=trust_data.get("sources_checked", 0),
             processing_ms=trust_data.get("processing_time_ms", 0),
             paid_usdc=total_paid,
         )
@@ -1307,7 +1307,7 @@ class TrustGatedAgent {
       level: trustData.trust_level,
       decision: this.scoreToDecision(trustData.trust_score),
       cluster: trustData.cluster ?? "unknown",
-      sourcesChecked: trustData.sources_checked ?? [],
+      sourcesChecked: trustData.sources_checked ?? 0,
       processingMs: trustData.processing_time_ms ?? 0,
       paidUsdc: totalPaid,
     };

@@ -84,16 +84,16 @@ The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are pri
 
 ## API Key Tier Upgrades
 
-Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key. See [Authentication](/authentication#api-key-authentication) for the full tier ladder. The balance does not expire or reset.
+Pay via x402 to top up an API key's prepaid balance (`POST /v1/keys/upgrade/{tier}` or `POST /v1/keys/topup/{usd}`). This is the only case where x402 payment is required even if you already hold an API key. See [Authentication](/authentication#api-key-authentication) for the full tier ladder. The balance does not expire or reset. Each key also has a monthly call cap equal to its tier's limit in the table below. It resets at 00:00 UTC on the 1st; see [Rate Limits](/guides/rate-limits#monthly-cap-per-key).
 
 API key top-ups (Indie, Starter, Growth, Pro in USD) are prepaid balances for the API; they are not the dashboard's monthly or yearly plans.
 
 | Endpoint | Price | Rate limits |
 |----------|-------|---------|
-| `POST /v1/keys/upgrade/indie` | $29 | 30 / min, 1,000 / 24 h |
-| `POST /v1/keys/upgrade/starter` | $99 | 60 / min, 10,000 / 24 h |
-| `POST /v1/keys/upgrade/growth` | $299 | 120 / min, 50,000 / 24 h |
-| `POST /v1/keys/upgrade/pro` | $999 | 300 / min, 250,000 / 24 h |
+| `POST /v1/keys/upgrade/indie` | $29 | 30 / min, 1,000 / 24 h, 1,000 / month |
+| `POST /v1/keys/upgrade/starter` | $99 | 60 / min, 10,000 / 24 h, 10,000 / month |
+| `POST /v1/keys/upgrade/growth` | $299 | 120 / min, 50,000 / 24 h, 50,000 / month |
+| `POST /v1/keys/upgrade/pro` | $999 | 300 / min, 250,000 / 24 h, 250,000 / month |
 
 ## Free Endpoints
 
@@ -105,7 +105,6 @@ No payment or API key required:
 | **Key provisioning** | `POST /v1/keys/create` |
 | **Discovery** | `/.well-known/x402.json`, `/.well-known/agent.json`, `/.well-known/mcp.json` |
 | **Transparency** | `/v1/self-verify`, `/v1/methodology`, `/v1/self-verify/signals` |
-| **Trust badges** | `/v1/badge/{id}`, `/v1/badge/{id}.json`, `/v1/verify/{id}` |
 | **Certificates** | `/v1/certificate/{hash}` (verification only) |
 | **Legal** | `/v1/legal/privacy`, `/v1/legal/terms`, `/v1/legal/dpa` |
 | **LLM** | `/llms.txt`, `/llms-full.txt` |
@@ -126,9 +125,9 @@ No payment or API key required:
     [Learn more →](/x402-protocol)
   </Card>
   <Card title="Prepaid API Key" icon="key">
-    Paid-tier API keys skip x402 on each call; the call is debited from the key's prepaid balance instead. Top-ups are paid via x402. Free and sandbox keys hold no balance and pay per call.
+    Paid-tier API keys skip x402 on each call; the call is debited from the key's prepaid balance instead. Top-ups are paid via x402. Free keys hold no balance and pay per call. Sandbox keys get mock responses without paying on the endpoints the sandbox covers; on any other priced endpoint they pay per call like a free key.
 
-    **Tiers:** Free (500 calls / 24 h), Indie (\$29), Starter (\$99), Growth (\$299), Pro (\$999).
+    **Tiers:** Free (500 calls / 24 h and 500 / month), Indie (\$29), Starter (\$99), Growth (\$299), Pro (\$999).
 
     [Learn more →](/authentication)
   </Card>
