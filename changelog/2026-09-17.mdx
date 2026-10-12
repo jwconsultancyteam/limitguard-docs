@@ -1,0 +1,15 @@
+---
+title: "September 17, 2026"
+description: "GET /v1/compliance/report withdrawn"
+---
+
+## `GET /v1/compliance/report/{entity_id}` withdrawn
+
+The endpoint returned the same EU AI Act briefing for every `entity_id`, so it was not the
+per-entity assessment it was priced as. It now answers `410 Gone` with `errorCode`
+`compliance_report_unavailable`, is no longer priced or listed in discovery, and a call to
+it is not charged.
+
+For an EU AI Act readiness score from inputs you supply, use
+`GET /v1/compliance/readiness/{entity_id}`. For a per-entity report built from a real
+check, use `POST /v1/reports/entity` (see [September 24](/changelog/2026-09-24)).

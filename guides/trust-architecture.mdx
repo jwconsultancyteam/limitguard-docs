@@ -129,9 +129,9 @@ Limitguard queries these independent data sources in parallel, as far as the ide
     Jurisdiction risk is evaluated using Transparency International's CPI score and the FATF (Financial Action Task Force) list status. High-risk jurisdictions, particularly FATF blacklisted or greylisted countries, reduce the trust score regardless of other signals.
   </Card>
   <Card title="4. Domain Intelligence" icon="link">
-    **WHOIS registration age and DNS email-record analysis.**
+    **WHOIS registration age, DNS email records and the TLS certificate.**
 
-    Domain age is a strong fraud signal: most fraudulent entities use recently registered domains. We also inspect DNS records for anomalies, check the MX, SPF and DMARC email records.
+    Domain age is a strong fraud signal: most fraudulent entities use recently registered domains. We also check the MX, SPF and DMARC email records, and connect to the website to check its TLS certificate: it must chain to a trusted certificate authority, match the domain name and not be expired. The issuer is recorded.
   </Card>
   <Card title="5. IBAN Validation" icon="credit-card">
     **Bank account structure and BIC/SWIFT verification.**
@@ -190,28 +190,28 @@ The trust score is not a black box. Every score comes with `top_factors` that ex
   "confidence": 0.94,
   "top_factors": [
     {
-      "source": "kvk",
-      "signal": "Active registration, 8+ years",
-      "impact": "positive",
-      "weight": 0.35
-    },
-    {
       "source": "sanctions",
-      "signal": "No match across 80+ lists",
+      "signal": "No sanctions match found",
       "impact": "positive",
-      "weight": 0.25
+      "weight": 0.30
     },
     {
-      "source": "vat",
-      "signal": "VIES verified EU VAT — name match",
+      "source": "registry",
+      "signal": "Verified, active, established business",
+      "impact": "positive",
+      "weight": 0.30
+    },
+    {
+      "source": "jurisdiction",
+      "signal": "Low-risk jurisdiction (CPI: 82)",
       "impact": "positive",
       "weight": 0.20
     },
     {
       "source": "domain",
-      "signal": "Domain age 6+ years, valid DMARC",
+      "signal": "Established web presence (2412 days)",
       "impact": "positive",
-      "weight": 0.15
+      "weight": 0.10
     }
   ]
 }
@@ -259,8 +259,8 @@ Build confidence thresholds into your integration policy. For example: require `
 
 | Layer | Location |
 |-------|----------|
-| API, audit log and cache | Germany |
-| Dashboard application | Germany |
+| API, audit log and cache | European Union |
+| Dashboard application | European Union |
 | Database: dashboard accounts, workspaces and check records | Ireland |
 | CDN and web application firewall | Global edge network |
 
