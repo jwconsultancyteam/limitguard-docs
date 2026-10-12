@@ -45,10 +45,7 @@ Response (HTTP 402):
   "resource": {
     "url": "https://api.limitguard.ai/v1/entity/check",
     "description": "Full entity trust check across multiple verification layers...",
-    "mimeType": "application/json",
-    "serviceName": "Limitguard",
-    "tags": ["kyb", "sanctions", "lead-verification", "wallet-screening", "compliance"],
-    "iconUrl": "https://limitguard.ai/icon-512.png"
+    "mimeType": "application/json"
   },
   "accepts": [
     {
@@ -96,7 +93,6 @@ individual fields:
 | `payTo` | Address to pay; chain-specific, so read it from the response rather than hardcoding it |
 | `extra.name` / `extra.version` | EIP-712 domain values to sign with on EVM chains (informational on Solana) |
 | `extra.decimals` | USDC decimals (6) |
-| `resource.serviceName` / `tags` / `iconUrl` | The service name ("Limitguard"), search tags and icon that x402 directories such as the Coinbase Bazaar show for this endpoint |
 
 Every 402 also carries additive recovery hints under `extensions.bazaar.info`, so an agent without a wallet can still get started (full reference: [Errors](/guides/errors)):
 
