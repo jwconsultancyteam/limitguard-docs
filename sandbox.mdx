@@ -143,7 +143,7 @@ The response includes a `Retry-After: 60` header.
 
 ## Middleware Execution Order
 
-Sandbox detection runs **before** x402 payment verification, so a sandbox request never reaches the payment check and is never charged.
+Sandbox detection runs **before** rate limiting and x402 payment verification. A sandbox request to an endpoint the sandbox covers skips the payment check and is never charged. Any other priced endpoint charges a sandbox key like a free key. A sandbox request over the limit of 10 requests per minute per IP is answered with a 429 by the sandbox step itself.
 
 ## Transitioning to Production
 

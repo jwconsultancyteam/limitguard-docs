@@ -50,14 +50,13 @@ A single `POST /v1/entity/check` request moves through the following stages. Eve
 ```mermaid
 flowchart TD
     A([Client Request]) --> B[Logging Middleware]
-    B --> C[Security Headers]
-    C --> D[Request Size Limit]
-    D --> E[Rate Limiter]
+    B --> C[Sandbox Detection]
+    C --> D[Rate Limiter]
+    D --> E[x402 Payment Verification]
     E --> F[Tenant Isolation]
-    F --> G{Sandbox?}
-    G -- Yes --> H[Mock Response]
-    G -- No --> I[x402 Payment Verification]
-    I --> J[Router]
+    F --> G[Request Size Limit]
+    G --> H[Security Headers]
+    H --> J[Router]
 
     J --> K[Fan-out: Parallel Checks]
 
@@ -78,33 +77,33 @@ flowchart TD
 ```
 
 <Note>
-The middleware chain runs top-to-bottom on every request. Sandbox detection fires **before** payment verification: if you are in sandbox mode, x402 is never reached. See [Sandbox Mode](/sandbox) for details.
+The middleware chain runs top-to-bottom on every request. Sandbox detection fires **before** rate limiting and payment verification, so a sandbox key is recognized first and pays nothing on the endpoints the sandbox covers. See [Sandbox Mode](/sandbox) for details.
 </Note>
 
 ---
 
 ## Middleware Security Stack
 
-Every request passes through 8 middleware layers before reaching the router. Order is fixed and cannot be bypassed.
+Every request passes through these main middleware layers before reaching the router. Order is fixed and cannot be bypassed. A few smaller layers (CORS, tracing, host checks) are left out here.
 
 | Position | Middleware | Purpose |
 |----------|-----------|---------|
 | 1 | **Logging** | Structured request logging with correlation IDs |
-| 2 | **Security Headers** | HSTS, CSP, X-Frame-Options, X-Content-Type-Options |
-| 3 | **Request Size Limit** | Blocks oversized payloads before parsing |
-| 4 | **Rate Limiter** | Per-tenant, per-IP sliding window limits |
-| 5 | **Tenant Isolation** | API key validated; request scoped to tenant context |
-| 6 | **Sandbox** | Detects sandbox mode; bypasses downstream if active |
-| 7 | **x402 Payment** | Verifies EIP-3009 signature or checks API key tier |
+| 2 | **Sandbox** | Detects a sandbox key by its prefix and applies the sandbox limit of 10 requests per minute per IP. Answers its own 429 |
+| 3 | **Rate Limiter** | Per-IP and per-key sliding window limits |
+| 4 | **x402 Payment** | Verifies EIP-3009 signature or checks API key tier. A sandbox request on a path with a sandbox mock skips payment |
+| 5 | **Tenant Isolation** | Scopes the request to the tenant context of its API key |
+| 6 | **Request Size Limit** | Blocks oversized payloads before parsing |
+| 7 | **Security Headers** | HSTS, CSP, X-Frame-Options, X-Content-Type-Options |
 | 8 | **Router** | Dispatches to endpoint handler |
 
 ```
-Request → Logging → Security Headers → Request Size Limit → Rate Limit
-        → Tenant Isolation → Sandbox → x402 Payment → Router
+Request → Logging → Sandbox → Rate Limit → x402 Payment
+        → Tenant Isolation → Request Size Limit → Security Headers → Router
 ```
 
 <Tip>
-Security headers are set at the middleware layer, not the application layer. This ensures they are present on every response, including errors, health checks, and 402 responses, regardless of which handler processes the request.
+Security headers are set at the middleware layer, not the application layer. This ensures they are present on every response a handler sends, including errors and health checks, regardless of which handler processes the request.
 </Tip>
 
 ---
@@ -229,16 +228,20 @@ The trust score is not a black box. Every score comes with `top_factors` that ex
 
 ### Entity Clusters
 
-The `cluster` field classifies entities into behavioural archetypes based on signal patterns across all sources. Cluster assignment improves interpretability: a `trust_score` of 72 means different things for an `established_eu_sme` versus a `newly_registered_offshore`.
+The `cluster` field classifies entities into behavioural archetypes based on signal patterns across all sources. Cluster assignment improves interpretability: a `trust_score` of 72 means different things for an `established_eu_sme` versus a `high_risk_jurisdiction`.
 
 | Cluster | Description |
 |---------|-------------|
-| `established_eu_sme` | Active EU registration 3+ years, VAT verified, clean sanctions |
-| `large_enterprise` | Registry-verified, high domain age, multiple positive signals |
-| `newly_registered` | Registration under 12 months: not inherently suspicious, but reduced confidence |
-| `unverified_jurisdiction` | Country risk flag or no registry match |
-| `high_risk_indicators` | One or more active risk flags (sanctions proximity, FATF jurisdiction). Wallets are not screened here; use `verify_wallet` |
-| `sanctioned_entity` | Direct sanctions match: automatic `block` recommendation |
+| `established_eu_enterprise` | Found in the register, older than 5 years, trust score 80 or more |
+| `established_eu_sme` | Found in the register, older than 2 years, trust score 60 or more |
+| `verified_startup` | Found in the register, under 2 years old: not inherently suspicious |
+| `unverified_new` | No register match |
+| `high_risk_jurisdiction` | Country is on the FATF black or grey list |
+| `sanctions_flagged` | Direct sanctions match: automatic `block` recommendation |
+| `insufficient_data` | Fewer than 3 sources answered, or the sanctions check could not run. Not a sanctions match |
+| `mixed_signals` | Found in the register, but the signals do not fit another cluster, for example a trust score under 50 |
+
+Wallets are not screened here; use `verify_wallet`.
 
 ### Confidence Score
 
@@ -426,13 +429,13 @@ Trust certificates are records Limitguard issues, stores, and verifies over its 
 
 <Steps>
   <Step title="Certificate requested">
-    A caller with an API key sends `POST /v1/certificate/issue` with an entity name, country, and the `trust_score` / `trust_level` to record.
+    A caller with an admin-role API key sends `POST /v1/certificate/issue` with an entity name, country, and the `trust_score` / `trust_level` to record.
   </Step>
   <Step title="Not derived automatically">
-    The trust score on a certificate is supplied by the caller in the request; it is not computed or re-verified server-side from a completed `/v1/entity/check`. Issuance is being restricted to Limitguard admins for this reason.
+    The trust score on a certificate is supplied by the caller in the request; it is not computed or re-verified server-side from a completed `/v1/entity/check`. Issuing and revoking therefore need the admin role: other keys get a 403.
   </Step>
   <Step title="Stored as an API record">
-    Limitguard holds the certificate in its own store (`certificate_id`, entity name, country, trust score/level, `issued_at`, `expires_at`, and a SHA-256 `certificate_hash` of those fields). Certificates expire based on `valid_days` (default 365) and can be revoked by their owner.
+    Limitguard holds the certificate in its own store (`certificate_id`, entity name, country, trust score/level, `issued_at`, `expires_at`, and a SHA-256 `certificate_hash` of those fields). Certificates expire based on `valid_days` (default 365) and can be revoked by the admin key that issued them.
   </Step>
   <Step title="Public verification">
     Anyone can verify a certificate via `GET /v1/certificate/{certificate_hash}` (public, no auth). There is no separate on-chain copy to cross-check it against; this API response is the record.
@@ -453,13 +456,13 @@ Trust certificates are records Limitguard issues, stores, and verifies over its 
 ### Querying Certificates
 
 ```http
-# Issue (requires an API key; being restricted to Limitguard admins)
+# Issue (admin-role API key required)
 POST /v1/certificate/issue
 
 # Verify (public, no auth)
 GET /v1/certificate/{certificate_hash}
 
-# Revoke (requires an API key; tenant-scoped to the issuing key)
+# Revoke (admin-role API key required; tenant-scoped to the issuing key)
 POST /v1/certificate/{certificate_hash}/revoke
 ```
 

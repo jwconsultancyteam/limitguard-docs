@@ -21,8 +21,8 @@
 - [Rate Limits](https://docs.limitguard.ai/guides/rate-limits.md): Rate limit behavior, tiers, and Retry-After headers
 - [Webhooks](https://docs.limitguard.ai/guides/webhooks.md): Get sanctions-list changes that affect you pushed to your server
 - [Trust Architecture](https://docs.limitguard.ai/guides/trust-architecture.md): Zero-access model, data flow, and security architecture
-- [Use Limitguard in Claude](https://docs.limitguard.ai/guides/claude-connector.md): Add the Limitguard connector to Claude, sign in with your Limitguard account and run checks from a chat
-- [Chrome extension](https://docs.limitguard.ai/guides/chrome-extension.md): Check the Dutch or Belgian company on the page you are on, from a Chrome extension with your API key
+- [Use Limitguard in Claude](https://docs.limitguard.ai/guides/claude-connector.md): Add the Limitguard connector to Claude, sign in with your Limitguard account and run checks from a chat, paid from a workspace balance
+- [Chrome extension](https://docs.limitguard.ai/guides/chrome-extension.md): Check the Dutch or Belgian company on the page you are on: install the Limitguard extension, add your API key and run a lead check in one click
 - [AI Agent Integration](https://docs.limitguard.ai/guides/ai-agent-integration.md): How AI agents discover and use Limitguard: MCP, A2A, and x402
 - [Framework Integrations](https://docs.limitguard.ai/guides/frameworks.md): Connect LangChain, CrewAI, or the OpenAI Agents SDK to Limitguard's remote MCP server
 - [Pay Per Call](https://docs.limitguard.ai/guides/pay-per-call.md): Call Limitguard with a USDC wallet and a client library: no API key, no subscription

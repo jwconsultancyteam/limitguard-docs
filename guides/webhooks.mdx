@@ -6,7 +6,7 @@ description: "Get sanctions-list changes that affect you pushed to your server"
 Webhooks let Limitguard push events to your server as signed HTTP `POST` requests, so you do not have to poll.
 
 <Info>
-**Live today: `sanctions.match.new`.** When the OFAC SDN, EU or UN consolidated list changes an entry that matches an entity or wallet you checked, or an entry on your watchlist, Limitguard sends you the same alert `GET /v1/compliance/alerts` shows you. Registrations and pending deliveries are stored, so they survive restarts and deploys.
+**Live today: `sanctions.match.new` and `identifier.change.new`.** When the OFAC SDN, EU or UN consolidated list changes an entry that matches an entity or wallet you checked, or an entry on your watchlist, Limitguard sends you the same alert `GET /v1/compliance/alerts` shows you. `identifier.change.new` is sent when a registry identifier of an entry on your watchlist changes. Registrations and pending deliveries are stored, so they survive restarts and deploys.
 
 `trust.score.changed`, `trust.level.downgrade` and `certificate.expired` can be registered, but nothing sends them yet. Every registration and list response carries `delivered_events`, the subset of your `events` that is actually sent today.
 </Info>
