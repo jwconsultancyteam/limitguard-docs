@@ -43,7 +43,7 @@ console.log(api_key); // lg_live_xxxxxxxxxxxxxxxxxxxx
 ```json Response
 {
   "api_key": "lg_live_xxxxxxxxxxxxxxxxxxxx",
-  "key_id": "key_abc123",
+  "key_id": "3f9a1c7e5b2d8046",
   "tier": "free",
   "monthly_limit": 500
 }
@@ -251,9 +251,9 @@ console.log(`Trust Score: ${result.trust_score}/100`);
   "recommendation": "proceed",
   "confidence": 0.94,
   "top_factors": [
-    {"source": "kvk", "signal": "Active registration, 8+ years", "impact": "positive", "weight": 0.35},
-    {"source": "vat", "signal": "VIES verified EU VAT", "impact": "positive", "weight": 0.20},
-    {"source": "sanctions", "signal": "No sanctions match", "impact": "positive", "weight": 0.25}
+    {"source": "sanctions", "signal": "No sanctions match found", "impact": "positive", "weight": 0.30},
+    {"source": "registry", "signal": "Verified, active, established business", "impact": "positive", "weight": 0.30},
+    {"source": "jurisdiction", "signal": "Low-risk jurisdiction (CPI: 82)", "impact": "positive", "weight": 0.20}
   ],
   "sources_checked": 5,
   "processing_time_ms": 342

@@ -22,9 +22,11 @@ x402 extends HTTP with a payment layer:
 | Network | CAIP-2 Chain ID | USDC Contract |
 |---|---|---|
 | Base Mainnet | `eip155:8453` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| Base Sepolia | `eip155:84532` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| Base Sepolia (testnet) | `eip155:84532` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
 | Solana Mainnet | `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
-| Solana Devnet | `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1` | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` |
+| Solana Devnet (testnet) | `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1` | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` |
+
+The production API (`api.limitguard.ai`) quotes Base Mainnet and Solana Mainnet only: its `/.well-known/x402.json` says `testnet_supported: false`. The two testnets work only against a test environment that lists them in its `accepts` array.
 
 ## Step 1: Discover Payment Requirements
 
@@ -267,7 +269,7 @@ block, which a load-balanced RPC often is right after mining), the server re-rea
 seconds before answering. If it still cannot see it, you get 402 `settlement_not_yet_visible`
 with a `Retry-After` header. The hash has not been consumed and stays valid for the rest of
 the 150-block window, so send the same request again (same hash, same `X-Payment-Challenge`).
-Solana uses `txSignature` (see above).
+Solana uses `txSignature` (see [Official x402 Client Payloads](#official-x402-client-payloads) below).
 
 When a proof fails verification its replay claim is released so you can retry once the
 transaction confirms. That release is retried a bounded number of times (3 attempts); if it
