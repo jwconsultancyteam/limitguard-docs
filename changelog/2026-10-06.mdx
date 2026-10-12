@@ -1,0 +1,16 @@
+---
+title: "October 6, 2026"
+description: "Sanctions screening by name: a yes/no preview and the full screen"
+---
+
+## Sanctions screening
+
+Two new endpoints screen a company or person name against the OFAC SDN, EU and UN
+sanctions lists, which Limitguard holds locally and refreshes daily:
+
+- `POST /v1/sanctions/preview` (MCP: `sanctions_preview`) answers yes or no and never shows
+  an entry. It is not charged, up to 10 calls per caller per UTC day.
+- `POST /v1/sanctions/screen` (MCP: `sanctions_screen`) returns each matched entry: list,
+  entry id, programmes, countries, listing date and match score. It costs $0.11.
+
+A name match is not a determination.

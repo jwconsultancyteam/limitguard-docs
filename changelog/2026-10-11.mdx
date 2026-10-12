@@ -1,0 +1,28 @@
+---
+title: "October 11, 2026"
+description: "x402 payments inside A2A, Coinbase Bazaar listing, the MCP registry name, and an EU list notice"
+---
+
+## x402 payments inside A2A
+
+An agent can now pay for a priced skill inside an A2A conversation, following the
+a2a-x402 extension (v0.2): the task asks for payment with the REST endpoint's price, and
+the agent answers with an x402 payment in the same task. The Agent Card declares the
+payment rails. See [AI Agent Integration](/guides/ai-agent-integration).
+
+## Listed on the Coinbase Bazaar
+
+`POST /v1/entity/check`, `/v1/risk/score`, `/v1/kyb/check`, `/v1/agent/check`,
+`/v1/leads/verify`, `/v1/mcp/verify-wallet` and `GET /v1/compliance/readiness/{entity_id}`
+are listed on the Coinbase x402 Bazaar under the name Limitguard, with tags and an icon.
+
+## MCP registry name
+
+The official MCP registry lists the server as `ai.limitguard.api/limitguard`. The old
+name `ai.limitguard.api/trust-intelligence` is retired. The server URL,
+`https://api.limitguard.ai/mcp`, and the tools are unchanged.
+
+## EU sanctions list date
+
+A sanctions preview or screen now says, in `list_note`, the date of the EU's published
+file it checked. Listings the EU adopted after that date may not be in it yet.

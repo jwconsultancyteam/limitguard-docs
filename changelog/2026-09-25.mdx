@@ -1,0 +1,30 @@
+---
+title: "September 25, 2026"
+description: "Compliance alerts priced, identifier change webhooks, and the compliance report over MCP"
+---
+
+## Compliance alerts are priced
+
+`GET /v1/compliance/alerts`, the feed of daily OFAC, EU and UN sanctions-list changes that
+match what you checked, costs $0.10 per call over x402 or from a key's balance. The
+dashboard's Growth, Pro and Enterprise plans include it.
+
+<Note>
+  The feed has cost $0.11 since [October 5](/changelog/2026-10-05).
+</Note>
+
+## `identifier.change.new` webhooks
+
+Watchlist entries are now re-checked weekly on the key tiers that include monitoring, and
+a change found in one of an entry's signals (for example registry status, VAT validity,
+insolvency, legal form or domain expiry) is sent as an `identifier.change.new` webhook. See [Webhooks](/guides/webhooks).
+
+## `get_compliance_report` over MCP
+
+The per-entity report is now also the MCP tool `get_compliance_report`, at the price of
+`POST /v1/reports/entity`.
+
+## Group structure in KYB
+
+`POST /v1/kyb/check` and the entity report now include `group_structure` from GLEIF: the
+company's LEI and its direct and ultimate parent, when GLEIF links them.

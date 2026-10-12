@@ -1,0 +1,19 @@
+---
+title: "October 5, 2026"
+description: "Small per-call prices move from $0.10 to $0.11, and the deep check is repriced"
+---
+
+## Price changes
+
+| Endpoint | Was | Now |
+|----------|-----|-----|
+| `cached` tier of `/v1/entity/check`, `/v1/risk/score` and `/v1/reputation/score` | $0.10 | $0.11 |
+| `GET /v1/wallet/balance` | $0.10 | $0.11 |
+| `GET /v1/compliance/alerts` | $0.10 | $0.11 |
+| `GET /v1/compliance/readiness/{entity_id}` | $0.10 | $0.11 |
+| `GET /v1/reputation/history/{entity_hash}` | $0.10 | $0.11 |
+| `POST /v1/entity/deep-check` (fresh) | $0.75 | $0.88 |
+| `POST /v1/entity/deep-check` (`enhanced`) | $1.50 | $1.71 |
+
+The `cached` tier of `/v1/kyb/check` stays at $0.25. Current prices are on
+[Pricing](/pricing).

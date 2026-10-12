@@ -1,6 +1,6 @@
 ---
 title: "September 24, 2026"
-description: "Trust scores now count company age for KVK and KBO founding dates"
+description: "Company age in trust scores, the enhanced tier retired, the entity report, webhooks and A2A"
 ---
 
 ## Company age now counts for Dutch and Belgian companies
@@ -25,3 +25,44 @@ From today they do:
   Responses served from the result cache (`quality: "cached"`) keep the score of the
   fresh check they came from.
 </Warning>
+
+## `enhanced` tier retired where it added nothing
+
+`POST /v1/entity/check`, `/v1/risk/score`, `/v1/reputation/score` and `/v1/kyb/check` sold
+`enhanced` above `fresh` for the same sources. An `enhanced` request to these four is now
+served and charged as `fresh`, and the response says so. `/v1/entity/deep-check` keeps its
+`enhanced` tier, which adds adverse media.
+
+## Per-entity report
+
+`POST /v1/reports/entity` builds a report from one real check: registry identity,
+sanctions and PEP screens, domain signals, the risk score with the rules that fired, and
+a status for every source. It costs $1.50. `GET /v1/reports/{report_id}` reads a report
+back at no charge.
+
+<Note>
+  The report has cost $1.85 since [October 4](/changelog/2026-10-04).
+</Note>
+
+## Webhooks are delivered
+
+Webhook registrations are now stored, so they survive deploys, and
+`sanctions.match.new` is sent when a sanctions-list change matches an entity or wallet
+you checked or an entry on your watchlist. Failed deliveries are retried with backoff.
+`trust.score.changed`, `trust.level.downgrade` and `certificate.expired` can be
+registered but are not sent yet; `delivered_events` in each registration response says
+which of yours are live. See [Webhooks](/guides/webhooks).
+
+## A2A JSON-RPC at `/a2a`
+
+The Agent Card at `/.well-known/agent.json` declared A2A protocol 0.3.0, but nothing
+answered JSON-RPC. `POST /a2a` now serves `message/send`, `tasks/get` and `tasks/cancel`.
+A skill call runs the REST endpoint's own handler, so the task result is the REST response,
+and priced skills are paid the same way as the REST call.
+
+## MCP tool annotations
+
+The MCP tools and the server card now carry annotations (`title`, `readOnlyHint`,
+`destructiveHint`, `openWorldHint`), and the server card no longer marks the API key as
+required to list the tools.
+

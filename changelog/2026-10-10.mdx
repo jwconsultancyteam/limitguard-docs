@@ -1,0 +1,17 @@
+---
+title: "October 10, 2026"
+description: "A yes/no wallet sanctions check, and the full wallet screen is priced"
+---
+
+## Wallet sanctions check
+
+`POST /v1/sanctions/wallet` (MCP: `wallet_sanctions_preview`) answers whether one wallet
+address is on the OFAC SDN digital-currency address list, with the list date. It needs
+no API key and is not charged, up to 10 calls per caller per UTC day, separate from the
+name preview.
+
+## The full wallet screen is priced
+
+`verify_wallet` and `POST /v1/mcp/verify-wallet` now cost $0.11. The screen reads the
+wallet's history on Base and Solana as well as the OFAC match. It is also an A2A skill
+on the Agent Card.
