@@ -1072,8 +1072,10 @@ class TrustGatedAgent:
         payload = {"entity_name": entity_name, "country": country, **kwargs}
         total_paid = 0.0
 
-        # Pass 1: Fast pre-screen (cached tier)
-        risk_data, paid = self._call("/v1/risk/score", payload, quality="cached")
+        # Pass 1: Fast pre-screen (cached tier). /v1/risk/score takes only
+        # entity_name and country; any other field is rejected with a 422.
+        risk_payload = {"entity_name": entity_name, "country": country}
+        risk_data, paid = self._call("/v1/risk/score", risk_payload, quality="cached")
         total_paid += paid / 1_000_000
         pre_score = risk_data.get("risk_score", 50)
 
@@ -1084,7 +1086,7 @@ class TrustGatedAgent:
                 level="high_risk",
                 decision=TrustDecision.BLOCK,
                 cluster="unknown",
-                sources_checked=risk_data.get("sources_checked", 0),
+                sources_checked=0,  # the risk response does not report sources_checked
                 processing_ms=risk_data.get("processing_time_ms", 0),
                 paid_usdc=total_paid,
             )
@@ -1283,8 +1285,10 @@ class TrustGatedAgent {
     const payload = { entity_name: entityName, country, ...extras };
     let totalPaid = 0;
 
-    // Pass 1: Fast pre-screen (cached tier)
-    const { data: riskData, amount: riskPaid } = await this.call("/v1/risk/score", payload, "cached");
+    // Pass 1: Fast pre-screen (cached tier). /v1/risk/score takes only
+    // entity_name and country; any other field is rejected with a 422.
+    const riskPayload = { entity_name: entityName, country };
+    const { data: riskData, amount: riskPaid } = await this.call("/v1/risk/score", riskPayload, "cached");
     totalPaid += riskPaid / 1_000_000;
     const preScore = riskData.risk_score ?? 50;
 
@@ -1523,7 +1527,7 @@ async function verifyEntity(entityName, country) {
 ```python
 import httpx
 
-API_KEY = "lg_sandbox_xxxxxxxxxxxxxxxxxxxx"  # a sandbox key: mock data, never charged
+API_KEY = "lg_sandbox_xxxxxxxxxxxxxxxxxxxx"  # a sandbox key: mock data on the endpoints the sandbox covers
 
 
 def score_to_decision(score: int) -> str:
