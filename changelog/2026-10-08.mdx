@@ -1,0 +1,29 @@
+---
+title: "October 8, 2026"
+description: "Trust badges withdrawn, no charge for a rejected MCP mirror call, and error responses that match the docs"
+---
+
+## Trust badges withdrawn
+
+`GET /v1/badge/{entity_id}`, `GET /v1/badge/{entity_id}.json` and
+`GET /v1/verify/{entity_id}` showed a demo score that was not based on any check. They
+now answer `410 Gone`. See [Trust Badge Unavailable](/guides/errors#trust-badge-unavailable).
+
+## A rejected `/v1/mcp/*` call is not charged
+
+The REST mirrors of the MCP tools (`/v1/mcp/check-entity`, `/v1/mcp/risk-score` and the
+others) returned a rejected request as a 200, so the call was paid. They now answer the
+standard 422 validation error, and nothing is charged, as on `/v1/entity/check`.
+
+## Error responses
+
+- A 401 or 404 raised by an endpoint now uses the RFC 7807 problem body, like the other
+  errors.
+- The monthly-cap 429 now carries `Retry-After`: the seconds until 00:00 UTC on the 1st.
+
+See [Errors](/guides/errors) and [Rate Limits](/guides/rate-limits).
+
+## `/v1/audit/verify` is scoped to your key
+
+`GET /v1/audit/verify` checked the whole service's audit chain and counted every
+customer's records. It now checks only the entries made with your API key.

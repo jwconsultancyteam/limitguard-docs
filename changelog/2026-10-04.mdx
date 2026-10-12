@@ -1,0 +1,23 @@
+---
+title: "October 4, 2026"
+description: "New per-call prices"
+---
+
+## Price changes
+
+These per-call prices changed today. A key's prepaid balance is debited at the new
+prices from today; the balance itself is unchanged.
+
+| Endpoint | Was | Now |
+|----------|-----|-----|
+| `POST /v1/entity/check` (fresh) | $0.85 | $1.05 |
+| `POST /v1/risk/score` (fresh) | $0.65 | $0.90 |
+| `POST /v1/reputation/score` (fresh) | $0.65 | $0.90 |
+| `POST /v1/reports/entity` | $1.50 | $1.85 |
+| `POST /v1/leads/verify` | $0.24 | $0.27 |
+| `POST /v1/sanctions/screen` | $0.10 | $0.11 |
+| `POST /v1/mcp/check-entity` | $0.85 | $1.05 |
+| `POST /v1/mcp/risk-score` | $0.65 | $0.90 |
+
+`/v1/reputation/score` is now priced the same as `/v1/risk/score`, since both use the same
+sources. Current prices are always on [Pricing](/pricing) and in the 402 response.

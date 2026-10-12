@@ -1,0 +1,30 @@
+---
+title: "October 3, 2026"
+description: "Lead Verify and the agent wallet check launch, and get_trust_score returns"
+---
+
+## Lead Verify
+
+`POST /v1/leads/verify` checks one Dutch or Belgian sales lead in one call: is it a real,
+active company in the KVK or KBO register, and do its VAT number, mail server, IBAN country
+and name hold up, including a check against the OFAC, EU and UN sanctions lists. It
+returns a verdict, a 0-100 lead score and flags. It costs $0.24. Over MCP it is the tool
+`verify_lead`.
+
+<Note>
+  Lead Verify has cost $0.27 since [October 4](/changelog/2026-10-04).
+</Note>
+
+## Agent wallet check
+
+`POST /v1/agent/check` checks a counterparty agent's EVM wallet in one call: a match
+against the OFAC SDN digital-currency address list, its Base USDC and ETH balance, its
+ERC-8004 identity registration and open ERC-8004 feedback, which is not scored. It costs
+$0.75. Over MCP it is the tool `check_agent_wallet`.
+
+## `get_trust_score` returns
+
+The MCP tool `get_trust_score`, removed on 24 September because it returned placeholder
+data, is back as a real lookup: your own most recent stored trust score for an entity you
+checked before, with when, which product and the trend. It runs no new check and is not
+charged.

@@ -43,6 +43,16 @@
 
 ## Changelog
 
+- [October 12, 2026](https://docs.limitguard.ai/changelog/2026-10-12.md)
+- [October 11, 2026](https://docs.limitguard.ai/changelog/2026-10-11.md)
+- [October 10, 2026](https://docs.limitguard.ai/changelog/2026-10-10.md)
+- [October 8, 2026](https://docs.limitguard.ai/changelog/2026-10-08.md)
+- [October 7, 2026](https://docs.limitguard.ai/changelog/2026-10-07.md)
+- [October 6, 2026](https://docs.limitguard.ai/changelog/2026-10-06.md)
+- [October 5, 2026](https://docs.limitguard.ai/changelog/2026-10-05.md)
+- [October 4, 2026](https://docs.limitguard.ai/changelog/2026-10-04.md)
+- [October 3, 2026](https://docs.limitguard.ai/changelog/2026-10-03.md)
+- [September 25, 2026](https://docs.limitguard.ai/changelog/2026-09-25.md)
 - [September 24, 2026](https://docs.limitguard.ai/changelog/2026-09-24.md)
 - [September 8, 2026](https://docs.limitguard.ai/changelog/2026-09-08.md)
 - [September 7, 2026](https://docs.limitguard.ai/changelog/2026-09-07.md)

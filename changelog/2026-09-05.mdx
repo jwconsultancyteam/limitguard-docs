@@ -33,9 +33,10 @@ Every x402 `amount` field, `X-Payment-Amount` header sample, and executable tier
 ### `enterprise` tier removed
 
 <Note>
-  Superseded: a key's tier sets per-minute and rolling 24-hour rate limits, not a
-  number of calls you buy (see [Rate Limits](/guides/rate-limits)), and
-  `/v1/keys/upgrade/{tier}` is a `POST`. The section is left as it was published.
+  Superseded: a key's tier sets its per-minute and rolling 24-hour rate limits and a
+  calendar-month cap of the same size; none of them is a number of calls you buy, since
+  every call is paid (see [Rate Limits](/guides/rate-limits)). `/v1/keys/upgrade/{tier}`
+  is a `POST`. The section is left as it was published.
 </Note>
 
 The API key tier ladder is `free` / `sandbox`, `indie`, `starter`, `growth`, `pro`. There is no `enterprise` tier: it has been removed from the rate-limit and error-handling tables. Pro's monthly quota is 250,000 calls, not 50,000.
