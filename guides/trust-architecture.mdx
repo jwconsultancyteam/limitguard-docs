@@ -129,14 +129,14 @@ Limitguard queries these independent data sources in parallel, as far as the ide
     Jurisdiction risk is evaluated using Transparency International's CPI score and the FATF (Financial Action Task Force) list status. High-risk jurisdictions, particularly FATF blacklisted or greylisted countries, reduce the trust score regardless of other signals.
   </Card>
   <Card title="4. Domain Intelligence" icon="link">
-    **WHOIS registration age, DNS configuration, and SSL certificate analysis.**
+    **WHOIS registration age and DNS email-record analysis.**
 
-    Domain age is a strong fraud signal: most fraudulent entities use recently registered domains. We also inspect DNS records for anomalies, check for DMARC/SPF/DKIM email authentication, and validate SSL certificate chain and expiry.
+    Domain age is a strong fraud signal: most fraudulent entities use recently registered domains. We also inspect DNS records for anomalies, check the MX, SPF and DMARC email records.
   </Card>
   <Card title="5. IBAN Validation" icon="credit-card">
     **Bank account structure and BIC/SWIFT verification.**
 
-    Validates the structural integrity of provided IBANs, resolves the BIC, and checks the issuing institution against known risk lists. Mismatched country codes between the IBAN and the declared entity jurisdiction are flagged.
+    Validates the structural integrity of provided IBANs, and resolves the BIC. Mismatched country codes between the IBAN and the declared entity jurisdiction are flagged.
   </Card>
   <Card title="6. VAT / VIES" icon="file-invoice">
     **EU VAT number validation via the European Commission VIES system.**
