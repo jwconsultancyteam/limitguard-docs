@@ -91,7 +91,7 @@
     "/v1/entity/deep-check": {
       "post": {
         "summary": "Entity Deep Check",
-        "description": "Deep check: extended PEP/RCA exposure screening, the Dutch insolvency\nregister on every tier, adverse media on the extended tier, an\nItalian credit report on the credit tier.\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.88) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.71) adds `adverse_media` from dilisense;\n`credit` ($2.45, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
+        "description": "Deep check: extended PEP/RCA exposure screening, the Dutch insolvency\nregister on every tier, adverse media on the extended tier, an\nItalian credit report on the credit tier.\n\n`pep_extended` is the source the base check does not return. /v1/entity/check\nqueries the same OpenSanctions collection but filters to sanctions/enforcement\ndatasets and reduces the answer to a boolean (app/services/sanctions.py); the\nrole.pep/role.rca detail is fetched and discarded. This endpoint keeps it.\n\n`insolvency_records` is the Centraal Insolventieregister (NL only; for any other\ncountry the field says `applicable: false`). It is queried by `kvk_number` when\nthe body carries one (exact), else by `entity_name` (trade-name search).\n\n`kvk_register_flags` is KVK's own register status for a Dutch BV or NV:\n`actief` and `insolventieCode` from KVK's Open Dataset Basisbedrijfsgegevens. It\nis null while KVK_REGISTER_FLAGS_ENABLED is off, for any country other than NL and\nwithout `kvk_number`. `not_covered` means the dataset has no entry (not a BV or\nNV). `not_available` means KVK did not answer. `not_applicable` means\n`kvk_number` is not 8 digits, so no call is made. None of these is a clean\nanswer, and none turns the call into a 503. `findings` lists the actions these flags\ngive, with exactly one finding when KVK and the insolvency register disagree.\n\n`credit_report` is an Openapi.com credit score, Italy only, available when\nOPENAPI_CREDIT_API_KEY is configured -- see /health. For any other country, or\na supported one with no `credit_report_identifier` (VAT number, tax code or\ncompany ID) in the body, the field says `applicable: false` rather than being\nomitted or erroring, the same pattern `insolvency_records` uses for non-NL, and\nthe `credit` tier's premium is never billed for it (app/middleware/x402.py\nprobes the country before pricing the call).\n\nThree tiers, resolved from X-Response-Quality by the x402 middleware: `fresh`\n(default; the `deep` tier, $0.88) returns pep_extended and insolvency_records;\n`enhanced` (the `extended` tier, $1.71) adds `adverse_media` from dilisense;\n`credit` ($2.45, Italy only, available when enabled) adds `credit_report`\ninstead. There is no cache-only branch, so `cached` is quoted, charged and\nserved as `fresh`. If a source of the requested tier cannot be reached the\nanswer is a 503 (`pep_source_unavailable`, `insolvency_source_unavailable`,\n`adverse_media_source_unavailable` or `credit_report_source_unavailable`),\nnever a fabricated clean screen, and the x402 gate settles only on a 2xx so the\ncall is not charged.",
         "operationId": "entity_deep_check_v1_entity_deep_check_post",
         "requestBody": {
           "content": {
@@ -1201,7 +1201,7 @@
     "/v1/methodology": {
       "get": {
         "summary": "Get Methodology",
-        "description": "Get published scoring methodology.\n\nPublic endpoint (no auth) for transparency.\nIncludes CORS headers.\n\nReturns:\n    ScoringMethodology with version, sources, weights, algorithm",
+        "description": "Get the methodology of Limitguard's own self-verification score.\n\nThese are the weights of GET /v1/self-verify, Limitguard scoring itself.\nThey are not the weights of the trust score customers buy.\n\nPublic endpoint (no auth) for transparency.\nIncludes CORS headers.\n\nReturns:\n    ScoringMethodology with version, sources, weights, algorithm",
         "operationId": "get_methodology_v1_methodology_get",
         "responses": {
           "200": {
@@ -5133,7 +5133,7 @@
               }
             ],
             "title": "Kvk Number",
-            "description": "Dutch KVK number (8 digits); enables an exact insolvency-register lookup"
+            "description": "Dutch KVK number (8 digits); enables an exact insolvency-register lookup and, while KVK_REGISTER_FLAGS_ENABLED is on, the KVK register flags lookup"
           },
           "credit_report_identifier": {
             "anyOf": [
@@ -5156,7 +5156,7 @@
           "country"
         ],
         "title": "DeepCheckRequest",
-        "description": "Request for POST /v1/entity/deep-check.\n\nTakes entity fields rather than an ``entity_id`` from a prior check: the audit\ntrail is keyed by sha256(entity_name) and is one-way, so an id could not be\nresolved back to the name the screens have to query. ``kvk_number`` is optional\nand only consulted by the insolvency source: the Centraal\nInsolventieregister keys ``searchUndertaking`` on the KvK number, which is an\nexact lookup where a trade-name search is a fuzzy one. ``credit_report_identifier``\nis only consulted by the `credit` tier's source: Openapi.com's Italian\ncredit-score lookup keys on a VAT number, tax code or company ID rather than a\nname, and reports back in `identifier_type` which one it matched."
+        "description": "Request for POST /v1/entity/deep-check.\n\nTakes entity fields rather than an ``entity_id`` from a prior check: the audit\ntrail is keyed by sha256(entity_name) and is one-way, so an id could not be\nresolved back to the name the screens have to query. ``kvk_number`` is optional\nand consulted by the insolvency source: the Centraal\nInsolventieregister keys ``searchUndertaking`` on the KvK number, which is an\nexact lookup where a trade-name search is a fuzzy one. While\nKVK_REGISTER_FLAGS_ENABLED is on, it also drives the KVK register flags lookup. ``credit_report_identifier``\nis only consulted by the `credit` tier's source: Openapi.com's Italian\ncredit-score lookup keys on a VAT number, tax code or company ID rather than a\nname, and reports back in `identifier_type` which one it matched."
       },
       "DeepCheckResponse": {
         "properties": {
@@ -5206,6 +5206,25 @@
               }
             ],
             "description": "Dutch Centraal Insolventieregister screen; on every tier. `applicable: false` (never null) when `country` is not NL."
+          },
+          "kvk_register_flags": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KvkRegisterFlagsResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "KVK's own register flags beside the insolvency register. None while KVK_REGISTER_FLAGS_ENABLED is off, for a country other than NL, or without kvk_number."
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings",
+            "description": "Actions from the KVK register flags. One finding when the two registers disagree"
           },
           "credit_report": {
             "anyOf": [
@@ -8822,6 +8841,121 @@
         "title": "KeyUsageResponse",
         "description": "Response showing current API key usage, the tier's real enforced rate\nlimits, and prepaid balance.\n\nA later change moved pricing to a prepaid balance debited per call; the limits that\nactually throttle a caller day-to-day are the per-minute burst cap and the\nrolling 24h cap (app.middleware.rate_limit.TIER_RATE_LIMITS) -- not the\nmonthly_* fields below, which are a separate, much looser abuse ceiling\nthat a steady low-rate caller could in principle still cross once a month\neven while always under the per-minute/per-day caps."
       },
+      "KvkRegisterFlagsResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "not_covered",
+              "not_available",
+              "not_applicable"
+            ],
+            "title": "Status"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active",
+            "description": "KVK `actief`: True for J, False for N. None unless status is ok"
+          },
+          "insolvency_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "FAIL",
+                  "SSAN",
+                  "SURS"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insolvency Code",
+            "description": "KVK `insolventieCode`. None when ok with no code, or not ok"
+          },
+          "insolvency_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insolvency Label",
+            "description": "bankruptcy, debt restructuring or suspension of payments"
+          },
+          "legal_form_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Form Code",
+            "description": "KVK `rechtsvormCode` (BV or NV)"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At",
+            "description": "ISO 8601 UTC time KVK gave this answer"
+          },
+          "from_store": {
+            "type": "boolean",
+            "title": "From Store",
+            "description": "True when served from the 7-day store",
+            "default": false
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "Why the source did not answer, when not_available"
+          },
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution",
+            "description": "CC BY 4.0 attribution, set when status is ok"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "KvkRegisterFlagsResult",
+        "description": "KVK Open Dataset Basisbedrijfsgegevens register flags, BV and NV only.\n\n`not_covered` means KVK's dataset has no entry for the number (it holds BV and NV\nonly). It is not a clean result. `not_available` means the source did not answer\n(rate limit, timeout, KVK error). It is never \"not insolvent\". `not_applicable`\nmeans the kvk_number is not an 8-digit KVK number."
+      },
       "LeadAddress": {
         "properties": {
           "street": {
@@ -9752,12 +9886,13 @@
           "days_until_enforcement": {
             "type": "integer",
             "minimum": 0.0,
-            "title": "Days Until Enforcement"
+            "title": "Days Until Enforcement",
+            "description": "Days until the Annex III high-risk obligations apply on 2 December 2027 (Regulation (EU) 2026/1744), 0 once they apply"
           },
           "urgency": {
             "type": "string",
             "title": "Urgency",
-            "description": "normal, high, or critical"
+            "description": "normal, high (180 days or less), critical (90 days or less), or in_force (the Annex III obligations already apply)"
           },
           "basis": {
             "type": "string",
@@ -11608,7 +11743,7 @@
           "last_updated"
         ],
         "title": "ScoringMethodology",
-        "description": "Published scoring methodology for transparency."
+        "description": "Methodology of Limitguard's own self-verification score, for transparency."
       },
       "SectorComparison": {
         "properties": {
@@ -11670,7 +11805,7 @@
           "scoring_methodology_url": {
             "type": "string",
             "title": "Scoring Methodology Url",
-            "description": "URL to published scoring methodology"
+            "description": "URL to the methodology of this self-verification score"
           }
         },
         "type": "object",
