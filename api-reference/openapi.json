@@ -4253,6 +4253,68 @@
         "type": "object",
         "title": "Branches"
       },
+      "CashFlow": {
+        "properties": {
+          "operating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operating"
+          },
+          "investing": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investing"
+          },
+          "financing": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Financing"
+          },
+          "net_cash_flows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Cash Flows"
+          },
+          "closing_cash": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closing Cash"
+          }
+        },
+        "type": "object",
+        "title": "CashFlow",
+        "description": "The cash-flow statement's totals and closing cash, whole euros, as filed."
+      },
       "CertificateVerifyResponse": {
         "properties": {
           "certificate": {
@@ -6923,6 +6985,67 @@
               }
             ]
           },
+          "income_details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IncomeDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consolidated_income_details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IncomeDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cash_flow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CashFlow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consolidated_cash_flow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CashFlow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "filing_months_late": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filing Months Late"
+          },
+          "previous_year": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviousYear"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "derived_note": {
             "type": "string",
             "title": "Derived Note",
@@ -8030,6 +8153,46 @@
           "status"
         ],
         "title": "IdentityRecord"
+      },
+      "IncomeDetails": {
+        "properties": {
+          "net_result_after_tax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Result After Tax"
+          },
+          "financial_income_expenses": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Financial Income Expenses"
+          },
+          "income_tax_expense": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Income Tax Expense"
+          }
+        },
+        "type": "object",
+        "title": "IncomeDetails",
+        "description": "More profit-and-loss lines, whole euros, as filed."
       },
       "IncomeStatement": {
         "properties": {
@@ -9732,6 +9895,64 @@
         ],
         "title": "PepScreenResult",
         "description": "Result of the `pep_extended` source. `screened` is never False on a 200.\n\nThere is no code path that returns this model without having queried\nOpenSanctions: app/services/pep.py raises rather than fabricating a clean screen,\nand the router turns that into a 503 so the payment is never settled."
+      },
+      "PreviousYear": {
+        "properties": {
+          "financial_year": {
+            "type": "integer",
+            "title": "Financial Year"
+          },
+          "equity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity"
+          },
+          "result_after_tax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result After Tax"
+          },
+          "consolidated_equity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Equity"
+          },
+          "consolidated_result_after_tax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Result After Tax"
+          }
+        },
+        "type": "object",
+        "required": [
+          "financial_year"
+        ],
+        "title": "PreviousYear",
+        "description": "The year before, from the KVK store; whole euros, as filed."
       },
       "ProviderRegistration": {
         "properties": {
