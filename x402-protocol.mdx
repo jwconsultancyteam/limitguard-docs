@@ -109,7 +109,7 @@ Every 402 also carries additive recovery hints under `extensions.bazaar.info`, s
 | `extensions.bazaar.info.sandbox.curl` | `POST /v1/keys/create {"email": "...", "tier": "sandbox"}` → free `lg_sandbox_` key, no wallet |
 | `extensions.bazaar.info.prepaidBalance` | Only on `errorCode: insufficient_balance` (API-key holder whose prepaid balance is below the price): `balance_usd`, `price_usd`, `topup.url` (`POST /v1/keys/topup/{usd}`), and a note that paying this call by x402 also works |
 
-The same body is mirrored base64-encoded in the `PAYMENT-REQUIRED` response header.
+The `PAYMENT-REQUIRED` response header carries the same quote, base64-encoded. It may carry only `x402Version`, `error`, `resource` and `accepts`, so read `errorCode`, `extensions` and the help text from the body.
 
 ## Step 2: Build EVM Payment (Base/EIP-3009)
 
