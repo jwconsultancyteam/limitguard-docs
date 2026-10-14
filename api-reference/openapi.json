@@ -356,12 +356,12 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "minimum": 5,
-              "description": "Whole US dollars to add to the prepaid balance",
+              "type": "string",
+              "pattern": "^[0-9]{1,12}$",
+              "description": "Whole US dollars to add to the prepaid balance (ASCII digits only)",
               "title": "Usd"
             },
-            "description": "Whole US dollars to add to the prepaid balance"
+            "description": "Whole US dollars to add to the prepaid balance (ASCII digits only)"
           }
         ],
         "responses": {
