@@ -2819,7 +2819,7 @@
     "/v1/kyb/check": {
       "post": {
         "summary": "KYB Check",
-        "description": "Full KYB (Know Your Business) verification.\n\nCombines entity trust check with sanctions screening and company\nregistration verification. Returns comprehensive KYB result with\nverification status, risk flags, and compliance recommendations.\n`verified` means trust_score 60 or more; `register_verified` says whether\nthe KVK or KBO register found the company.\n\nPaid with x402 it costs \\$0.29 fresh or \\$0.25 cached (the agent price).\nAn API key's prepaid balance is debited \\$1.50 fresh or \\$0.25 cached (the account price).",
+        "description": "Full KYB (Know Your Business) verification.\n\nCombines entity trust check with sanctions screening and company\nregistration verification. Returns comprehensive KYB result with\nverification status, risk flags, and compliance recommendations.\n`verified` means trust_score 60 or more; `register_verified` says whether\nthe KVK or KBO register found the company.\n\nPriced at $1.50 per call via x402 (see ENDPOINT_PRICING).",
         "operationId": "kyb_check_v1_kyb_check_post",
         "requestBody": {
           "content": {
