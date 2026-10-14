@@ -323,7 +323,8 @@ curl https://api.limitguard.ai/.well-known/agent.json
       "description": "Lead verify for one NL or BE sales lead: is it a real, active company? Checks the KVK or KBO register and cross-checks what the lead holds: VAT with VIES, mail server and disposable domain, IBAN country and bank (not the holder), and the company name against the OFAC, EU and UN sanctions lists. Returns a verdict, a 0-100 lead score and flags, each with one action. An input not given is not checked.",
       "endpoint": "/v1/leads/verify",
       "method": "POST",
-      "price_usdc": 0.27
+      "price_usdc": 0.05,
+      "account_price_usdc": 0.27
     },
     {
       "id": "agent_check",
@@ -336,7 +337,8 @@ curl https://api.limitguard.ai/.well-known/agent.json
       "description": "Agent wallet check in one call: screens an EVM wallet against the OFAC SDN digital-currency address list, reads its Base USDC and ETH balance, looks up its ERC-8004 identity registration (and, given an agent id, that agent's owner and payment wallet) and lists open ERC-8004 feedback, which is not scored. Returns one verdict and each part's status; a part that could not be read says so.",
       "endpoint": "/v1/agent/check",
       "method": "POST",
-      "price_usdc": 0.75
+      "price_usdc": 0.005,
+      "account_price_usdc": 0.75
     },
     {
       "id": "entity_check",
@@ -352,7 +354,8 @@ curl https://api.limitguard.ai/.well-known/agent.json
       "description": "Full entity trust check ... Returns trust score 0-100, cluster, and recommendation.",
       "endpoint": "/v1/entity/check",
       "method": "POST",
-      "price_usdc": 1.05
+      "price_usdc": 0.29,
+      "account_price_usdc": 1.05
     },
     {
       "id": "risk_score",
@@ -363,7 +366,8 @@ curl https://api.limitguard.ai/.well-known/agent.json
       "description": "Quick risk score assessment. Faster than full entity check.",
       "endpoint": "/v1/risk/score",
       "method": "POST",
-      "price_usdc": 0.9
+      "price_usdc": 0.25,
+      "account_price_usdc": 0.9
     },
     {
       "id": "kyb_check",
@@ -376,7 +380,8 @@ curl https://api.limitguard.ai/.well-known/agent.json
       "description": "Know Your Business verification with sanctions check and company registration.",
       "endpoint": "/v1/kyb/check",
       "method": "POST",
-      "price_usdc": 1.5
+      "price_usdc": 0.29,
+      "account_price_usdc": 1.5
     }
   ],
   "authentication": {
@@ -566,22 +571,28 @@ curl https://api.limitguard.ai/.well-known/x402.json
     {
       "path": "/v1/entity/check",
       "method": "POST",
-      "price_usdc": 1.05,
-      "price_raw": 1050000,
+      "price_usdc": 0.29,
+      "price_raw": 290000,
+      "account_price_usdc": 1.05,
+      "account_price_raw": 1050000,
       "category": "entity_verification"
     },
     {
       "path": "/v1/risk/score",
       "method": "POST",
-      "price_usdc": 0.9,
-      "price_raw": 900000,
+      "price_usdc": 0.25,
+      "price_raw": 250000,
+      "account_price_usdc": 0.9,
+      "account_price_raw": 900000,
       "category": "entity_verification"
     },
     {
       "path": "/v1/kyb/check",
       "method": "POST",
-      "price_usdc": 1.5,
-      "price_raw": 1500000,
+      "price_usdc": 0.29,
+      "price_raw": 290000,
+      "account_price_usdc": 1.5,
+      "account_price_raw": 1500000,
       "category": "regulatory_compliance"
     }
   ]
@@ -837,15 +848,17 @@ console.log(`Trust score: ${result.trust_score}, ${result.recommendation}`);
 
 Control cost vs. freshness with the `X-Response-Quality` header. The payment amount must match or exceed the tier price.
 
-| Tier | Header Value | /v1/entity/check | /v1/risk/score | /v1/kyb/check | Data Freshness |
+| Tier | Header Value | /v1/entity/check (x402 agent price) | /v1/risk/score (x402 agent price) | /v1/kyb/check (x402 agent price) | Data Freshness |
 |------|-------------|-----------------|----------------|---------------|----------------|
 | Cached | `cached` | $0.11 (110,000) | $0.11 (110,000) | $0.25 (250,000) | From cache: 1 h for entity and KYB, 7 days for risk |
-| Fresh | `fresh` | $1.05 (1,050,000) | $0.90 (900,000) | $1.50 (1,500,000) | Live fan-out (default) |
+| Fresh | `fresh` | $0.29 (290,000) | $0.25 (250,000) | $0.29 (290,000) | Live fan-out (default) |
+
+These are the x402 agent prices. An API key is debited the account prices instead: \$1.05, \$0.90 and \$1.50 on `fresh`, and \$0.11, \$0.11 and \$0.25 on `cached`.
 
 `enhanced` was retired on these endpoints on 2026-09-24: it ran the same sources as `fresh`, so it is now quoted, charged and served at the `fresh` price. For more sources, use `POST /v1/entity/deep-check`.
 
 <Tip>
-For high-frequency screening (e.g., checking every inbound invoice), start with `cached` for pre-screening and only upgrade to `fresh` when the cached score is below 70. A cached entity check costs about 9.5x less than a fresh one (see [Pricing](/pricing#tiered-pricing)), which is what this saves on clean counterparties.
+For high-frequency screening (e.g., checking every inbound invoice), start with `cached` for pre-screening and only upgrade to `fresh` when the cached score is below 70. A cached entity check costs about 9.5x less than a fresh one with an API key and about 2.6x less with x402 (see [Pricing](/pricing#agent-prices-x402)), which is what this saves on clean counterparties.
 </Tip>
 
 ---

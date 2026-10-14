@@ -3,7 +3,7 @@ title: "Pricing"
 description: "API prices: USDC per call, or from a prepaid API key balance"
 ---
 
-All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol), or hold a paid-tier [API key](/authentication) with a prepaid balance that each priced call is debited from.
+All prices are in USDC. Pay per API call via the [x402 protocol](/x402-protocol) at the [agent price](#agent-prices-x402), or hold a paid-tier [API key](/authentication) with a prepaid balance that each priced call is debited from at the account price. The tables below are the account prices.
 
 <Note>
   The dashboard at [dashboard.limitguard.ai](https://dashboard.limitguard.ai/?utm_source=docs&utm_medium=docs&utm_campaign=signup&utm_content=pricing) is priced separately, in euros: per lead, per company check with a PDF report, and optional monthly or yearly plans that include credit. See [limitguard.ai/pricing](https://limitguard.ai/pricing/?utm_source=docs&utm_medium=docs&utm_campaign=pricing&utm_content=pricing).
@@ -36,7 +36,7 @@ The official x402 SDKs refuse a payment above one dollar by default (`maxAmountP
 
 ## Tiered Pricing
 
-Four core endpoints sell two quality tiers. Select with the `X-Response-Quality` header (default: `fresh`).
+Four core endpoints sell two quality tiers. Select with the `X-Response-Quality` header (default: `fresh`). These are account prices: an x402 payment pays the agent price in the table above.
 
 | Endpoint | Cached | Fresh (default) |
 |----------|--------|-----------------|
@@ -60,9 +60,9 @@ Four core endpoints sell two quality tiers. Select with the `X-Response-Quality`
 
 ## Flat-Priced Endpoints
 
-These endpoints have a single price regardless of quality tier:
+These endpoints have a single account price regardless of quality tier. An x402 payment pays the agent price above for the routes listed there:
 
-| Endpoint | Price |
+| Endpoint | Account price |
 |----------|-------|
 | `POST /v1/leads/verify` | $0.27 |
 | `POST /v1/agent/check` | $0.75 |
@@ -77,7 +77,7 @@ These endpoints have a single price regardless of quality tier:
 
 ### Deep check
 
-`POST /v1/entity/deep-check` has no cached tier. Its default is `deep` (its `fresh` tier) and `extended` is its `enhanced` tier; where enabled, `credit` is a third tier.
+`POST /v1/entity/deep-check` has no cached tier. Its default is `deep` (its `fresh` tier) and `extended` is its `enhanced` tier; where enabled, `credit` is a third tier. Its prices are account prices; it has no separate agent price, so an x402 payment pays the same.
 
 | Endpoint | Fresh (default) | Enhanced |
 |----------|-----------------|----------|
@@ -89,9 +89,9 @@ These endpoints have a single price regardless of quality tier:
 
 ## MCP Tool Endpoints
 
-The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are priced per call like the REST API. `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `get_trust_score` (your own most recent stored score for an entity), `sanctions_preview` and `wallet_sanctions_preview` (a yes/no OFAC SDN check of a wallet address) are free; `verify_wallet` (the full wallet screen) costs \$0.11; `get_compliance_report`, `sanctions_screen`, `check_agent_wallet` and `verify_lead` are billed at the price of the REST endpoint they call (`POST /v1/reports/entity`, `POST /v1/sanctions/screen`, `POST /v1/agent/check` and `POST /v1/leads/verify`, in the tables above). `check_agent` is an unimplemented placeholder: \$0.00, and hidden from the MCP tool list. The REST mirrors:
+The [MCP tools](/guides/ai-agent-integration#mcp-model-context-protocol) are priced per call on the two price lists of the REST API: a key or the Claude connector pays the account price, an x402 payment the agent price in [Agent prices](#agent-prices-x402). `check_entity` and `get_risk_score` cost the same as the `fresh` tier of the endpoint they mirror; `get_trust_score` (your own most recent stored score for an entity), `sanctions_preview` and `wallet_sanctions_preview` (a yes/no OFAC SDN check of a wallet address) are free; `verify_wallet` (the full wallet screen) costs \$0.11 with a key and \$0.005 with x402; `get_compliance_report`, `sanctions_screen`, `check_agent_wallet` and `verify_lead` are billed at the price of the REST endpoint they call (`POST /v1/reports/entity`, `POST /v1/sanctions/screen`, `POST /v1/agent/check` and `POST /v1/leads/verify`, in the tables above). `check_agent` is an unimplemented placeholder: \$0.00, and hidden from the MCP tool list. The REST mirrors:
 
-| Endpoint | Tool | Price |
+| Endpoint | Tool | Account price |
 |----------|------|-------|
 | `POST /v1/mcp/check-entity` | `check_entity` | $1.05 |
 | `POST /v1/mcp/risk-score` | `get_risk_score` | $0.90 |

@@ -162,8 +162,8 @@ For AI agents, 402 is the expected first response when no payment or API key is 
       "scheme": "exact",
       "network": "eip155:8453",
       "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "amount": "1050000",
-      "maxAmountRequired": "1050000",
+      "amount": "290000",
+      "maxAmountRequired": "290000",
       "payTo": "0xFacilitatorAddress",
       "maxTimeoutSeconds": 600,
       "extra": {"name": "USD Coin", "version": "2", "decimals": 6}
@@ -172,8 +172,8 @@ For AI agents, 402 is the expected first response when no payment or API key is 
       "scheme": "exact",
       "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
       "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "amount": "1050000",
-      "maxAmountRequired": "1050000",
+      "amount": "290000",
+      "maxAmountRequired": "290000",
       "payTo": "SolanaFacilitatorAddress",
       "maxTimeoutSeconds": 600,
       "extra": {"name": "USDC", "version": "2", "decimals": 6, "feePayer": "SolanaFeePayerAddress"}
@@ -192,7 +192,7 @@ Trimmed: each `accepts` entry also repeats `resource`, `description` and `mimeTy
     Parse the `accepts` array. Choose an entry whose `network` (a CAIP-2 chain ID) your agent can pay on.
   </Step>
   <Step title="Check the amount">
-    The `amount` field uses 6 decimal places: `1050000` is $1.05 USDC, the `fresh` price of `POST /v1/entity/check`. Pay the `amount` the 402 quotes, and verify your wallet has sufficient balance before signing.
+    The `amount` field uses 6 decimal places: `290000` is $0.29 USDC, the x402 agent price of the `fresh` tier of `POST /v1/entity/check` (an API key is debited the account price instead). Pay the `amount` the 402 quotes, and verify your wallet has sufficient balance before signing.
   </Step>
   <Step title="Build EIP-3009 signature (EVM) or SPL transfer (Solana)">
     Sign a `TransferWithAuthorization` to the entry's `payTo`, with a unique nonce and a `validBefore` no more than ten minutes ahead (the quote's `maxTimeoutSeconds` is 600). See the [x402 Protocol](/x402-protocol) guide for full code examples.
@@ -211,7 +211,7 @@ Trimmed: each `accepts` entry also repeats `resource`, `description` and `mimeTy
     ```json
     {
       "x402Version": 2,
-      "error": "Insufficient payment: 10000 < 1050000",
+      "error": "Insufficient payment: 10000 < 290000",
       "errorCode": "insufficient_funds",
       "accepts": [...]
     }

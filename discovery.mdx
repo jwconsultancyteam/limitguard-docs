@@ -41,16 +41,20 @@ curl https://api.limitguard.ai/.well-known/x402.json
     {
       "path": "/v1/entity/check",
       "method": "POST",
-      "price_usdc": 1.05,
-      "price_raw": 1050000,
+      "price_usdc": 0.29,
+      "price_raw": 290000,
+      "account_price_usdc": 1.05,
+      "account_price_raw": 1050000,
       "description": "Full entity trust check across multiple verification layers: ...",
       "category": "entity_verification"
     },
     {
       "path": "/v1/leads/verify",
       "method": "POST",
-      "price_usdc": 0.27,
-      "price_raw": 270000,
+      "price_usdc": 0.05,
+      "price_raw": 50000,
+      "account_price_usdc": 0.27,
+      "account_price_raw": 270000,
       "description": "Lead verify for one NL or BE sales lead: is it a real, active company? ...",
       "category": "lead_verification"
     }
@@ -58,7 +62,7 @@ curl https://api.limitguard.ai/.well-known/x402.json
 }
 ```
 
-Trimmed here: the live response lists every priced endpoint, each with its `inputSchema`, plus `payment` (networks and assets), `extensions`, `a2a` and `sla` blocks. `price_raw` is the default (`fresh`) price in USDC 6-decimal units. See [Pricing](/pricing) for the complete, current table.
+Trimmed here: the live response lists every priced endpoint, each with its `inputSchema`, plus `payment` (networks and assets), `extensions`, `a2a` and `sla` blocks. `price_raw` is the default (`fresh`) x402 agent price in USDC 6-decimal units; `account_price_raw` is the account price an API key, the dashboard or the Claude connector is debited. See [Pricing](/pricing) for the complete, current table.
 
 Also available at `/v1/sales/listing` for the same data.
 

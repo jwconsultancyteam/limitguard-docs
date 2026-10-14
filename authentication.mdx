@@ -139,8 +139,8 @@ When you make a request without payment, the API returns the payment requirement
       "scheme": "exact",
       "network": "eip155:8453",
       "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "amount": "1050000",
-      "maxAmountRequired": "1050000",
+      "amount": "290000",
+      "maxAmountRequired": "290000",
       "payTo": "0xFacilitatorAddress",
       "maxTimeoutSeconds": 600,
       "extra": {"name": "USD Coin", "version": "2", "decimals": 6}
@@ -149,7 +149,7 @@ When you make a request without payment, the API returns the payment requirement
 }
 ```
 
-`amount` is in USDC 6-decimal units: `1050000` is the `fresh` price of `POST /v1/entity/check` today. Always pay the `amount` the 402 quotes; [Pricing](/pricing) lists every endpoint. The full body is on the [x402 Protocol](/x402-protocol) page.
+`amount` is in USDC 6-decimal units: `290000` is the x402 agent price of the `fresh` tier of `POST /v1/entity/check` today; an API key is debited the account price instead. Always pay the `amount` the 402 quotes; [Pricing](/pricing) lists every endpoint. The full body is on the [x402 Protocol](/x402-protocol) page.
 
 ### Supported Networks
 
@@ -171,7 +171,7 @@ The production API (`api.limitguard.ai`) quotes Base Mainnet and Solana Mainnet 
 | Header | Value | Description |
 |--------|-------|-------------|
 | `X-Payment-Verified` | `true` | Payment accepted and verified |
-| `X-Payment-Amount` | `1050000` | Amount in USDC 6-decimal units |
+| `X-Payment-Amount` | `290000` | Amount in USDC 6-decimal units |
 | `X-Payment-Fallback` | `true` | Circuit breaker triggered (rare) |
 
 ## Free Endpoints
