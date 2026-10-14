@@ -475,7 +475,7 @@ it rejects the CAIP-2 `network` before signing.
 
 `@x402/fetch` refuses any single payment over $1 by default. That default covers every
 x402 agent price: the entity check and KYB (\$0.29), the risk score (\$0.25), the report
-(\$0.55), Lead Verify (\$0.05) and the wallet and sanctions screens (\$0.005). Pass
+(\$0.55), Lead Verify (\$0.10) and the wallet and sanctions screens (\$0.005). Pass
 `spendControls: { maxAmountPerPayment: "$3" }` to its config only to pay deep-check
 `enhanced` (\$1.71) or `credit` (\$2.45), or a `/v1/keys/upgrade/*` or `/v1/keys/topup/*`
 purchase.
