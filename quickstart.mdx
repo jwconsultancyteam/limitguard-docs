@@ -308,10 +308,12 @@ console.log(await response.json());
 
 Control cost vs. freshness with the `X-Response-Quality` header:
 
-| Tier | Header Value | Cost (entity/check) | Description |
+| Tier | Header Value | Cost with an API key (entity/check) | Description |
 |------|-------------|---------------------|-------------|
 | **Cached** | `cached` | $0.11 | Serve from Redis cache if available |
 | **Fresh** | `fresh` | $1.05 | Always run full fan-out (default) |
+
+Paying per call with x402 instead of an API key costs the agent price: \$0.29 for `fresh` and \$0.11 for `cached` on `/v1/entity/check`. See [Pricing](/pricing#agent-prices-x402).
 
 ```bash
 curl -X POST https://api.limitguard.ai/v1/entity/check \
