@@ -4224,6 +4224,112 @@
         "title": "BeAccountsSection",
         "description": "Belgian annual accounts filed with the National Bank of Belgium.\n\nShown on the report, never scored. ``values`` maps the official account code\n(``\"70\"`` turnover, ``\"10/15\"`` equity, ...) to the filed amounts; ``history``\nholds the two older years a small company's second filing adds. On any\nstatus other than ``ok`` every figure field is empty, never \"nothing filed\".\n``source`` is ``\"consult\"`` when read from the public Consult app; None\nmeans the web services, or a report stored before."
       },
+      "BeShareholder": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Pct"
+          },
+          "enterprise_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enterprise Number"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "BeShareholder",
+        "description": "One holder in the latest NBB filing's shareholder table. A holder with no\nenterprise number and no legal-form word may be a natural person: then ``country``\nis None, as the KBO directors carry a name only."
+      },
+      "BeShareholders": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "no_list",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "holders": {
+            "items": {
+              "$ref": "#/components/schemas/BeShareholder"
+            },
+            "type": "array",
+            "title": "Holders"
+          },
+          "filing_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filing Year"
+          },
+          "gazette_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gazette Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "BeShareholders",
+        "description": "Every shareholder the latest NBB filing names, sorted by % of the voting\nrights. ``no_list``: no filing (``no_filing``), no shareholder table in it (a short\nmodel, ``section_not_found``) or a table with no readable row (``no_rows``); never\n\"no owners\". Shown, never scored. Screened on the local sanctions lists in\n``EntityReport.party_sanctions`` while REPORT_PARTY_SANCTIONS_ENABLED is on.\n``gazette_url``: for ``no_filing``, the company's publications in the Belgian\nOfficial Gazette, where the founding deed names the founders. Built from the\nenterprise number, never fetched."
+      },
       "Branches": {
         "properties": {
           "total": {
@@ -6244,6 +6350,26 @@
               }
             ]
           },
+          "be_shareholders": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BeShareholders"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "party_sanctions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PartySanctions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "be_accounts": {
             "anyOf": [
               {
@@ -7173,7 +7299,6 @@
           },
           "parents_screened": {
             "type": "boolean",
-            "const": false,
             "title": "Parents Screened",
             "default": false
           }
@@ -7183,7 +7308,7 @@
           "status"
         ],
         "title": "GroupChain",
-        "description": "A Belgian company's group: the parent named in its NBB filing, chained up through GLEIF.\n\nRead from the latest filing's consolidated-accounts declaration and shareholder\nstructure, then each named parent's GLEIF direct and ultimate parent. The chain\nstops at the first missing link. Shown, never scored; parents are not\nscreened for sanctions (Walker, 2026-09-25)."
+        "description": "A Belgian company's group: the parent named in its NBB filing, chained up through GLEIF.\n\nRead from the latest filing's consolidated-accounts declaration and shareholder\nstructure, then each named parent's GLEIF direct and ultimate parent. The chain\nstops at the first missing link. Shown, never scored. ``parents_screened``\nis True only when every parent link named here was screened on the local\nsanctions lists (``EntityReport.party_sanctions``)."
       },
       "GroupLink": {
         "properties": {
@@ -7483,7 +7608,6 @@
           },
           "parents_screened": {
             "type": "boolean",
-            "const": false,
             "title": "Parents Screened",
             "default": false
           },
@@ -7499,7 +7623,7 @@
           "status"
         ],
         "title": "GroupStructure",
-        "description": "Group structure from GLEIF Level 2 data.\n\nParents are not screened for sanctions (Walker, 2026-09-25): that is a\nseparately priced add-on, so ``parents_screened`` is always False. A\nparent is None when GLEIF holds no parent LEI record; on any status\nother than ``ok`` every entity field is None, never \"no parent\"."
+        "description": "Group structure from GLEIF Level 2 data.\n\n (Walker, 14 Oct 2026, replacing the 25 Sep decision): the report screens\nthe parents on the local sanctions lists while REPORT_PARTY_SANCTIONS_ENABLED is\non (``EntityReport.party_sanctions``). ``parents_screened`` is True only when\nevery parent named here was screened; GLEIF's own answer keeps it False. A\nparent is None when GLEIF holds no parent LEI record; on any status\nother than ``ok`` every entity field is None, never \"no parent\"."
       },
       "HTTPValidationError": {
         "properties": {
@@ -9786,6 +9910,176 @@
           "lei"
         ],
         "title": "ParentEntity"
+      },
+      "PartyHit": {
+        "properties": {
+          "list": {
+            "type": "string",
+            "title": "List"
+          },
+          "listed_name": {
+            "type": "string",
+            "title": "Listed Name"
+          },
+          "listed_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listed On"
+          },
+          "entry_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "list",
+          "listed_name"
+        ],
+        "title": "PartyHit",
+        "description": "One listed entry a party's name matched. ``listed_name``, never\n``matched_name``: the MCP guardrails strip that key."
+      },
+      "PartySanctions": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "not_screened",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "screened_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screened At"
+          },
+          "lists": {
+            "items": {
+              "$ref": "#/components/schemas/SanctionsList"
+            },
+            "type": "array",
+            "title": "Lists"
+          },
+          "parties": {
+            "items": {
+              "$ref": "#/components/schemas/PartyScreen"
+            },
+            "type": "array",
+            "maxItems": 60,
+            "title": "Parties"
+          },
+          "not_screened_count": {
+            "type": "integer",
+            "title": "Not Screened Count",
+            "default": 0
+          },
+          "cap": {
+            "type": "integer",
+            "title": "Cap",
+            "default": 10
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "PartySanctions",
+        "description": "Every shareholder and parent company the report names, screened against the local\nOFAC, EU and UN lists (, Walker 14 Oct 2026): the NBB shareholders and\nconsolidating parent, and the GLEIF direct and ultimate parents. The same exact,\nword-order key as /v1/sanctions/screen; no fuzzy match, no vendor call, no PEP.\nAt most ``cap`` names are screened, parents first; the rest stay listed as\n``not_screened``/``over_cap``. A party whose lists could not be read is\n``not_screened``, never clear. A hit holds a PROCEED verdict at REVIEW."
+      },
+      "PartyScreen": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "spellings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Spellings"
+          },
+          "roles": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "shareholder",
+                "consolidating_parent",
+                "direct_parent",
+                "ultimate_parent"
+              ]
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "clear",
+              "hit",
+              "not_screened"
+            ],
+            "title": "Result"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/PartyHit"
+            },
+            "type": "array",
+            "maxItems": 25,
+            "title": "Hits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "result"
+        ],
+        "title": "PartyScreen",
+        "description": "One shareholder or parent company the report names, screened once.\n``spellings``: every spelling that shares its screen key, never ``aliases`` (the MCP\nguardrails strip that key). ``reason`` says why a party was ``not_screened``:\n``lists_unavailable``, ``name_too_short`` or ``over_cap``."
       },
       "PepScreen": {
         "properties": {
