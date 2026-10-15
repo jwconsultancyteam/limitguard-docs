@@ -1,9 +1,11 @@
 ---
 title: "Framework Integrations"
-description: "Connect LangChain, CrewAI, or the OpenAI Agents SDK to Limitguard's remote MCP server"
+description: "Connect LangChain, CrewAI, or the OpenAI Agents SDK to Limitguard, through the Python SDK tools or the remote MCP server"
 ---
 
-Limitguard's MCP server is a standard remote **Streamable HTTP** endpoint at `https://api.limitguard.ai/mcp`. Any framework with a generic MCP client can connect to it directly - there is no Limitguard-specific package or wrapper for LangChain, CrewAI, or the OpenAI Agents SDK. The examples below use each framework's own remote-MCP client against that single URL.
+Limitguard's MCP server is a standard remote **Streamable HTTP** endpoint at `https://api.limitguard.ai/mcp`. Any framework with a generic MCP client can connect to it directly. The examples below use each framework's own remote-MCP client against that single URL.
+
+LangChain and CrewAI also have ready-made Limitguard tools in the Python SDK, from version 0.1.6. Install the extra for your framework (`pip install 'limitguard[langchain]'` or `pip install 'limitguard[crewai]'`), then import `limitguard_tools` from `limitguard.integrations.langchain` or `limitguard.integrations.crewai`. `limitguard_tools(api_key="lg_live_...")` returns three tools: `limitguard_check_entity`, `limitguard_risk_score` and `limitguard_verify_lead`. They share a default cap of 20 calls and USD 5. There is no Limitguard-specific package for the OpenAI Agents SDK, so use the MCP example for that one.
 
 <Note>
 For the raw MCP manifest (`/.well-known/mcp.json`), the tools it lists, and their pricing, see [AI Agent Integration](/guides/ai-agent-integration#mcp-model-context-protocol). This page is about wiring a framework's MCP client to that server, not about the tool catalog itself.
