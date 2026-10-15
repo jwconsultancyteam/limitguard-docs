@@ -4252,6 +4252,17 @@
             ],
             "title": "Enterprise Number"
           },
+          "kvk_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kvk Number"
+          },
           "country": {
             "anyOf": [
               {
@@ -4269,7 +4280,7 @@
           "name"
         ],
         "title": "BeShareholder",
-        "description": "One holder in the latest NBB filing's shareholder table. A holder with no\nenterprise number and no legal-form word may be a natural person: then ``country``\nis None, as the KBO directors carry a name only."
+        "description": "One holder in the latest NBB filing's shareholder table. A holder with no\nenterprise number, no KVK number and no legal-form word may be a natural person: then\n``country`` is None, as the KBO directors carry a name only. ``kvk_number``: a Dutch\nholder's KVK number when the filing shows one; ``enterprise_number`` is Belgian only."
       },
       "BeShareholders": {
         "properties": {
@@ -7366,6 +7377,17 @@
             ],
             "title": "Enterprise Number"
           },
+          "kvk_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kvk Number"
+          },
           "share_pct": {
             "anyOf": [
               {
@@ -10016,7 +10038,7 @@
           "status"
         ],
         "title": "PartySanctions",
-        "description": "Every shareholder and parent company the report names, screened against the local\nOFAC, EU and UN lists (, Walker 14 Oct 2026): the NBB shareholders and\nconsolidating parent, and the GLEIF direct and ultimate parents. The same exact,\nword-order key as /v1/sanctions/screen; no fuzzy match, no vendor call, no PEP.\nAt most ``cap`` names are screened, parents first; the rest stay listed as\n``not_screened``/``over_cap``. A party whose lists could not be read is\n``not_screened``, never clear. A hit holds a PROCEED verdict at REVIEW."
+        "description": "Every shareholder and parent company the report names, screened against the local\nOFAC, EU and UN lists (, Walker 14 Oct 2026): the NBB shareholders and\nconsolidating parent, and the GLEIF direct and ultimate parents. The same exact,\nword-order key as /v1/sanctions/screen; no fuzzy match, no vendor call, no PEP.\nAt most ``cap`` names are screened, parents first; the rest stay listed as\n``not_screened``/``over_cap``. A party whose lists could not be read is\n``not_screened``, never clear. A party with a KBO or KVK number on the objection\nlist, or whose objection lookup failed, is ``not_screened``/``not_checked`` and takes\nno screening slot. A hit holds a PROCEED verdict at REVIEW."
       },
       "PartyScreen": {
         "properties": {
@@ -10079,7 +10101,7 @@
           "result"
         ],
         "title": "PartyScreen",
-        "description": "One shareholder or parent company the report names, screened once.\n``spellings``: every spelling that shares its screen key, never ``aliases`` (the MCP\nguardrails strip that key). ``reason`` says why a party was ``not_screened``:\n``lists_unavailable``, ``name_too_short`` or ``over_cap``."
+        "description": "One shareholder or parent company the report names, screened once.\n``spellings``: every spelling that shares its screen key, never ``aliases`` (the MCP\nguardrails strip that key). ``reason`` says why a party was ``not_screened``:\n``lists_unavailable``, ``name_too_short``, ``over_cap`` or ``not_checked``.\n``not_checked``: the party carries a KBO or KVK number that is on the sole traders'\nobjection list, or the list could not be read (fail closed). One reason for both,\nso no answer tells an objection apart."
       },
       "PepScreen": {
         "properties": {
