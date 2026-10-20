@@ -269,7 +269,26 @@ block, which a load-balanced RPC often is right after mining), the server re-rea
 seconds before answering. If it still cannot see it, you get 402 `settlement_not_yet_visible`
 with a `Retry-After` header. The hash has not been consumed and stays valid for the rest of
 the 150-block window, so send the same request again (same hash, same `X-Payment-Challenge`).
+
+The paying wallet must send the transaction itself. Limitguard accepts the hash only when
+the transaction's sender (the receipt's `from`) is the same address as the `from` of the
+USDC `Transfer`. So the account that sends the transaction must be the account the USDC
+comes from. A transfer that any other account sends for you is refused, for example:
+
+- A `transferWithAuthorization` (EIP-3009) settlement that Limitguard, the CDP facilitator
+  or any other facilitator sent for you. Its hash is public, so it is not your proof.
+- A transfer from a contract account, such as an ERC-4337 smart account or a Safe, because
+  a bundler, relayer or owner key sends it.
+- A transfer that a gas sponsor or meta-transaction relayer sends for your wallet.
+- A receipt that does not show who sent the transaction.
+
 Solana uses `txSignature` (see [Official x402 Client Payloads](#official-x402-client-payloads) below).
+
+For Solana `txSignature` proofs the rule is the same: the paying wallet must pay the fee.
+Limitguard accepts a confirmed transaction only when its fee payer, the first signer, is the
+authority of the USDC `TransferChecked`. A transaction that Limitguard or any other
+facilitator co-signed and paid the fee for is refused. So is a transaction whose fee payer
+cannot be read.
 
 When a proof fails verification its replay claim is released so you can retry once the
 transaction confirms. That release is retried a bounded number of times (3 attempts); if it
@@ -374,11 +393,13 @@ The same tx hash and challenge token can be redeemed against `POST /x402/verify`
 directly, without retrying the protected endpoint, which is useful for pre-validating a
 proof before spending it. Because `/x402/verify` has no request URL of its own to
 infer the resource from, you must say which resource the proof was quoted for, via
-the v2 envelope's `resource.url` **object** or a plain `resourcePath` **string**:
+the v2 envelope's `resource.url` **object** or a plain `resourcePath` **string**.
+`/x402/verify` and `/x402/settle` need an API key in `X-API-Key`. Without one they answer 401.
 
 ```bash
 curl -X POST https://api.limitguard.ai/x402/verify \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <your API key>" \
   -H "X-Payment-Challenge: <token from your 402>" \
   -d '{
     "txHash": "0x<64-hex tx hash>",
@@ -520,7 +541,8 @@ proof and is **not** gated on the `X-Payment-Challenge` token that a `txSignatur
 `txSignature` instead, construct the wallet with `broadcast=True`.
 
 These payloads work against `PAYMENT-SIGNATURE` (or `X-PAYMENT`) on any paid endpoint and against `POST /x402/verify`
-and `POST /x402/settle`.
+and `POST /x402/settle`. The two `/x402/` routes need an API key. `/x402/settle` also refuses an amount below
+the cheapest x402 price, and a Solana transaction that asks for more than 200,000 compute units or more than two signatures.
 
 ## V1 Backward Compatibility
 

@@ -298,7 +298,7 @@
     "/v1/keys/upgrade/{tier}": {
       "post": {
         "summary": "Upgrade Key",
-        "description": "Buy prepaid balance via x402 USDC payment.\n\nThe x402 price is credited 1:1 to the key's prepaid balance and the tier\nlabel is set to the higher of the current and purchased tier (the label\nselects burst limits in rate_limit.py; it never downgrades). Repeat\npurchases are allowed. Each priced call is then debited at the price in\nthe pricing table.\n\nThe x402 middleware handles payment verification before this handler runs.\nSend X-API-Key header to identify which key to credit.\n\nLadder prices: indie \\$29, starter \\$99, growth \\$299, pro \\$999.",
+        "description": "Buy prepaid balance via x402 USDC payment.\n\nThe x402 price is credited 1:1 to the key's prepaid balance and the tier\nlabel is set to the higher of the current and purchased tier (the label\nselects burst limits in rate_limit.py; it never downgrades). Repeat\npurchases are allowed. Each priced call is then debited at the price in\nthe pricing table.\n\nThe x402 middleware verifies the payment signature before this handler runs.\nThe handler then checks the funds on chain and settles the payment\nwith a mined receipt before it applies the upgrade or the credit. The credit\nis the amount paid, capped at the tier price.\nSend X-API-Key header to identify which key to credit.\n\nLadder prices: indie \\$29, starter \\$99, growth \\$299, pro \\$999.",
         "operationId": "upgrade_key_v1_keys_upgrade__tier__post",
         "security": [
           {
@@ -343,7 +343,7 @@
     "/v1/keys/topup/{usd}": {
       "post": {
         "summary": "Topup Key",
-        "description": "Top up a key's prepaid balance via x402 USDC payment.\n\nThe x402 middleware prices this path at {usd} dollars and verifies payment\nbefore this handler runs; the amount paid is credited 1:1. Each priced call\nis then debited at the price in the pricing table.",
+        "description": "Top up a key's prepaid balance via x402 USDC payment.\n\nThe x402 middleware prices this path at {usd} dollars and verifies the payment\nsignature before this handler runs. The handler then checks the funds\non chain and settles the payment with a mined receipt before it credits. The\namount paid is credited, capped at {usd} dollars. Each priced call is then\ndebited at the price in the pricing table.",
         "operationId": "topup_key_v1_keys_topup__usd__post",
         "security": [
           {
@@ -3014,7 +3014,7 @@
           "mcp"
         ],
         "summary": "MCP Verify Wallet",
-        "description": "Screen a wallet: OFAC SDN match, on-chain signals, named rules. $0.11 per call.",
+        "description": "Screen a wallet: OFAC SDN match, on-chain signals, named rules. \\$0.005 by x402, \\$0.11 with an API key.",
         "operationId": "mcp_verify_wallet_v1_mcp_verify_wallet_post",
         "requestBody": {
           "content": {
@@ -3135,7 +3135,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/x402/settle": {
@@ -3155,7 +3160,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/.well-known/security.txt": {
